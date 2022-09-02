@@ -313,7 +313,7 @@ Class::Class() : member{arg1, arg2, ...} {...	//(5) in a member initializer list
 
 ## 初始化语义
 
-​		上述初始化类型中讨论的诸多初始化形式，在不同的上下文中，有着不同的c++语义。
+​		初始化语义是从`c++`语义学的角度来对初始化的形式进行分类。
 
 ### object initialization
 
@@ -321,9 +321,9 @@ Class::Class() : member{arg1, arg2, ...} {...	//(5) in a member initializer list
 
 ### value initialization
 
-​		值初始化通常用以初始化一个临时的值语义的对象。
-
 ​		This is the initialization performed when an object is constructed with an empty initializer.
+
+> ​	值初始化通常用以初始化临时的值语义对象。
 
 ```c++
 T()	//(1) nameless temporary object , initializer consisting of an empty pair of parentheses 
@@ -361,6 +361,15 @@ T object {};	//(4) (since C++11) named object (automatic, static, or thread-loca
 > ```c++
 > std::cout << double() << std::endl; // 即在一条语句中创建一个临时的值语义的对象做临时之用。
 > ```
+
+​		一般通过是否带有括号来区别值初始化和默认初始化：
+
+```c++
+Fraction frac {}; // Value initialization using empty set of braces
+Fraction frac; // Default-initialization, calls default constructor
+```
+
+
 
 ### reference initialization
 
