@@ -125,6 +125,37 @@ int d { 7 }; 	// initializer in braces
 
 ​		一般谈论的初始化，都是指对象初始化
 
+```c++
+class Fraction
+{
+private:
+    int m_numerator {};
+    int m_denominator {};
+
+public:
+    Fraction() // default constructor
+    {
+         m_numerator = 0;
+         m_denominator = 1;
+    }
+
+    // Constructor with two parameters, one parameter having a default value
+    Fraction(int numerator, int denominator=1)
+    {
+        assert(denominator != 0);
+        m_numerator = numerator;
+        m_denominator = denominator;
+    }
+
+    int getNumerator() { return m_numerator; }
+    int getDenominator() { return m_denominator; }
+    double getValue() { return static_cast<double>(m_numerator) / m_denominator; }
+};
+
+```
+
+
+
 ### Default initialization
 
 ​		If no initializer is provided, the rules of [default initialization](https://en.cppreference.com/w/cpp/language/default_initialization) apply.
@@ -136,10 +167,16 @@ T object ;	(1)			// automatic, static, or thread-local storage duration, declare
 
 
 new T		(2)			// dynamic storage duration, created by a new-expression with no initializer;
-new T ( ) 	( before C++03 )
-    
-    // (3) constructor is called, but base class or a non-static data member is not mentioned in a constructor initializer list 
+new T ( ) 	( before C++03 )  // (3) constructor is called, but base class or a non-static data member is not mentioned in a constructor initializer list 
 ```
+
+```c++
+Fraction frac; // Default-initialization, calls default constructor
+```
+
+> ```cpp
+> Fraction frac {}; // Value initialization using empty set of braces
+> ```
 
 - structs and classes can self-initialize even when no explicit initializers are provided!
 
@@ -170,44 +207,6 @@ new T ( ) 	( before C++03 )
   
 
   
-
-### Copy initialization
-
-​		Initializes an object from another object.
-
-​		Copy initialization is performed in the following situations:
-
-​		拷贝初始化的语法形式从C语言继承而来，以等号赋值的形式来引起初始化。
-
-```c++
-T object = other;	//(1)	when a named variable (automatic, static, or thread-local) of a non-reference type T is declared with the initializer consisting of an equals sign followed by an expression.
-
-T object = {other};	//(2)	(until C++11)when a named variable of a scalar type T is declared with the initializer consisting of an equals sign followed by a brace-enclosed expression (Note: as of C++11, this is classified as list initialization, and narrowing conversion is not allowed).
-
-f(other)	//(3)	when passing an argument to a function by value
-
-return other;	//(4)	 when returning from a function that returns by value
-
-throw object;
-catch (T object) //(5)	when throwing or catching an exception by value
-T array[N] = {other-sequence};	(6)	as part of aggregate initialization, to initialize each element for which an initializer is provided
-```
-
-> For simple data types (like int), copy and direct initialization are essentially the same. For more complicated types, direct initialization tends to be more efficient than copy initialization.
-
-#### Copy-list-initialization
-
-​		both explicit and non-explicit constructors are considered, but only non-explicit constructors may be called
-
-```c++
-T object = {arg1, arg2, ...};	//(6)	initialization of a named variable with a braced-init-list after an equals sign
-function( { arg1, arg2, ... } )	//(7)	in a function call expression, with braced-init-list used as an argument and list-initialization initializes the function parameter
-return { arg1, arg2, ... } ;	//(8)	in a return statement with braced-init-list used as the return expression and list-initialization initializes the returned object
-object[ { arg1, arg2, ... } ]	//(9)	in a subscript expression with a user-defined operator[], where list-initialization initializes the parameter of the overloaded operator
-object = { arg1, arg2, ... }	//(10)	 in an assignment expression, where list-initialization initializes the parameter of the overloaded operator
-U( { arg1, arg2, ... } )		//(11)	functional cast expression or other constructor invocations, where braced-init-list is used in place of a constructor argument. Copy-list-initialization initializes the constructor's parameter (note; the type U in this example is not the type that's being list-initialized; U's constructor's parameter is)
-Class { T member = { arg1, arg2, ... }; };	(12)	 in a non-static data member initializer that uses the equals sign
-```
 
 
 
@@ -242,6 +241,16 @@ Class::Class() : member(args, ...) { ... }	//(6) a base / a non-static member, b
 [arg](){ ... }					//(7) (since C++11) closure object members from the variables, caught by copy in a lambda-expression
 ```
 
+```c++
+Fraction threeQuarters(3, 4); // Direct initialization, also calls Fraction(int, int)
+```
+
+> ```cpp
+> Fraction fiveThirds{ 5, 3 }; // List initialization, calls Fraction(int, int)
+> ```
+
+> 
+>
 > To provide a more consistent initialization mechanism, there’s **brace initialization** (also called **uniform initialization** or **list initialization**) that uses curly braces.
 >
 > 传统的直接初始化是指小括号初始化，用以初始化单个对象，不能用以进行聚合体的初始化；大括号直接初始化用作列表初始化。为了统一语法，支持了大括号初始化单个对象。
@@ -281,6 +290,39 @@ a{3}; // error
 
 
 
+### Copy initialization
+
+​		Initializes an object from another object.
+
+​		Copy initialization is performed in the following situations:
+
+​		拷贝初始化的语法形式从C语言继承而来，以等号赋值的形式来引起初始化。
+
+```c++
+T object = other;	//(1)	when a named variable (automatic, static, or thread-local) of a non-reference type T is declared with the initializer consisting of an equals sign followed by an expression.
+
+T object = {other};	//(2)	(until C++11)when a named variable of a scalar type T is declared with the initializer consisting of an equals sign followed by a brace-enclosed expression (Note: as of C++11, this is classified as list initialization, and narrowing conversion is not allowed).
+
+f(other)	//(3)	when passing an argument to a function by value
+
+return other;	//(4)	 when returning from a function that returns by value
+
+throw object;
+catch (T object) //(5)	when throwing or catching an exception by value
+T array[N] = {other-sequence};	(6)	as part of aggregate initialization, to initialize each element for which an initializer is provided
+```
+
+> For simple data types (like int), copy and direct initialization are essentially the same. For more complicated types, direct initialization tends to be more efficient than copy initialization.
+
+```c++
+Fraction six = Fraction{ 6 }; // Copy initialize a Fraction, will call Fraction(6, 1)
+Fraction seven = 7; // Copy initialize a Fraction.  The compiler will try to find a way to convert 7 to a Fraction, which will invoke the Fraction(7, 1) constructor.
+```
+
+​		 avoid this form of initialization with classes, as it may be less efficient. Although direct-initialization, list-initialization, and copy-initialization all work identically with fundamental types, copy-initialization does not work the same with classes (though the end-result is often the same). 
+
+
+
 ### list-initialization
 
 ​		列表初始化实际上指使用参数列表进行初始化。
@@ -288,6 +330,10 @@ a{3}; // error
 ​		聚合体实际作为单一目标，若干数据项实际上看做多个“参数“。
 
 ​		这点与聚合初始化是不一样的，聚合初始化实际上是在一个初始化语句中，对多个同质的目标进行初始化，如结构体、联合体、数组等。
+
+> As always, we prefer list initialization than direct initialization.
+
+
 
 #### Direct-list-initialization
 
@@ -303,9 +349,30 @@ Class { T member { arg1, arg2, ... }; };	//(4) in a non-static data member initi
 Class::Class() : member{arg1, arg2, ...} {...	//(5) in a member initializer list of a constructor if braced-init-list is used
 ```
 
+```c++
+Fraction fiveThirds{ 5, 3 }; // List initialization, calls Fraction(int, int)
+```
 
 
-#### copy-list-initialization
+
+#### Copy-list-initialization
+
+​		both explicit and non-explicit constructors are considered, but only non-explicit constructors may be called
+
+```c++
+T object = {arg1, arg2, ...};	//(6)	initialization of a named variable with a braced-init-list after an equals sign
+function( { arg1, arg2, ... } )	//(7)	in a function call expression, with braced-init-list used as an argument and list-initialization initializes the function parameter
+return { arg1, arg2, ... } ;	//(8)	in a return statement with braced-init-list used as the return expression and list-initialization initializes the returned object
+object[ { arg1, arg2, ... } ]	//(9)	in a subscript expression with a user-defined operator[], where list-initialization initializes the parameter of the overloaded operator
+object = { arg1, arg2, ... }	//(10)	 in an assignment expression, where list-initialization initializes the parameter of the overloaded operator
+U( { arg1, arg2, ... } )		//(11)	functional cast expression or other constructor invocations, where braced-init-list is used in place of a constructor argument. Copy-list-initialization initializes the constructor's parameter (note; the type U in this example is not the type that's being list-initialized; U's constructor's parameter is)
+Class { T member = { arg1, arg2, ... }; };	(12)	 in a non-static data member initializer that uses the equals sign
+```
+
+```c++
+Fraction seven = {7};
+Fraction seven({7});
+```
 
 
 
@@ -369,7 +436,32 @@ Fraction frac {}; // Value initialization using empty set of braces
 Fraction frac; // Default-initialization, calls default constructor
 ```
 
+​		大多数情况下，值初始化和默认初始化会导致同样的结果，即默认构造函数被调用。
 
+​		不同的一点在于，在使用值初始化时，编译器也许会在调用构造函数之前对成员进行零初始化，这将会造成一定的性能损耗。但是当成员没有默认的被任何初始化器初始化，那么默认初始化因为没有进行零初始化可能会造成错误。
+
+```c++
+class Fraction
+{
+private:
+    // Removed initializers
+    int m_numerator;
+    int m_denominator;
+
+public:
+    // Removed default-constructor
+
+    int getNumerator() { return m_numerator; }
+    int getDenominator() { return m_denominator; }
+    double getValue() { return static_cast<double>(m_numerator) / m_denominator; }
+};
+
+Fraction frac;
+    // frac is uninitialized, accessing its members causes undefined behavior
+    std::cout << frac.getNumerator() << '/' << frac.getDenominator() << '\n';
+```
+
+​		因此，在初始化类对象时，使用值初始化更加简单和安全。
 
 ### reference initialization
 
@@ -513,6 +605,10 @@ Class::Class(...) : ref ( target ) { ... }
 ​		建议为所有的类类型成员提供默认值，保证即使初始化器列表有缺省时成员也都会被初始化。
 
 ​		在没有显式的初始化器列表能够提供时，更倾向于使用值初始化`{}`（空`brace-init-list`），而不是进行默认初始化。
+
+
+
+
 
 
 
