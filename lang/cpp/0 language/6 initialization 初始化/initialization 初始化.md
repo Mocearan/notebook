@@ -323,7 +323,7 @@ Fraction seven = 7; // Copy initialize a Fraction.  The compiler will try to fin
 
 
 
-### list-initialization
+### list-initialization  / uniform initialization
 
 ​		列表初始化实际上指使用参数列表进行初始化。
 
