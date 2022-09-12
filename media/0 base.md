@@ -203,11 +203,8 @@
   >   > ​		这也是位图（bitmap）在内存中所占用的大小，所以每一张图像的裸数据都是很大的。
   > 
   
-- Stride
-
-  ​		内存中每行像素所占的空间，为了实现内存对齐，每行像素在内存中所占的空间并不一定是图像的宽度。
-
-
+  
+  
 
 ​		RGB像素点中各个分量通常是按照顺序排列的，但有些图像处理要转换成其他的顺序，`opencv`经常转换成BGR的排列方式。
 
@@ -243,7 +240,13 @@
 
 ​		视频帧的裸数据表示，更多的是YUV数据格式，主要应用于优化彩色视频信号的传输，使其向后兼容老式黑白电视。
 
-> ​		之所以采用YUV色彩空间，是因为它的亮度信号Y和色度信号U、V是分离的。如果只有Y信号分量而没有U、V分量，那么这样表示的图像就是黑白灰度图像。彩色电视采用YUV空间正是为了用亮度信号Y解决彩色电视机与黑白电视机的兼容问题，使黑白电视机也能接收彩色电视信号。
+​		之所以采用YUV色彩空间，是因为它的亮度信号Y和色度信号U、V是分离的。
+
+> ​		如果只有Y信号分量而没有U、V分量，那么这样表示的图像就是黑白灰度图像。
+>
+> ​		彩色电视采用YUV空间正是为了用亮度信号Y解决彩色电视机与黑白电视机的兼容问题，使黑白电视机也能接收彩色电视信号。
+>
+> ​		同时降低色度的采样率而不会对图像质量影响太大，降低了视频信号传输时对频宽（带宽）的要求。
 
 - Y，明亮度（Luminance或Luma），也称灰阶值
 
@@ -262,25 +265,97 @@
 
 > ​		在广播电视系统中不传输很低和很高的数值，实际上是为了防止信号变动造成过载，因而把这“两边”的数值作为“保护带”，不论是Rec.601还是BT.709的广播电视标准中，Y的取值范围都是16～235, UV的取值范围都是16～240。
 
-​		YUV最常用的采样格式是4:2:0,它指的是对每行扫描线来说，只有一种色度分量是以2:1的抽样率来存储的。
+##### YUV的采样格式
 
-​		相邻的扫描行存储着不同的色度分量，也就是说，如果某一行是4:2:0，那么其下一行就是4:0:2，再下一行是4:2:0，以此类推。
+​		YUV采用`A:B:C`表示法来描述Y、U、V采样频率的关系。
 
-​		对于每个色度分量来说，水平方向和竖直方向的抽样率都是2:1，所以可以说色度的抽样率是4:1。
+​		主要分为YUV 4:4:4 、YUV 4:2:2、YUV 4:2:0三种常用类型。
 
-> 对非压缩的8比特量化的视频来说，8×4的一张图片需要占用48字节的内存：
+![image-20220908213114325](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908213114325.png)
+
+> ​		黑点表示一个Y分量，空心圆表示像素点的一个UV分量组合。
 >
-> ![image-20220821230236373](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220821230236373.png)
+> ​		YUV最常用的采样格式是4:2:0,它指的是对每行扫描线来说，只有一种色度分量是以2:1的抽样率来存储的。
 >
-> 上述描述意思是，对于一组四个Y，在U/V分量中采两个U或两个V。
+> ​		相邻的扫描行存储着不同的色度分量，也就是说，如果某一行是4:2:0，那么其下一行就是4:0:2，再下一行是4:2:0，以此类推。
+>
+> ​		对于每个色度分量来说，水平方向和竖直方向的抽样率都是2:1，所以可以说色度的抽样率是4:1。
+>
+> > 对非压缩的8比特量化的视频来说，8×4的一张图片需要占用48字节的内存：
+> >
+> > ![image-20220821230236373](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220821230236373.png)
+> >
+> > 上述描述意思是，对于一组四个Y，在U/V分量中采一个U和一个V。
 
+##### YUV的排列格式
 
+​		YUV是一系列相似格式的统称，针对具体的排列方式，可以分为多种格式。
+
+- 打包（packed）格式
+
+  ​	每个像素点的Y、U、V分量交叉排列，易像素点为单元连续存放在同一数组中。通常几个相邻的像素组成一个宏像素（macro-pixel)
+
+  ![image-20220908211732290](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908211732290.png)
+
+- 平面（planar）格式
+
+  ​	将Y、U、V分量分别各自连续的存放在不同的数组中。
+
+![image-20220908211748811](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908211748811.png)
+
+![image-20220908221051838](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908221051838.png)
+
+##### YUV的数据存储
+
+​		对非压缩的8比特量化的采样数据来说，每个分量占一个字节（char或byte）
+
+- YUV 4:4:4
+
+  ​	I444格式（YUV444P, P-planar），对于ffmpeg像素表示`AV_PIX_FMT_YUV444P`
+
+  > planar YUV4:4:4， 24bpp(24bit per pixel)，（1Cr & Cb sample per 1X1 Y samples）
+  >
+  > > Y 4byte + U 4byte + V 4byte = 12byte
+  > >
+  > > 即4个像素占用12byte，每个像素占用3byte
+
+  ![image-20220908214343304](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908214343304.png)
+
+- YUV 4:2:2
+
+  ​	I422 格式（YUV422P），对于ffmpeg像素表示`AV_PIX_FMT_YUV422P`
+
+  > planar YUV4:2:2， 16bpp(16bit per pixel)，（1Cr & Cb sample per 2X1 Y samples）
+  >
+  > > Y 4byte + U 2byte + V 2byte = 8byte
+  > >
+  > > 即4个像素占用8byte，每个像素占用2byte
+
+  ![image-20220908214659406](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908214659406.png)
+
+- YUV 4:2:0
+
+​	I420格式（YUV420P），对于ffmpeg像素表示`AV_PIX_FMT_YUV420P`
+
+> planar YUV4:2:0， 12bpp(12bit per pixel)，（1Cr & Cb sample per 2X2 Y samples）
+>
+> > Y 4byte + U 1byte + V 1byte = 6byte
+> >
+> > 即4个像素占用6byte，每个像素占用1.5byte
+
+![image-20220908215935314](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908215935314.png)
 
 ##### YUV和RGB的转化
 
 ​		凡是渲染到屏幕上的东西（文字、图片或者其他），都要转换为RGB的表示形式。
 
+​		主要的转换标准是BT601和BT709.
+
+![image-20220908221221048](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908221221048.png)
+
 ![image-20220821232507499](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220821232507499.png)
+
+​	![image-20220908221533694](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908221533694.png)
 
 > 比较典型的场景：
 >
@@ -290,7 +365,11 @@
 >
 > 其他场景下需要自行寻找对应的文档，以找出适合的转换矩阵进行转换。
 
-​		
+​		ffmpeg提供swscale或者libyuv进行RGB和YUV的转换。
+
+- 从YUV转到RGB，如果值小于0要取0，大于255要取255.
+
+![image-20220908221700552](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908221700552.png)
 
 #### 视频编码
 
@@ -404,7 +483,15 @@
 
 
 
+##### Stride
 
+​		内存中每行像素所占的空间，为了实现内存对齐，每行像素在内存中所占的空间并不一定是图像的宽度。
+
+![image-20220908221919639](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908221919639.png)
+
+![image-20220908222150926](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908222150926.png)
+
+![image-20220908222203828](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908222203828.png)
 
 ## 流媒体基本原理
 
