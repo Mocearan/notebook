@@ -1126,90 +1126,103 @@ int   getpeername(int   sockfd,   struct   sockaddr  *addr,  socklen_t *addrlen)
   struct hostent *gethostbyname(const char *name);
   
   #include <sys/socket.h>       /* for AF_INET */
-  // 根据addr地址结构获取y
+  // 根据addr地址结构获取域名
   struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
   ```
 
-  ```c
-  // The hostent structure is defined in <netdb.h> as follows:
+  - `struct hostent`
   
-  struct hostent {
-   char  *h_name;            /* official name of host */
-   char **h_aliases;         /* alias list */
-   int    h_addrtype;        /* host address type */
-   int    h_length;          /* length of address */
-   char **h_addr_list;       /* list of addresses */
-  }
-  #define h_addr h_addr_list[0] /* for backward compatibility */
+    ```c
+    // The hostent structure is defined in <netdb.h> as follows:
+    
+    struct hostent {
+     char  *h_name;            /* official name of host */
+     char **h_aliases;         /* alias list */
+     int    h_addrtype;        /* host address type */
+     int    h_length;          /* length of address */
+     char **h_addr_list;       /* list of addresses */
+    }
+    #define h_addr h_addr_list[0] /* for backward compatibility */
+    
+    
+    
+    /*
+    h_name -----------------> official hostname \0
+    h_alias -----[]  ---> alias #1 \0
+                 []  ---> alias #2 \0
+        		NULL
+    h_addrtype
+    h_length
+    h_addr_list ----[]----> IP addr #1
+        	        []----> IP addr #2
+         		   NULL
+    */
+    ```
   
-  //The members of the hostent structure are:
+    > The members of the hostent structure are:
+    >
+    > - `h_name `
+    >   	 The official name of the host.
+    >   	官方域名，代表某一主页，实际上一些著名公司的域名并未使用官方域名注册
+    >
+    > - `h_aliases`
+    >        An array of alternative names for the host, terminated by a NULL pointer.
+    >        可以通过多个域名访问同一主页，同一Ip可以绑定多个域名。因此，除官方域名之外，还可以指定其他域名，通过h_aliases获得
+    >
+    > - `h_addrtype`
+    >       The type of address; always AF_INET or AF_INET6 at present.
+    >       不仅支持IPv4还支持IPv6，因此可以通过此变量获取保存在h_addr_list中的ip地址的地址族信息，若是IPv4，则此变量为AF_INET
+    >
+    > - `h_length`
+    >       The length of the address in bytes.
+    >       保存ip地址长度，IPv4为4字节，若IPv6为16字节
+    >
+    > - `h_addr_list`
+    >       An array of pointers to network addresses for the host (in network byte order), terminated by a NULL pointer.
+    >       最重要的成员，易整数形式保存域名对应的ip地址。用户较多的网站可能分配多个ip给同一域名，利用多个服务器进行负载均衡。此时同样可以通过此变量获取ip地址信息。
+    >
+    > - `h_addr `
+    >
+    >   ​	The first address in h_addr_list for backward compatibility.
   
-  // h_name 
-  //	 The official name of the host.
-  //	 官方域名，代表某一主页，实际上一些著名公司的域名并未使用官方域名注册
+    
   
-  // h_aliases
-  //    An array of alternative names for the host, terminated by a NULL pointer.
-  //	  可以通过多个域名访问同一主页，同一Ip可以绑定多个域名。因此，除官方域名之外，还可以指定其他域名，通过h_aliases获得
+  - 相关扩展函数
   
-  // h_addrtype
-  //    The type of address; always AF_INET or AF_INET6 at present.
-  //		不仅支持IPv4还支持IPv6，因此可以通过此变量获取保存在h_addr_list中的ip地址的地址族信息，若是IPv4，则此变量为AF_INET
+    ```c
+    void sethostent(int stayopen);
+    
+    void endhostent(void);
+    
+    void herror(const char *s);
+    
+    const char *hstrerror(int err);
+    
+    /* System V/POSIX extension */
+    struct hostent *gethostent(void);
+    
+    /* GNU extensions */
+    struct hostent *gethostbyname2(const char *name, int af);
+    
+    int gethostent_r(
+     struct hostent *ret, char *buf, size_t buflen,
+     struct hostent **result, int *h_errnop);
+    
+    int gethostbyaddr_r(const void *addr, socklen_t len, int type,
+                     struct hostent *ret, char *buf, size_t buflen,
+                     struct hostent **result, int *h_errnop);
+    
+    int gethostbyname_r(const char *name,
+                     struct hostent *ret, char *buf, size_t buflen,
+                     struct hostent **result, int *h_errnop);
+    
+    int gethostbyname2_r(const char *name, int af,
+                      struct hostent *ret, char *buf, size_t buflen,
+                      struct hostent **result, int *h_errnop);
+    ```
   
-  // h_length
-  //    The length of the address in bytes.
-  //		保存ip地址长度，IPv4为4字节，若IPv6为16字节
+    
   
-  // h_addr_list
-  //     An array of pointers to network addresses for the host (in network byte order), terminated by a NULL pointer.
-  //		最重要的成员，易整数形式保存域名对应的ip地址。用户较多的网站可能分配多个ip给同一域名，利用多个服务器进行负载均衡。此时同样可以通过此变量获取ip地址信息。
-  
-  // h_addr The first address in h_addr_list for backward compatibility.
-  
-  
-  h_name -----------------> official hostname \0
-  h_alias -----[]  ---> alias #1 \0
-               []  ---> alias #2 \0
-      		NULL
-  h_addrtype
-  h_length
-  h_addr_list ----[]----> IP addr #1
-      	        []----> IP addr #2
-       		   NULL
-  ```
-
-  ```c
-  void sethostent(int stayopen);
-  
-  void endhostent(void);
-  
-  void herror(const char *s);
-  
-  const char *hstrerror(int err);
-  
-  /* System V/POSIX extension */
-  struct hostent *gethostent(void);
-  
-  /* GNU extensions */
-  struct hostent *gethostbyname2(const char *name, int af);
-  
-  int gethostent_r(
-   struct hostent *ret, char *buf, size_t buflen,
-   struct hostent **result, int *h_errnop);
-  
-  int gethostbyaddr_r(const void *addr, socklen_t len, int type,
-                   struct hostent *ret, char *buf, size_t buflen,
-                   struct hostent **result, int *h_errnop);
-  
-  int gethostbyname_r(const char *name,
-                   struct hostent *ret, char *buf, size_t buflen,
-                   struct hostent **result, int *h_errnop);
-  
-  int gethostbyname2_r(const char *name, int af,
-                    struct hostent *ret, char *buf, size_t buflen,
-                    struct hostent **result, int *h_errnop);
-  ```
-
   
 
 #### 地址转换函数
