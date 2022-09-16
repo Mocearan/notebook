@@ -1,26 +1,26 @@
 # constant
 
- a **constant** is a fixed value that may not be changed. 
+​		a **constant** is a fixed value that may not be changed. 
 
-C++ has two kinds of constants: literal constants, and symbolic constants.
+​		C++ has two kinds of constants: literal constants, and symbolic constants.
 
 ## literal constant
 
-A **literal** (also known as a **literal constant**) is a fixed value that has been inserted directly into the source code.
+​		A **literal** (also known as a **literal constant**) is a fixed value that has been inserted directly into the source code.
 
 > Literals and variables both have a value (and a type). However, the value of a literal is fixed and can’t be changed (hence it being called a constant), whereas the value of a variable can be changed through initialization and assignment.
 
-**Literal constants** (usually just called **literals**) are unnamed values inserted directly into the code.
+​		**Literal constants** (usually just called **literals**) are unnamed values inserted directly into the code.
 
-They are constants because their values can not be changed dynamically (you have to change them, and then recompile for the change to take effect).
+​		They are constants because their values can not be changed dynamically (you have to change them, and then recompile for the change to take effect).
 
 ### letaral type
 
- The type of a literal is assumed from the value and format of the literal itself.
+​		The type of a literal is assumed from the value and format of the literal itself.
 
 ![image-20220427164338625](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220427164338625.png)
 
-If the default type of a literal is not as desired, you can change the type of a literal by adding a suffix:
+​		If the default type of a literal is not as desired, you can change the type of a literal by adding a suffix:
 
 ![image-20220427164436405](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220427164436405.png)
 
@@ -37,13 +37,13 @@ std::cout << 5.0f; // 5.0f is type float
 
 ### string literals
 
-#### C-style Null-terminated strings
+​		#### C-style Null-terminated strings
 
-a string as a collection of sequential characters. 
+​		a string as a collection of sequential characters. 
 
-The sequence of character constants inside double quotes represents a string constant.
+​		The sequence of character constants inside double quotes represents a string constant.
 
-`operator“”`
+`operator""`
 
 ```cpp
 "Hello, world!"; // "Hello, world!" is a C-style string literal
@@ -67,30 +67,30 @@ The sequence of character constants inside double quotes represents a string con
 
 `“operator”sv`
 
+```c++
+#include <iostream>
+#include <string>      // for std::string
+#include <string_view> // for std::string_view
+
+int main()
+{
+ using namespace std::literals; // easiest way to access the s and sv suffixes
+
+ std::cout << "foo\n";   // no suffix is a C-style string literal
+ std::cout << "goo\n"s;  // s suffix is a std::string literal
+ std::cout << "moo\n"sv; // sv suffix is a std::string_view literal
+
+ return 0;
+};
+```
 
 
-> ```c++
-> #include <iostream>
-> #include <string>      // for std::string
-> #include <string_view> // for std::string_view
-> 
-> int main()
-> {
->     using namespace std::literals; // easiest way to access the s and sv suffixes
-> 
->     std::cout << "foo\n";   // no suffix is a C-style string literal
->     std::cout << "goo\n"s;  // s suffix is a std::string literal
->     std::cout << "moo\n"sv; // sv suffix is a std::string_view literal
-> 
->     return 0;
-> };
-> ```
 
 
 
 ### integer literals
 
-整数字面量拥有以下形式:
+​		整数字面量拥有以下形式:
 
 - *decimal-literal*	 *integer-suffix*(optional)(1)
 
@@ -314,11 +314,11 @@ C++ actually has two different kinds of constants:
 
 ### const variables
 
-Any variable that should not be modifiable after initialization and whose initializer is not known at compile-time should be declared as const.
+​		Any variable that should not be modifiable after initialization and whose initializer is not known at compile-time should be declared as const.
 
 #### compile-time constants
 
-simply put the `const` keyword either before or after the variable type, like so:
+​		simply put the `const` keyword either before or after the variable type, like so:
 
 ```c++
 const double gravity { 9.8 };  // preferred use of const before type
@@ -326,7 +326,7 @@ int const sidesInSquare { 4 }; // "east const" style, okay, but not preferred
 const int something { 1 + 2 }; // the compiler can resolve this at compiler time
 ```
 
-Const variables *must* be initialized when you define them, and then that value can not be changed via assignment:
+​		Const variables *must* be initialized when you define them, and then that value can not be changed via assignment:
 
 ```c++
 const double gravity; // error: const variables must be initialized
@@ -335,9 +335,9 @@ gravity = 9.9; // error: const variables can not be changed
 
 #### Runtime constants
 
-Any variable that should not be modifiable after initialization and whose initializer is known at compile-time should be declared as constexpr.
+​		Any variable that should not be modifiable after initialization and whose initializer is known at compile-time should be declared as constexpr.
 
-const variables can be initialized from other variables (including non-const ones):
+​		const variables can be initialized from other variables (including non-const ones):
 
 ```c++
 const int usersAge { age };
@@ -352,7 +352,7 @@ void printInt(const int x) // x is a runtime constant because the value isn't kn
 
 ### constexpr
 
-ensures that a constant must be a compile-time constant.
+​		ensures that a constant must be a compile-time constant.
 
 ```c++
 constexpr double gravity { 9.8 }; // ok, the value of 9.8 can be resolved at compile-time
@@ -364,9 +364,9 @@ std::cin >> age;
 constexpr int myAge { age }; // compile error: age is a runtime constant, not a compile-time constant
 ```
 
-Note that literals are also implicitly constexpr, as the value of a literal is known at compile-time.
+​		Note that literals are also implicitly constexpr, as the value of a literal is known at compile-time.
 
-Constexpr variables can also be used in constant expressions：
+​		Constexpr variables can also be used in constant expressions：
 
 ```c++
 constexpr int x { 3 };
@@ -379,7 +379,7 @@ std::cout << x + y; // x + y evaluated at compile-time
 
 ### macro
 
-Avoid using #define to create symbolic constants macros. Use const or constexpr variables instead.
+​		Avoid using #define to create symbolic constants macros. Use const or constexpr variables instead.
 
 - because these #defined values aren’t variables, you can’t add a watch in the debugger to see their values. 
 -  macros can have naming conflicts with normal code
@@ -396,13 +396,13 @@ void printInt(const int x)
 }
 ```
 
-Making a function parameter const enlists the compiler’s help to ensure that the parameter’s value is not changed inside the function. Note that we did not provide an explicit initializer for our const parameter -- the value of the argument in the function call will be used as the initializer in this case.
+​		Making a function parameter const enlists the compiler’s help to ensure that the parameter’s value is not changed inside the function. Note that we did not provide an explicit initializer for our const parameter -- the value of the argument in the function call will be used as the initializer in this case.
 
-Function parameters for arguments passed by value should not be made const.
+​		Function parameters for arguments passed by value should not be made const.
 
 > we generally don’t care if the function changes the value of the parameter (since it’s just a copy that will be destroyed at the end of the function anyway)
 
-Don’t use const with return by value.
+​		Don’t use const with return by value.
 
 ## const variable name
 
@@ -418,19 +418,19 @@ Don’t use const with return by value.
 
 ## symbolic constants in multi-file program
 
-In many applications, a given symbolic constant needs to be used throughout your code (not just in one location). These can include physics or mathematical constants that don’t change (e.g. pi or Avogadro’s number), or application-specific “tuning” values (e.g. friction or gravity coefficients). Instead of redefining these every time they are needed, it’s better to declare them once in a central location and use them wherever needed. That way, if you ever need to change them, you only need to change them in one place.
+​		In many applications, a given symbolic constant needs to be used throughout your code (not just in one location). These can include physics or mathematical constants that don’t change (e.g. pi or Avogadro’s number), or application-specific “tuning” values (e.g. friction or gravity coefficients). Instead of redefining these every time they are needed, it’s better to declare them once in a central location and use them wherever needed. That way, if you ever need to change them, you only need to change them in one place.
 
 
 
 ## magic numbers
 
-**Avoid magic numbers, use symbolic constants instead**
+​		**Avoid magic numbers, use symbolic constants instead**
 
-A **magic number** is a literal (usually a number) that either has an unclear meaning or is used multiple times.
+​		A **magic number** is a literal (usually a number) that either has an unclear meaning or is used multiple times.
 
-Using magic numbers is generally considered bad practice because, in addition to not providing context as to what they are being used for, they pose problems if the value needs to change.
+​		Using magic numbers is generally considered bad practice because, in addition to not providing context as to what they are being used for, they pose problems if the value needs to change.
 
-Magic numbers aren’t always numbers -- they can also be strings or other types.
+​		Magic numbers aren’t always numbers -- they can also be strings or other types.
 
 ```c++
 const int maxStudentsPerSchool{ numClassrooms * 30 };
@@ -441,7 +441,7 @@ const int maxStudentsPerSchool{ numClassrooms * maxStudentsPerClass };
 
 
 
-Note that literals used only once, and in obvious contexts, are not considered “magic”. The values -1, 0, 0.0, and 1 are often used in contexts that are obvious:
+​		Note that literals used only once, and in obvious contexts, are not considered “magic”. The values -1, 0, 0.0, and 1 are often used in contexts that are obvious:
 
 > ```cpp
 > int idGenerator { 0 };         // fine: we're starting our id generator with value 0

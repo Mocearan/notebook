@@ -127,7 +127,7 @@ Prior to compilation, the code file goes through a phase known as **translation*
 >   int foo = 1;
 >   int bar = 0xE+foo;   // 错误：非法的预处理数字 0xE+foo
 >   int baz = 0xE + foo; // OK
->                   
+>                     
 >   int quux = bar+++++baz; // 错误：bar++ ++ +baz，而非 bar++ + ++baz。
 >   ```
 >
@@ -324,120 +324,6 @@ cout << fib<5>::value << endl;
 > 2c. …it’s possible that the file is set to not compile or link. Check the file properties and ensure the file is configured to be compiled/linked. In Code::Blocks, compile and link are separate checkboxes that should be checked. In Visual Studio, there’s an “exclude from build” option that should be set to “no” or left blank.
 >
 > 1. Do *not* *#include “add.cpp”* from *main.cpp*. This will cause the compiler to insert the contents of *add.cpp* directly into *main.cpp* instead of treating them as separate files.
-
-# 分离式编程
-
-As programs get larger, it is common to split them into multiple files for organizational or reusability purposes. 
-
----
-
-程序的源文件被依据功能的逻辑结构被分割成多个源文件。
-
-每个分割的源文件都是一个独立的翻译单元，可以被编译器单独编译。编译产物被链接器链接后成为完整的程序。
-
-> A code file with translations applied to it is called a **translation unit**.
-
-When the compiler compiles a multi-file program, it may compile the files in any order. Additionally, it compiles each file individually, with no knowledge of what is in other files.
-
-源文件之间的符号通过引用性声明引入【包含声明】，而源文件之间符号实现（定义）则通过链接来查找【链接定义】。
-
-![img](https://www.learncpp.com/images/CppTutorial/Section1/IncludeLibrary.png?ezimgfmt=rs%3Adevice%2Frscb2-1)
-
-![img](https://www.learncpp.com/images/CppTutorial/Section1/IncludeHeader.png?ezimgfmt=rs:647x377/rscb2/ng:webp/ngcb2)
-
-### 头文件
-
-The primary purpose of a header file is to propagate declarations to code files.
-
-Header files usually have a .h extension, but you will occasionally see them with a .hpp extension or no extension at all. 
-
-Header files allow us to put declarations in one location and then import them wherever we need them. This can save a lot of typing in multi-file programs.
-
-头文件通常包含那些只能被定义一次的实体，如类，函数声明，const 和 constexpr变量等。
-
-头文件也常用到其他头文件的功能，为了保证多次包含的情况下也能安全正常工作，需要进行一些特殊的头文件处理。
-
-**头文件一旦改变，相关的源文件必须重新编译以获取更新过的声明**
-
-> Header files are often paired with code files, with the header file providing forward declarations for the corresponding code file. Since our header file will contain a forward declaration for functions defined in *add.cpp*, we’ll call our new header file *add.h*.
-
-#### 防卫性声明
-
-Header guards are designed to ensure that the contents of a given header file are not copied more than once into any single file, in order to prevent duplicate definitions.
-
-> 头文件定义时，可能需要引用其他对象的定义，这样在头文件被引用时，可能隐式的引用了其他头文件，如果再显式地引用相同的头文件。会造成依赖冲突。
->
-> 所以必须在书写头文件时做防卫性声明。
-
-```c++
-#ifndef MASSPP_OSTYPE_H
-#define MASSPP_OSTYPE_H
-...
-#endif // MASSPP_OSTYPE_H
-    
-//    这样使得多次包含时，相同变量在同一个编译单元只被定义一次。
-//  #define、#ifndef、#endif 组合起来用于检查某个指定的预处理变量是否已经定义。来达到头文件防卫性声明的目的。
-/*
-	第一次包含头文件是，#ifndef的结果为真，预处理器将顺序执行后面的操作直至遇到#endif为止。
-此时，预处理宏的值将被#define定义。头文件被拷贝到.cpp的实现文件中。再多次包含头文件时，
-#ifndef的检查结果将为假。编译器将忽略#ifndef到#endif之间的部分。
-*/
-    
-//  Some good suggestions are a naming convention of <PROJECT>_<PATH>_<FILE>_H , <FILE>_<LARGE RANDOM NUMBER>_H, or <FILE>_<CREATION DATE>_H
-```
-
-​		防卫性声明通过预处理指令控制宏来保证头文件多次包含后安全工作。
-
-​		头文件即使（目前还）没有被包含在任何其他头文件中，也应该设置保护符。头文件保护符很简单，程序员只要习惯性地加上就可以了，没必要太在乎程序需不需要。
-
-> `#pragma once`被部分编译器引入，实现`Include Guard`，但它是非标准的，不推荐使用。
->
-> C++20 新增了`module`特性，可以实现一次性加载，但`Include guard`短期内还是无可替代的
-
-#### 添加头文件的顺序
-
-```c++
-// project header files
-// 3rd	header files
-// cpp header files
-// c header files
-// os header files
-```
-
-> 也有反着的，但这种能最小化编译速度。
->
-> ![image-20220328221521407](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220328221521407.png)
->
-> That way, if one of your user-defined headers is missing an #include for a 3rd party library or standard library header, it’s more likely to cause a compile error so you can fix it.
-
-#### 传递包含
-
-When your code file #includes the first header file, you’ll also get any other header files that the first header file includes (and any header files those include, and so on). These additional header files are sometimes called **transitive includes**, as they’re included implicitly rather than explicitly.
-
-However, you should not rely on the content of headers that are included transitively. The implementation of header files may change over time, or be different across different systems. 
-
-This is easily avoided by explicitly including all of the header files the content of your code file requires.
-
-#### header file best practices
-
-Here are a few more recommendations for creating and using header files.
-
--   Always include header guards (we’ll cover these next lesson).
--   Do not define variables and functions in header files (global constants are an exception -- we’ll cover these later)
--   Give a header file the same name as the source file it’s associated with (e.g. *grades.h* is paired with *grades.cpp*).
--   Each header file should have a specific job, and be as independent as possible. For example, you might put all your declarations related to functionality A in A.h and all your declarations related to functionality B in B.h. That way if you only care about A later, you can just include A.h and not get any of the stuff related to B.
--   Be mindful of which headers you need to explicitly include for the functionality that you are using in your code files
--   Every header you write should compile on its own (it should #include every dependency it needs)
--   Only #include what you need (don’t include everything just because you can).
--   Do not #include .cpp files.
-
-### troubleshooting
-
-If you get a compiler error indicating that *add.h* isn’t found, make sure the file is really named *add.h*. Depending on how you created and named it, it’s possible the file could have been named something like *add* (no extension) or *add.h.txt* or *add.hpp*. Also make sure it’s sitting in the same directory as the rest of your code files.
-
-If you get a linker error about function *add* not being defined, make sure you’ve added *add.cpp* in your project so the definition for function *add* can be linked into the program.
-
-
 
 
 
