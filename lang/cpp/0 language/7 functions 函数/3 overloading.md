@@ -1,6 +1,29 @@
-# Overloading
+# Overloading 重载
 
 ---
+
+​		同一作用域中，多个函数
+
+-   拥有相同名称
+
+-   不同形参列表
+
+    -   形参数量
+    -   形参对应位置上的类型
+
+-   或非静态成员内函数不同cv限定版本
+
+    则各个函数实现之间，称为函数重载（overload）。
+
+    > `返回值类型`和``nocexcept``不作为函数重载的条件。
+
+​	重载函数的地址有特定的确定方法。（重载集地址）
+
+​	函数重载也称为函数多态性（静态多态）。
+
+>   静态多态：编译期确定，编译期绑定。
+>
+>   动态多态：运行期确定，运行期绑定。如通过虚函数实现的重写。
 
 
 
@@ -49,191 +72,11 @@
 
 
 
+### name managling
+
+​		为实现重载，编译期实际上会对函数签名进行`name managling`，将名字按照编译期的规则进行重新编排，一般会将参数类型按照位置顺序带入名称，这样就能做到各个重载版本之间实际的名字不同。
+
+​		`extern "C"`里的函数声明，将不会再编译时进行`name managling`.
 
 
-## overload resolution
-
-​		The process of matching function calls to a specific overloaded function is called **overload resolution**.
-
-​		when the argument types in the function call don’t exactly match the parameter types in any of the overloaded functions, compiler matches a given function call to a specific overloaded function via overload resolution.
-
-
-
-### rule
-
-​		when a function call is made to an overloaded function, the compiler steps through a sequence of rules to determine which(if any) of the overloaded functions is the best match.
-
-​		At each step, the compiler applies a bunch of different type conversions to the argument(s) in the function call. 
-
-​		For each conversion applied, the compiler checks if any of the overloaded functions are now a match. After all the different type conversions have been applied and checked for matches, the step is done. The result will be one of three possible outcomes:
-
-- No matching functions were found.
-
-  ​	The compiler moves to the next step in the sequence.
-
-- A single matching function was found. 
-
-  ​	This function is considered to be the best match. The matching process is now complete, and subsequent steps are not executed.
-
-- More than one matching function was found. 
-
-  ​	The compiler will issue an ambiguous match compile error.
-
-​		If the compiler reaches the end of the entire sequence without finding a match, it will generate a compile error that no matching overloaded function could be found for the function call.
-
-
-
-### matching sequence
-
-1. 编译器尝试进行完全匹配
-
-   1. 查找形参精确匹配的重载
-
-   2. 对实参进行一些一般转换
-
-      > ​		The trivial conversion are a set of specific conversion rules will modify types(without modifying the value) for purpose of finding a match.
-      >
-      > for example:
-      >
-      > ​	non-const type -> const type
-      >
-      > ```c++
-      > void print(const int){...}
-      > int x{0};
-      > print(x);
-      > ```
-      >
-      > ​	non-reference <-> reference
-      >
-      > ```c++
-      > void print(int&){...}
-      > int x{0};
-      > print(x);
-      > 
-      > void print(int){...}
-      > int x{0};
-      > int& y{x};
-      > print(y);
-      > ```
-
-2. 没有精确匹配，编译器查找数值提升转换后能够匹配的参数。
-
-   > certain narrow integral and floating point types can be automatically promoted to wider types
-
-   ```c++
-   void print(int){...}
-   void print(double){...}
-   print('a'); // print(int)
-   print(true); // print(int)
-   print(4.5f); // print(double)
-   ```
-
-3. 没有数值提升匹配，编译器查找数值转换后能够匹配的参数
-
-   ```c++
-   void print(double){...}
-   void print(std::string){...}
-   
-   print('a'); //print(double)
-   ```
-
-   > numeric prototions > numeric conversions
-   
-4. 没有数值转换匹配，编译器查找用户定义转换能够匹配的参数。
-
-   > certain types (e.g. classes) can define conversions to other types that can be implicitly invoked
-
-   ```c++
-   // We haven't coverd classes yet, so don't worry if this doesn't make sense 
-   class X 
-   {
-   public:
-     operator int() {return 0;} // Here's a user-defined conversion from X to int
-   };
-   
-   void print(int){...}
-   void print(double){...}
-   
-   X x; // Here, we're creating an object of type X(named x)
-   print(x); // x is converted to type int using the user-defined conversion from X to int
-   ```
-
-   ​	在用户定义转换之后，编译器可能会用附加的隐式提升或转换来进行匹配。
-
-5. 没有用户定义转换匹配，编译器查找带有省略号的变参重载
-
-6. 综上未匹配，编译器提示编译错误，查找不到匹配的函数
-
-
-
-### ambiguous match
-
- An ambiguous match occurs when the compiler finds two or more functions that can be made to match in the same step. When this occurs, the compiler will stop matching and issue a compile error stating that it has found an ambiguous function call.
-
-```c++
-void print(int){...}
-void print(int){...}
-
-print(5l); // 5l is type long
-```
-
-> - literal `5l` is of type `long`,
-> - the compiler will first look to see if it can find an exact match for `print(long)`
-> - but it will not find one. Next, the compiler will try numeric promotion,
-> - but values of type `long` can’t be promoted, so there is no match here either.
->
-> Following that, the compiler will try to find a match by applying numeric conversions to the `long` argument. In the process of checking all the numeric conversion rules, the compiler will find two potential matches. If the `long` argument is numerically converted into an `int`, then the function call will match `print(int)`. If the `long` argument is instead converted into a `double`, then it will match `print(double)` instead. Since two possible matches via numeric conversion have been found, the function call is considered ambiguous.
-
-```c++
-void print(unsigned int x)
-{
-}
-void print(float y)
-{
-}
-
-int main()
-{
-    print(0); // int can be numerically converted to unsigned int or to float
-    print(3.14159); // double can be numerically converted to unsigned int or to float
-
-    return 0;
-}
-```
-
->  expect `0` to resolve to `print(unsigned int)` and `3.14159` to resolve to `print(float)`, both of these calls result in an ambiguous match. The `int` value `0` can be numerically converted to either an `unsigned int` or a `float`
-
-#### resolving ambiguous matches
-
-1. define a new overloaded function that takes parameters of exactly type.
-
-2.  explicitly cast the ambiguous argument(s) to match the type of the function you want to call.
-
-   ```c++
-   void print(unsigned int){...}
-   print(static_cast<unsigned int>(x));
-   ```
-
-3. literal argument can use the literal suffix to ensure correct type supplied.
-
-   ```c++
-   print(0u);
-   ```
-
-### **Matching for functions with multiple arguments**
-
-If there are multiple arguments, the compiler applies the matching rules to each argument in turn.
-
-the function chosen must provide a better match than all the other candidate functions for at least one parameter, and no worse for all of the other parameters.
-
-If no such function can be found, the call will be considered ambiguous (or a non-match).
-
-```c++
-void print(char c, int x){...}
-void print(char c, double x){...}
-void print(char c, float x){...}
-print('x', 'a');
-```
-
-> the top function matches the second parameter via promotion, whereas the other functions require a conversion.
 
