@@ -453,7 +453,7 @@ inline To down_cast(From* f)                     // so we only accept pointers
 
 
 
-### static_cast
+### static_cast 
 
 ​		**static_cast**, which can be used to convert a value of one type to a value of another type.
 
@@ -465,4 +465,114 @@ inline To down_cast(From* f)                     // so we only accept pointers
 
 - provides compile-time type checking
 - can’t inadvertently remove `const`
+
+
+
+### dynamic_cast 
+
+​		在处理多态的场景下，遇到基类提供的虚函数接口不能表达派生类特有的功能接口时，需要将一个基类引用（指针或引用）的对象转化为实际的派生类对象来进行访问。
+
+​		将派生类对象转换为一个基类对象，因为派生类拥有基类部分，进行对象切割，丢弃派生类拓展的部分就能得到完整的基类对象。这种转型是安全的，称为向上转型（upcasting）。
+
+​		使用引用（指针，引用）时，依据类型信息确定的指针可访问的宽度，和直接使用对象转型是同理的。也是向上转型。
+
+​		而将一个基类对象转型为其派生类对象是不安全的，因为派生类拓展部分的信息无法由基类对象提供。称为downcasting。
+
+​		但使用引用（指针，引用）时，进行downcasting就不一定不安全。因为基类可能引用基类对象、期望转型到的派生类对象、非期望转型到的七类派生类对象。此时，需要提供类型信息来进行转型的验证是否为期望转型到的派生类对象。通过验证的转换，即为安全的downcasting。
+
+​		`dynamic_casting`，通过RTTI提供的动态类型信息，进行转换时的对象信息验证来进行转换，存在转换失败的可能，即转换的对象实际类型与期望转换到的类型不同。
+
+​		转换失败时，返回空指针。
+
+​		`dynamic_cast`在一些情况下不能使用：
+
+- `protected / private`继承
+- 没声明或继承任何虚函数的继承链（因此没有虚函数表来进行动态类型信息验证）
+- 涉及虚基类的某些情况（[dynamic_cast 运算符 | Microsoft Learn](https://learn.microsoft.com/zh-cn/cpp/cpp/dynamic-cast-operator?redirectedfrom=MSDN&view=msvc-170)
+
+```c++
+#include <iostream>
+#include <string>
+
+class Base
+{
+protected:
+	int m_value{};
+
+public:
+	Base(int value)
+		: m_value{value}
+	{
+	}
+
+	virtual ~Base() = default;
+};
+
+class Derived : public Base
+{
+protected:
+	std::string m_name{};
+
+public:
+	Derived(int value, const std::string& name)
+		: Base{value}, m_name{name}
+	{
+	}
+
+	const std::string& getName() const { return m_name; }
+};
+
+Base* getObject(bool returnDerived)
+{
+	if (returnDerived)
+		return new Derived{1, "Apple"};
+	else
+		return new Base{2};
+}
+
+int main()
+{
+	Base* b{ getObject(true) };
+
+	Derived* d{ dynamic_cast<Derived*>(b) }; // use dynamic cast to convert Base pointer into Derived pointer
+    
+    if (d) // make sure d is non-null
+		std::cout << "The name of the Derived is: " << d->getName() << '\n';
+	delete b;
+
+	return 0;
+}
+
+
+//////////  可以是引用的
+int main()
+{
+	Derived apple{1, "Apple"}; // create an apple
+	Base& b{ apple }; // set base reference to object
+	Derived& d{ dynamic_cast<Derived&>(b) }; // dynamic cast using a reference instead of a pointer
+
+	std::cout << "The name of the Derived is: " << d.getName() << '\n'; // we can access Derived::getName through d
+
+	return 0;
+}
+// Because C++ does not have a “null reference”, dynamic_cast can’t return a null reference upon failure. Instead, if the dynamic_cast of a reference fails, an exception of type std::bad_cast is thrown.
+```
+
+​		这种动态的类型一致性检查，因为使用RTTI提供的动态类型信息，具有运行时的性能损耗，因此很多人认为`dynamic_cast`是糟糕的类设计实践，建议通过编译器选项禁用RTTI。
+
+> RTTI，Run-time type information(RTTI)，是c++的特性之一，在运行时公开关于对象数据类型的信息，`dynamic_cast`使用了该功能。
+>
+> RTTI有相当大的空间性能成本，一些编译器允许关闭RTTI进行优化，使得`dynamic_cast`不能使用。
+
+​		作为替代，应该尽量使用虚函数来完成所有的动态抽象。通常，也应该优先使用虚函数而不是downcasting，但有时downcasting是更好的选择：
+
+- 当不能在基类中添加虚函数来实现派生类的功能时（如基类时标准库，或某些不易修改的三方库提供）
+- 当需要访问特定于派生类而不能添加到基类的接口时（如派生类的access funciton)
+- 向基类添加虚函数没有意义时（如基类没有要返回的恰当类型信息或值信息，此时如果户需要实例化虚函数，可以将基类的虚函数改为纯虚函数，派生类中通过改变返回值来完成该功能）
+
+
+
+​		`static_cast`也能进行downcasting，类似于静态的强制转换，不验证期望的派生类类型信息，因而不安全。
+
+> use static_cast unless you’re downcasting, in which case dynamic_cast is usually a better choice. However, you should also consider avoiding casting altogether and just use virtual functions.
 

@@ -321,6 +321,48 @@ Fraction seven = 7; // Copy initialize a Fraction.  The compiler will try to fin
 
 ​		 avoid this form of initialization with classes, as it may be less efficient. Although direct-initialization, list-initialization, and copy-initialization all work identically with fundamental types, copy-initialization does not work the same with classes (though the end-result is often the same). 
 
+> ​		This form of copy initialization is evaluated the same way as the following:
+>
+> ```cpp
+> Fraction six(Fraction(6));
+> ```
+>
+> ​		this can potentially make calls to both Fraction(int, int) and the Fraction copy constructor (which may be elided for performance reasons). However, because eliding isn’t guaranteed (prior to C++17, where elision in this particular case is now mandatory), it’s better to avoid copy initialization for classes, and use uniform initialization instead.
+
+```c++
+#include <iostream>
+class Something
+{
+public:
+	Something() = default;
+	Something(const Something&)
+	{
+		std::cout << "Copy constructor called\n";
+	}
+};
+
+Something foo()
+{
+	return Something(); // copy constructor normally called here
+}
+Something goo()
+{
+	Something s;
+	return s; // copy constructor normally called here
+}
+
+int main()
+{
+	std::cout << "Initializing s1\n";
+	Something s1 = foo(); // copy constructor normally called here
+
+	std::cout << "Initializing s2\n";
+	Something s2 = goo(); // copy constructor normally called here
+}
+```
+
+> ​		The above program would normally call the copy constructor 4 times -- however, due to copy elision, it’s likely that your compiler will elide most or all of the cases. Visual Studio 2019 elides 3 (it doesn’t elide the case where goo() is returned), and GCC elides all 4.
+
 
 
 ### list-initialization  / uniform initialization
