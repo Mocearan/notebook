@@ -439,8 +439,10 @@ pair p2{ 1, 2 };     // CTAD used to deduce pair<int, int> from the initializers
 > 当编译器尝试实例化对应的模板时，搜索到已经显式定义的针对该类型的实现，就会使用该实现替换泛型的模板实现。
 
 - `template<>`全特化声明，声明此版本将所有模板参数特化
+
 - 模板原型声明，以特定的类型，声明模板类或模板函数的原型
-- 
+
+  
 
 #### class template explicit specialization 类模板显式特化
 

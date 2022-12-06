@@ -1,6 +1,6 @@
 # iterator
 
-​		An **iterator** is an object designed to traverse through a container (e.g. the values in an array, or the characters in a string), providing access to each element along the way.
+​		An **iterator** is an object designed to traverse through a container, providing access to each element along the way.
 
 ---
 
@@ -8,9 +8,22 @@
 
 ​		Once the appropriate type of iterator is created, the programmer can then use the interface provided by the iterator to traverse and access elements without having to worry about what kind of traversal is being done or how the data is being stored in the container. And because C++ iterators typically use the same interface for traversal (operator++ to move to the next element) and access (operator* to access the current element), we can iterate through a wide variety of different container types using a consistent method.
 
-​		指针和迭代器有相似的地方，因为迭代器建立在指针访问顺序容器的方式之上，进行了推广和标准化。其次，指针并非专用做对数据结构的访问，而是一种语言的机制，是一种实现迭代访问的手段，而非迭代概念本身。
+## 迭代器与指针
 
-​		迭代器是对数据结构访问的逻辑抽象，并进行接口的统一设计。
+​		指针和迭代器有相似的地方，因为迭代器建立在指针访问顺序容器的方式之上，进行了推广和标准化。
+
+​		但指针并非专用做对数据结构的访问，而是一种语言的机制，是一种实现迭代访问的手段，而非迭代概念本身。
+
+​		迭代器是将指针对数据结构访问的逻辑抽象，并提供一组统一的接口定义。
+
+### pointer-like API
+
+- `operator*` 解引用
+- `operator++`偏移一个单位
+- `operator== / operator!=` 指向比较
+- `operator=` 指向赋值
+
+
 
 
 

@@ -2,7 +2,9 @@
 
 ---
 
-​		standard library provide some functions that come pre-tested, are efficient, work on a variety of different container types, and many support parallelization (the ability to devote multiple CPU threads to the same task in order to complete it faster).
+​		STL provide some functions that come pre-tested, are efficient, work on a variety of different container types, and many support parallelization (the ability to devote multiple CPU threads to the same task in order to complete it faster).
+
+​		In addition to container classes and iterators, STL also provides a number of generic algorithms for working with the elements of the container classes. These allow you to do things like search, sort, insert, reorder, remove, and copy elements of the container class.
 
 ​		The functionality provided in the algorithms library generally fall into one of three categories:
 
@@ -18,47 +20,37 @@
 
 
 
+## 算法与迭代器
+
+​		STL提供的通用算法，通过迭代器和容器粘合。
+
+>  While this is very powerful and can lead to the ability to write complex code very quickly, it’s also got a dark side: some combination of algorithms and container types may not work, may cause infinite loops, or may work but be extremely poor performing. So use these at your risk.
+
+
+
 ## `std::find`
 
 ​		searches for the first occurrence of a value in a container.
 
 ```c++
 #include <algorithm>
-#include <array>
 #include <iostream>
+#include <list>
+#include <numeric>
 
 int main()
 {
-    std::array arr{ 13, 90, 99, 5, 40, 80 };
+    std::list<int> li(6);
+    std::iota(li.begin(), li.end(), 0);
 
-    std::cout << "Enter a value to search for and replace with: ";
-    int search{};
-    int replace{};
-    std::cin >> search >> replace;
+    // Find the value 3 in the list
+    auto it{ std::find(li.begin(), li.end(), 3) };
 
-    // Input validation omitted
+    // Insert 8 right before 3.
+    li.insert(it, 8);
 
-    // std::find returns an iterator pointing to the found element (or the end of the container)
-    // we'll store it in a variable, using type inference to deduce the type of
-    // the iterator (since we don't care)
-    auto found{ std::find(arr.begin(), arr.end(), search) };
-
-    // Algorithms that don't find what they were looking for return the end iterator.
-    // We can access it by using the end() member function.
-    if (found == arr.end())
-    {
-        std::cout << "Could not find " << search << '\n';
-    }
-    else
-    {
-        // Override the found element.
-        *found = replace;
-    }
-
-    for (int i : arr)
-    {
+    for (int i : li) // for loop with iterators
         std::cout << i << ' ';
-    }
 
     std::cout << '\n';
 
@@ -214,9 +206,46 @@ void sort(int* begin, int* end, std::function<bool(int, int)> compare)
 ::sort(std::begin(array), std::end(array), std::greater{});
 ```
 
+## std::reverse
+
+​		翻转容器中的元素
+
+```c++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main()
+{
+    std::vector<int> vect{ 7, -3, 6, 2, -5, 0, 4 };
+
+    // sort the vector
+    std::sort(vect.begin(), vect.end());
+
+    for (int i : vect)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    // reverse the vector
+    std::reverse(vect.begin(), vect.end());
+
+    for (int i : vect)
+    {
+        std::cout << i << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+```
 
 
-## for_each
+
+## stdfor_each
 
 ​			takes a list as input and applies a custom function to every element. 
 
@@ -260,3 +289,35 @@ for (auto& i : arr)
 > ```
 >
 > ​		Like many algorithms, `std::for_each` can be parallelized to achieve faster processing, making it better suited for large projects and big data than a range-based for-loop.
+
+
+
+## std::min_element / std::max_element
+
+​		查找容器中最大或最小的元素。
+
+
+
+## std::iota 
+
+​		生成一系列连续的值
+
+```c++
+#include <algorithm> // std::min_element and std::max_element
+#include <iostream>
+#include <list>
+#include <numeric> // std::iota
+
+int main()
+{
+    std::list<int> li(6);
+    // Fill li with numbers starting at 0.
+    std::iota(li.begin(), li.end(), 0);
+
+    std::cout << *std::min_element(li.begin(), li.end()) << ' '
+              << *std::max_element(li.begin(), li.end()) << '\n';
+
+    return 0;
+}
+```
+
