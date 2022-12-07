@@ -937,6 +937,10 @@ catch (...)
 
 - Strong guarantee -- If an exception is thrown, no memory will be leaked and the program state will not be changed. This means the function must either completely succeed or have no side effects if it fails. This is easy if the failure happens before anything is modified in the first place, but can also be achieved by rolling back any changes so the program is returned to the pre-failure state.
 
+  ​	保证如果函数被异常中断，不会泄露任何内存，也不会改变程序状态。
+
+  ​	特别是，所有的构造函数都应该支持强异常保证，这样，如果对象的构造失败，程序的其余部分就不会处于更改的状态。
+
 - No throw / No fail -- The function will always succeed (no-fail) or fail without throwing an exception (no-throw).
 
   > The no-throw guarantee: if a function fails, then it won’t throw an exception. Instead, it will return an error code or ignore the problem. No-throw guarantees are required during stack unwinding when an exception is already being handled; for example, all destructors should have a no-throw guarantee (as should any functions those destructors call). Examples of code that should be no-throw:

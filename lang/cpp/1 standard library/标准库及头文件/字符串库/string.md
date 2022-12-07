@@ -1,9 +1,3 @@
-# string
-
----
-
-
-
 # 空终止字符串（C-Style字符串）
 
 ​		尾随`\0`（称为空终止符）的非零字节序列。
@@ -29,7 +23,7 @@
 
 
 
-### symbolic constants
+## symbolic constants 符号常量
 
 ```c++
 const char* name{"Mass"};
@@ -82,15 +76,226 @@ Alex
 
 
 
+# string class 字符串类
 
+​		`#include <string>`
 
-# std::string
+---
+
+​		使用C-style strings的缺点之一是需要字符串的用户进行所有的内存管理。
+
+```c++
+char* strHello{new char[7]}; // 需要小心的处理字符串的边界
+strcpy(strHello, "hello!");
+delete[] strHello;
+```
+
+​		因为C-style strings基于指针，因此也不能使用符合直觉的操作符来进行字符串操作，如赋值和比较。
+
+​		因此C++标准库以类的形式提供了`std::string`和`std::wstring`提供了更好的处理字符串的方式。
 
 
 
 ## basic_string
 
+​		字符串类拥有共同的模板基类`basic_string`:
 
+```c++
+namespace std
+{
+    template<class charT, class traits = char_traits<charT>, class Allocator = allocator<charT>>
+        class basic_string;
+}
+```
+
+​		这个模板基类不能直接使用，`basic_string`的两个派生类提供两种类型的字符串：
+
+```c++
+namespace std
+{
+	typedef basic_stirng<char> string;	// ascii and utf-8 stirngs, 单/多字节字符串
+    typedef basic_string<wchar_t> wstring; // wide-character / unicode(utf-16) strings, 宽字节字符串
+	typedef std::basic_string<char8_t> std::u8string;  // (C++20)
+	typedef std::basic_string<char16_t> std::u16string; // (C++11)
+	typedef std::basic_string<char32_t> std::u32string; // (C++11)
+}
+```
+
+### 模板形参
+
+- CharT 字符类型
+- Traits 指定字符类型上操作的特性类
+- Allocator 用于分配内部存储的分配器类型
+
+### 成员类型
+
+### 成员函数
+
+#### 构造 / 析构
+
+- 
+
+- `get_allocator()`
+
+  ​	获取关联的分配器
+
+#### 容量
+
+- `capacity()`  
+
+  ​	返回当前对象分配的存储空间能保存的字符数量
+
+- `empty()`
+
+  ​	检查字符串是否为空
+
+- `length() / size()`
+
+  ​	返回字符数
+
+- `max_size()` 
+
+  ​	返回可分配的最大字符数
+
+- `reserve()`
+
+  ​	扩展或缩小字符串的容量
+
+#### 元素访问
+
+- `at`
+
+  ​	访问指定字符，有边界检查
+
+- `operator[]`
+
+  ​	访问指定字符
+
+- `c_str()`
+
+- `data()`
+
+#### 迭代器
+
+- `begin() / end()` 获取起始/尾后迭代器
+- `cbegin() / cend()` 获取常起始/常尾后迭代器
+- `rbegin() / rend()` 获取反向起始/反向尾后迭代器
+- `crbegin() / crend()` 获取反向常起始/反向常尾后迭代器
+
+#### 修改
+
+##### 赋值
+
+- `operator=`
+- `assign()`
+
+##### 拷贝
+
+- `copy()`
+
+  ​	将内容(不以null结尾)复制到字符数组
+
+##### 尾插
+
+- `operator+=`
+- `append()`
+- `push_back()`
+
+##### 插入
+
+- `insert()`
+
+##### 删除
+
+- `erase()`
+
+  ​	移除字符
+
+- `clear()`
+
+  ​	清空字符串
+
+##### 更改
+
+- `replace()`
+
+  ​	替换字符串的指定部分
+
+- `resize()`
+
+  ​	展开或缩小字符串(在字符串末尾截断或添加字符)
+
+- `swap()`
+
+  ​	交换两个字符串的值
+
+#### 比较
+
+- `operator== / operator!=`
+
+- `operator< / operator<= / operator> / operator>=`
+
+- `compare()`
+
+  ​	 returns -1, 0, or 1
+
+#### 查找
+
+- `find()`
+
+  ​	查找首个字符或子串的索引
+
+- `find_first_of()`
+
+  ​	查找给定集合中的字符的首个索引
+
+- `find_first_not_of()`
+
+  ​	查找非给定集合中的字符的首个索引
+
+- `find_last_of()`
+
+  ​	查找给定集合中的字符的最后一个索引
+
+- `find_last_not_of()`
+
+  ​	查找非给定集合中的字符的最后一个索引
+
+- `rfind()`
+
+  ​	查找最后一个字符或子串的索引
+
+#### 子串
+
+- `operator+`
+
+  ​	合并子串
+
+- `substr()`
+
+  ​	截取子串
+
+#### IO
+
+- `operator>>`
+- `getline()`
+- `operator<<`
+
+### 功能遗漏
+
+​		虽然`basic_string`支持众多的功能，但是有一些需要注意的遗漏。
+
+- 正则表达式支持
+- 从数字构造字符串
+- 大小写转换函数
+- 不区分大小写的比较
+- 按词切分（Tokenization）或按字符拆分
+- 获取字符串左侧或右侧部分的便利函数
+- 空白符去除
+- 按`sprintf`风格格式化字符串
+- utf-8和utf-16间的转换（`std::string`和`std::wstring`的转换）
+
+​		需要自行拓展实现这些功能，或将字符串转换为C-style字符串(``c_str()``)后使用C库函数提供的功能。
 
 ## basic_string_view
 
@@ -306,4 +511,3 @@ std::cout << (static_cast<std::string>(v) + s) << '\n';
 
 
 ## char_traits
-
