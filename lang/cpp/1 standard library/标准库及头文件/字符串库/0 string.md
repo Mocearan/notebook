@@ -129,11 +129,72 @@ namespace std
 
 ### 成员类型
 
+- `size_type`
+
+  ​	`size_t`，实际的`size_t`大小依赖于环境。
+
 ### 成员函数
 
-#### 构造 / 析构
+#### 构造
 
-- 
+- `basic_string()`
+
+  ```c++
+  std::string s;
+  ```
+
+- `basic_string(const CharT* szCString)`
+
+  ​	从c-style字符串构建`std::basic_string`，不包括`NULL`终止符
+
+  ​	如果c风格字符串大小超过string允许的最大值，会抛出`length_error`异常
+
+  ```c++
+  const char* str{"my string"};
+  std::string s{str};
+  ```
+
+- `basic_string(const CharT* str, size_type length)`
+
+  ```c++
+  const char* str{"my string"};
+  std::string s(str, 4); // my s
+  ```
+
+- `basic_string(const std::string& str)`
+
+  ```c++
+  std::string s{std::string{"mystring"}};
+  ```
+
+- `basic_string(const std::string& str, size_type pos)`
+
+- `basic_string(const std::string& str, size_type pos, size_type count)`
+
+  - 从`str`的`pos`开始拷贝最多`count`个字符
+  - 没有`count`限制的版本将拷贝`str`从`pos`开始的所有字符
+  - `pos`超出`str`的范围，将会抛出`out_of_range`异常
+
+- `basic_string(size_type count, CharT ch)`
+
+  ​	以`count`个`ch`创建字符串
+
+  ```c++
+  std::string s(4, 'q');
+  ```
+
+- `template <class InputIt> basic_string(InputIt first, InputIt last)`
+
+  ​	以字符范围[first, last]创建字符串
+
+
+#### 析构
+
+- `~basic_string()`
+
+  ​	销毁字符串，释放内存
+
+#### 分配器
 
 - `get_allocator()`
 
