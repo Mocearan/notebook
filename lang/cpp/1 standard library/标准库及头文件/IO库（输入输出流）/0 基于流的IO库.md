@@ -5,22 +5,30 @@
 ​		c++语言并未定义任何输入输出（IO）语句，取而代之，包含了一个全面的标准库来提供IO机制。
 （以及其他很多设施）。对于很多用途，我们只需要了解IO库中一部分基本概念和操作。	
 
+
+
+## 类型
+
 ​		`iostream`库包含两个基础类型，``istream``和``ostream``，分别表示输入流和输出流。一个流就是一个字符序列，是从IO设备读出或写入IO设备的。
 
-> **“流”想要表达的是，随着时间的推移，字符是顺序生成或消耗的。** 
->
-> 
->
-> **键盘输入特殊字符**
->
-> 从键盘读取数据时，对于如何指出文件结束，不同操作系统有不同的约定。在Windows中，输入
-> 	文件结束符的方法是Ctrl+Z。Unix系统中，包括MacOS系统中，文件结束符输入时Ctrl+D
+![image-20221209103758938](../../../../../../../AppData/Roaming/Typora/typora-user-images/image-20221209103758938.png)
 
-```c++
-#include <iostream>
+## I/O的基本概念
 
-// rest of code that uses iostream functionality here
-```
+### 缓冲
+
+​		A **buffer** (also called a data buffer) is simply a piece of memory set aside for storing data temporarily while it’s moved from one place to another. 
+
+### 流
+
+​		Abstractly, a **stream** is just a sequence of bytes that can be accessed sequentially. Over time, a stream may produce or consume potentially unlimited amounts of data.
+
+> “流”想要表达的是，随着时间的推移，字符是顺序生成或消耗的。*
+
+​		Typically we deal with two different types of streams：
+
+- **Input streams** are used to hold input from a data producer, such as a keyboard, a file, or a network. 
+- **output streams** are used to hold output for a particular data consumer, such as a monitor, a file, or a printer. 
 
 
 
@@ -30,7 +38,10 @@
 
 ## std::cin
 
+### 键盘输入特殊字符
 
+​	从键盘读取数据时，对于如何指出文件结束，不同操作系统有不同的约定。在Windows中，输入
+​	文件结束符的方法是Ctrl+Z。Unix系统中，包括MacOS系统中，文件结束符输入时Ctrl+D
 
 ### std::endl
 
@@ -49,18 +60,6 @@ inline basic_ostream<_CharT, _Traits>&
 endl(basic_ostream<_CharT, _Traits>& __os)
 { return flush(__os.put(__os.widen('\n'))); }
 ```
-
-
-
-## 缓冲
-
-​		A **buffer** (also called a data buffer) is simply a piece of memory set aside for storing data temporarily while it’s moved from one place to another. 
-
-## 流
-
-
-
-## 类型
 
 
 
