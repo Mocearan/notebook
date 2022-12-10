@@ -7,17 +7,13 @@
 
 
 
-## 类型
-
-​		`iostream`库包含两个基础类型，``istream``和``ostream``，分别表示输入流和输出流。一个流就是一个字符序列，是从IO设备读出或写入IO设备的。
-
-![image-20221209103758938](../../../../../../../AppData/Roaming/Typora/typora-user-images/image-20221209103758938.png)
-
 ## I/O的基本概念
 
 ### 缓冲
 
 ​		A **buffer** (also called a data buffer) is simply a piece of memory set aside for storing data temporarily while it’s moved from one place to another. 
+
+​		未缓冲的输出通常立即处理，而缓冲的输出通常作为块存储和写入。
 
 ### 流
 
@@ -30,18 +26,51 @@
 - **Input streams** are used to hold input from a data producer, such as a keyboard, a file, or a network. 
 - **output streams** are used to hold output for a particular data consumer, such as a monitor, a file, or a printer. 
 
+​		当用户按下键盘上的一个键时，键代码就被放入输入流中。然后，程序从流中提取值，以便使用它。您将值插入到流中，数据消费者(例如监视器)使用它们。
+
+## 类层次图
+
+​		按照流的类型，`iostream`库包含两个基础类型，``istream``和``ostream``，分别表示输入流和输出流。
+
+> 一个流就是一个字符序列，是从IO设备读出或写入IO设备的。
+
+![image-20221209104100446](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20221209104100446.png)
+
+- `basic_ios`类虽然不是最基类，但是`basic_ios`是直接使用的最基类
+- `basic_ios`定义了一组公用的输入输出流设施
+- `basic_istream` 是用于处理输入流的主要类.
+  -  在输入流上，``operator>>`` 用来从流中提取出数据 
+- `basic_ostream` 是用于处理输出流的主要类
+  - 在输出流上，`operator<<`用来向流中添加数据。
+
+## 预定义标准流对象
 
 
-## I/O 操作符
+
+### std::cin / wcin
+
+> 键盘输入特殊字符
+>
+> 	从键盘读取数据时，对于如何指出文件结束，不同操作系统有不同的约定。在Windows中，输入
+> 	文件结束符的方法是Ctrl+Z。Unix系统中，包括MacOS系统中，文件结束符输入时Ctrl+D
+
+### cout / wcout
+
+### cerr / wcerr
+
+​		提供无缓冲的输出方式。
+
+### clog / wclog
+
+​		提供缓冲的输出方式。
+
+​		因为clog不经常使用，它经常从标准流列表中被省略。
+
+## I/O 操纵符
 
 
 
-## std::cin
 
-### 键盘输入特殊字符
-
-​	从键盘读取数据时，对于如何指出文件结束，不同操作系统有不同的约定。在Windows中，输入
-​	文件结束符的方法是Ctrl+Z。Unix系统中，包括MacOS系统中，文件结束符输入时Ctrl+D
 
 ### std::endl
 
