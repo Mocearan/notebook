@@ -108,7 +108,7 @@ double getDouble()
 
 
 
-**Error case 4: Extraction succeeds but the user overflows a numeric value**
+## Error case 4: Extraction succeeds but the user overflows a numeric value
 
 ​		数据范围溢出。
 
@@ -211,3 +211,53 @@ int main()
 }
 ```
 
+
+
+
+
+# input validation 输入验证
+
+​		输入验证是验证用户输入是否满足预期的设定。
+
+---
+
+​		输入验证通常分为两种：字符串和数值。
+
+### 字符分类
+
+​		字符串库在字节字符串库的`<cctype>`中提供了一组用于字符检查的函数。
+
+```c++
+namespace std {
+  int isalnum(int c);
+  int isalpha(int c);
+  int isblank(int c);
+  int iscntrl(int c);
+  int isdigit(int c);
+  int isgraph(int c);
+  int islower(int c);
+  int isprint(int c);
+  int ispunct(int c);
+  int isspace(int c);
+  int isupper(int c);
+  int isxdigit(int c);
+  int tolower(int c);
+  int toupper(int c);
+}
+```
+
+​		可以用来检查指定的字符是数字还是字母。
+
+## 字符串验证
+
+​		所有用户输入都将作为字符串接收，然后根据格式是否恰当来接受或者拒绝。
+
+​		大多数语言中，这是通过正则表达式来完成的，但是正则表达式比手动书写字符串验证条件性能要低，所以只有在不考虑性能影响，或手动验证条件太多太繁琐的情况下才使用正则表达式验证。
+
+
+
+
+
+## 数值验证
+
+​		数值验证通常考虑用户输入是否在一个给定的范围内。还需要处理用户输入的非数值内容。-

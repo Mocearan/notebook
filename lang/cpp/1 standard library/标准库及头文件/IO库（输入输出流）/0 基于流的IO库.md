@@ -68,13 +68,27 @@
 
 ## I/O 操纵符
 
+​		i/O操纵符是一个可以用来对流输入输出进行限定和修改的对象。
 
+`<iomanip>`
+
+---
+
+### std::setw
+
+​		限制流操作的字符最大数量。
+
+```c++
+#include <iomanip>
+char buf[10]{};
+std::cin >> std::setw(10) >> buf; // 只会从流中读出9个字符，因为会给terminator留下一个字符，'\0'
+```
 
 
 
 ### std::endl
 
-Using std::endl can be a bit inefficient, as it actually does two jobs: it moves the cursor to the next line, and it “flushes” the output (makes sure that it shows up on the screen immediately). 
+​		Using std::endl can be a bit inefficient, as it actually does two jobs: it moves the cursor to the next line, and it “flushes” the output (makes sure that it shows up on the screen immediately). 
 
 ```c++
  /**
