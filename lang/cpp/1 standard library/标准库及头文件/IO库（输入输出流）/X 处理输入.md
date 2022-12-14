@@ -400,3 +400,87 @@ int main()
 ## 数值验证
 
 ​		数值验证通常考虑用户输入是否在一个给定的范围内。还需要处理用户输入的非数值内容。-
+
+```c++
+#include <iostream>
+#include <limits>
+
+int main(void)
+{
+    int age{};
+    while ( true ) {
+        std::cout << "Enter your age: ";
+        std::cin >> age;
+        if ( std::cin.fail() ) { // no extraction took place 
+            std::cin.clear(); // reset the state bits back to goodbit so we can use ignore()
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // clear out the bad input from the stream
+            continue; // try again
+        }
+
+        // for "123abc"
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // clear out any additional input from the stream
+        if ( std::cin.gcount() > 1 ) // if we cleared out more than 1 additional character
+            continue;
+
+        if ( age <= 0 ) // make sure age is positive
+            continue;
+
+        break;
+    }
+
+    std::cout << "You entered: " << age << '\n';
+
+
+    return 0;
+}
+```
+
+​				在c++中执行输入验证是一项非常繁重的工作。幸运的是，许多这样的任务(例如将数值验证作为字符串进行)可以很容易地转换为可以在各种情况下重用的函数。
+
+```c++
+#include <charconv> // std::from_chars
+#include <iostream>
+#include <optional>
+#include <string>
+#include <string_view>
+
+std::optional<int> extractAge(std::string_view age)
+{
+  int result{};
+  auto end{ age.data() + age.length() };
+
+  // Try to parse an int from age
+  if (std::from_chars(age.data(), end, result).ptr != end)
+  {
+    return {};
+  }
+
+  if (result <= 0) // make sure age is positive
+  {
+    return {};
+  }
+
+  return result;
+}
+
+int main()
+{
+  int age{};
+
+  while (true)
+  {
+    std::cout << "Enter your age: ";
+    std::string strAge{};
+    std::getline(std::cin >> std::ws, strAge);
+
+    if (auto extracted{ extractAge(strAge) })
+    {
+      age = *extracted;
+      break;
+    }
+  }
+
+  std::cout << "You entered: " << age << '\n';
+}
+```
+
