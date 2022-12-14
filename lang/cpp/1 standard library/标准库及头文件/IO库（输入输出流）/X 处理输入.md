@@ -223,7 +223,7 @@ int main()
 
 ​		输入验证通常分为两种：字符串和数值。
 
-### 字符分类
+## 字符分类
 
 ​		字符串库在字节字符串库的`<cctype>`中提供了一组用于字符检查的函数。
 
@@ -253,6 +253,145 @@ namespace std {
 ​		所有用户输入都将作为字符串接收，然后根据格式是否恰当来接受或者拒绝。
 
 ​		大多数语言中，这是通过正则表达式来完成的，但是正则表达式比手动书写字符串验证条件性能要低，所以只有在不考虑性能影响，或手动验证条件太多太繁琐的情况下才使用正则表达式验证。
+
+### 验证姓名 
+
+​	字符加空格
+
+```c++
+#include <algorithm> // for std::all_of
+#include <cctype>    // for std::isalpha, std::isspace
+#include <iostream>
+#include <ranges>
+#include <string>
+#include <string_view>
+
+bool isValidName( std::string_view name )
+{
+    return std::ranges::all_of( name, [] ( char ch ) {
+        return ( std::isalpha( ch ) or std::isspace( ch ) );
+        } );
+
+    // befor c++20 
+    // return std::all_of( name.begin(), name.end(), [] ( char ch ) {
+    //     return ( std::isalpha( ch ) or std::isspace( ch ) );
+    //     } );
+}
+
+#if 0 // enhance validation 
+bool containsInvalidNameCharacters(std::string_view input) {
+	return !std::ranges::all_of(
+		input,
+		[](char x) { return std::isalpha(x) || std::isspace(x); }
+	);
+}
+
+auto spaceCount(std::string_view input) {
+	return std::ranges::count_if(
+		input,
+		[](char x) { return std::isspace(x); }
+	);
+}
+
+bool invalidName(std::string_view input) {
+	return (input.length() < 2) // New
+		|| (containsInvalidNameCharacters(input))
+		|| (spaceCount(input) > 1); // New
+}
+#endif 
+
+
+int main()
+{
+    std::string name {};
+
+    do {
+        std::cout << "Enter your name: ";
+        std::getline( std::cin, name ); // get the entire line, including spaces.
+    } while ( not isValidName( name ) );
+
+    std::cout << "Hello " << name << "!\n";
+}
+```
+
+
+
+### 验证手机号码
+
+​		固定长度，验证标准根据字符的位置有所不同。
+
+```c++
+/*
+A # will match any digit in the user input.
+A @ will match any alphabetic character in the user input.
+A _ will match any whitespace.
+A ? will match anything.
+*/
+
+/*
+	“(###) ###-####”
+	- (
+	- ###
+	- )
+	- space
+	- ###
+	- -
+	- ####
+*/
+
+#include <ranges>
+#include <algorithm> // std::equal
+#include <cctype>    // std::isdigjt, std::isspace, std::isalpha
+#include <iostream>
+#include <map>
+#include <string>
+#include <string_view>
+
+
+
+
+bool inputMatches(std::string_view input, std::string_view pattern)
+{
+    if ( input.length() not_eq pattern.length() )
+        return false;
+
+    // This table defines all special symbols that can match a range of user input
+    // Each symbol is mapped to a function that determines whether the input is valid for that symbol
+    static const std::map<char, int(*)(int)> validators{
+        {'#', &std::isdigit},
+        {'_', &std::isspace},
+        {'@', &std::isalpha},
+        {'?', [](int) {return 1;}}
+    };
+
+    // Before c++20
+    // return std::equal(input.begin(), input. end(), patern.begin(), [](char ch, char mask) -> bool {...});
+
+    return std::ranges::equal(input, pattern, [](char ch, char mask) -> bool {
+        if ( auto found{validators.find(mask)}; found not_eq validators.end() ) {
+            // The pattern's current element was found in the validators. Call the
+            // corresponding function.
+            return (*found->second)(ch);
+        } else {
+            // The pattern's current element was not found in the validateors.
+            // The characters have to be an exact match.
+            return (ch == mask);
+        }
+    });
+}
+
+int main()
+{
+    std::string phoneNumber{};
+
+    do {
+        std::cout << "Enter a phone number (###) ###-####: ";
+        std::getline(std::cin, phoneNumber);
+    } while ( not inputMatches(phoneNumber, "(###) ###-####") );
+
+    std::cout << "You entered: " << phoneNumber << '\n';
+}
+```
 
 
 
