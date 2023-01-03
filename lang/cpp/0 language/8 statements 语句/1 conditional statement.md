@@ -18,9 +18,9 @@ else
   	false_statuement;
 ```
 
-each branch may be a  compound statement(block).
+​		each branch may be a  compound statement(block).
 
-an `else statement` is paired up with the last unmatched `if statement` in the same block.
+​		an `else statement` is paired up with the last unmatched `if statement` in the same block.
 
 ```c++
 if (x >= 0) // outer if statement
@@ -64,9 +64,11 @@ else // only executes if x > 20
         std::cout << "Neither number is positive\n";
 ```
 
-
+​		The most common case is testing a variable against **0** (or the **nullptr**). To do that, simply leave out the explicit mention of the condition. 
 
 ### if with init-statement
+
+​		与for语句一样，在if语句的条件下声明名称的目的是限制变量的范围，以提高可读性并最小化错误。
 
 ```c++
 if ( init-statement condition ) statement-true

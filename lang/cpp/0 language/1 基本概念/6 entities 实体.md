@@ -1,10 +1,10 @@
 # entities 实体
 
-实体即脱离设计模型、理论建构之外的，实际用以组织程序代码的基本构件。
+​		实体即脱离设计模型、理论建构之外的，实际用以组织程序代码的基本构件。
 
 ---
 
-C++ 程序中的*实体*包括值、[对象](https://zh.cppreference.com/w/cpp/language/object)、[引用](https://zh.cppreference.com/w/cpp/language/reference)、 [结构化绑定](https://zh.cppreference.com/w/cpp/language/structured_binding) (C++17 起)、[函数](https://zh.cppreference.com/w/cpp/language/functions)、[枚举项](https://zh.cppreference.com/w/cpp/language/enum)、[类型](https://zh.cppreference.com/w/cpp/language/type)、类成员、[模板](https://zh.cppreference.com/w/cpp/language/templates)、[模板特化](https://zh.cppreference.com/w/cpp/language/template_specialization)、[命名空间](https://zh.cppreference.com/w/cpp/language/namespace)和[形参包](https://zh.cppreference.com/w/cpp/language/parameter_pack)。
+​		C++ 程序中的*实体*包括值、[对象](https://zh.cppreference.com/w/cpp/language/object)、[引用](https://zh.cppreference.com/w/cpp/language/reference)、 [结构化绑定](https://zh.cppreference.com/w/cpp/language/structured_binding) (C++17 起)、[函数](https://zh.cppreference.com/w/cpp/language/functions)、[枚举项](https://zh.cppreference.com/w/cpp/language/enum)、[类型](https://zh.cppreference.com/w/cpp/language/type)、类成员、[模板](https://zh.cppreference.com/w/cpp/language/templates)、[模板特化](https://zh.cppreference.com/w/cpp/language/template_specialization)、[命名空间](https://zh.cppreference.com/w/cpp/language/namespace)和[形参包](https://zh.cppreference.com/w/cpp/language/parameter_pack)。
 
 预处理器**宏**不是 C++ 实体。
 
@@ -60,17 +60,14 @@ C++ 程序中的*实体*包括值、[对象](https://zh.cppreference.com/w/cpp/l
 
 ### 对象的要素
 
-对对象进行抽象， 能够的到组成对象的基本属性：空间属性，地址（寻址）属性，值属性，操作属性。
+​		对对象进行抽象， 能够的到组成对象的基本属性：空间属性，地址（寻址）属性，值属性，操作属性。
 
-无论是标量类型还是复合类型、类类型，任何对象都拥有这四个基本属性。
+​		无论是标量类型还是复合类型、类类型，任何对象都拥有这四个基本属性。
 
-**空间属性：**即代码段指令明确说明的，对象在内存上占用的空间大小，与类型相关即容纳多少数量数据的属性，
-
-**地址（寻址）属性：**内存上每个基本单位字节，都按照一定的规则进行了编码，对内存的使用，首先要通过该编码找到该空间，所以称为地址。
-
-**值属性：**在某个或某连续的内存空间上存储的数据，称为该对象的值。
-
-**操作属性：**服从于代码段指令对该对象制约下的可以进行的运算，称为对象的操作属性。具体的操作约束依赖于类型。
+- **空间属性：**即代码段指令明确说明的，对象在内存上占用的空间大小，与类型相关即容纳多少数量数据的属性，
+- **地址（寻址）属性：**内存上每个基本单位字节，都按照一定的规则进行了编码，对内存的使用，首先要通过该编码找到该空间，所以称为地址。
+- **值属性：**在某个或某连续的内存空间上存储的数据，称为该对象的值。
+- **操作属性：**服从于代码段指令对该对象制约下的可以进行的运算，称为对象的操作属性。具体的操作约束依赖于类型。
 
 > 不管是对于匿名对象还是声明了名字后的对象或引用，这四个属性都存在。
 >
@@ -114,11 +111,11 @@ C++ 程序中的*实体*包括值、[对象](https://zh.cppreference.com/w/cpp/l
 
 ### 对象创建
 
-对象能由**定义**、**new表达式**、throw表达式、更改联合体的活跃成员和求值要求临时对象的表达式显式创建。
+​		对象能由**定义**、**new表达式**、throw表达式、更改联合体的活跃成员和求值要求临时对象的表达式显式创建。
 
 > When the program is run (called **runtime**), the object will be instantiated. **Instantiation** is a fancy word that means the object will be created and assigned a memory address. 
 
-**显式对象创建**中创建的对象是**唯一定义**的。
+​		**显式对象创建**中创建的对象是**唯一定义**的。
 
 > **唯一定义：**
 >
@@ -126,7 +123,7 @@ C++ 程序中的*实体*包括值、[对象](https://zh.cppreference.com/w/cpp/l
 >
 > ps: c++语言/基础语法/基本概念/定义与ODR
 
-​	**隐式生存期类型**的对象可以由下列操作**隐式创建**：
+​		**隐式生存期类型**的对象可以由下列操作**隐式创建**：
 
 - 开始 char、unsigned char 或 std::byte (C++17 起)数组生存期的操作
 
@@ -286,9 +283,9 @@ int c(ld), d = ld;	//转化执行，确实丢失了部分值
 
 > variables are names for a piece of memory that can be used to store information. 
 
-对c++来说，变量和对象基本上可以互换使用，只不过具名的对象称为变量。
+​		对c++来说，变量和对象基本上可以互换使用，只不过具名的对象称为变量。
 
-变量提供一个具名的、可供程序操作的内存空间。
+​		变量提供一个具名的、可供程序操作的内存空间。
 
 > 我们需要使用一个名字来访问一个对象，一个命名后的对象被称为一个变量，它有特定的类型，类型决定我们可以对其做什么样的操作。		
 >
@@ -356,15 +353,15 @@ int c(ld), d = ld;	//转化执行，确实丢失了部分值
 
 ## 值
 
-在c++语义分析中，值即对于某块内存地址上持有的数据属性。
+​		在c++语义分析中，值即对于某块内存地址上持有的数据属性。
 
-值可能是不确定的，例如默认初始化的非结构化类型（非类类型-标量类型）。
+​		值可能是不确定的，例如默认初始化的非结构化类型（非类类型-标量类型）。
 
 ### 变量值和常量值
 
-值按照可变性（variability），可以分为变量值和常量值。
+​		值按照可变性（variability），可以分为变量值和常量值。
 
-变量值是指，变量在定义后，其对象模型空间属性上在不同阶段（初始化时，初始化后）所容纳的数据。
+​		变量值是指，变量在定义后，其对象模型空间属性上在不同阶段（初始化时，初始化后）所容纳的数据。
 
 
 
