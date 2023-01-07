@@ -1,18 +1,24 @@
 # function declaration
 
-函数声明引入函数名和它的类型。函数定义将函数名/类型与函数体关联。
+​		函数声明引入函数名和它的类型。函数定义将函数名/类型与函数体关联。
 
 ---
 
+A function declaration may contain argument names. This can be a help to the reader of a program, but unless the declaration is also a function definition, the compiler simply ignores such names.
 
+```c++
+double sqrt(double d);
+```
 
+The type of a function consists of its return type followed by the sequence of its argument types in parentheses.
 
+For such a *member function*, the name of its class is also part of the function type.
 
 ## parameter list
 
 ### default arguments
 
-A **default argument** is a default value provided for a function parameter.
+​		A **default argument** is a default value provided for a function parameter.
 
 > If the caller provides an argument, the value of the argument in the function call is used. If the caller does not provide an argument, the value of the default argument is used.
 

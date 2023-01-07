@@ -231,6 +231,8 @@ int main()
 
 ### Arithmetic conversion
 
+​		c++会在基础类型的算数运算和赋值运算中进行有意义的类型转换，使得他们可以自由的组合。目的是保证表达式计算的结果具有更高的精度。
+
 ​		If one of these operators is invoked with operands of different types, one or both of the operands will be implicitly converted to matching types using a set of rules called the **usual arithmetic conversions**.
 
 ​		require operands to be of the same type:
