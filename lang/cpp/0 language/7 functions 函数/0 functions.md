@@ -25,6 +25,8 @@ return-type identifier() // identifier replaced with the name of your function
 
 ## 函数四元素
 
+​		The basic semantics of argument passing and function value return are that of initialization (§[3.4](ch03.xhtml 
+
 ### 返回值
 
 ​		Return values provide a way for functions to return a single value back to the function’s caller. a function can only return a single value back to the caller each time it is called. 
@@ -274,7 +276,7 @@ void printSize(int array[5])
 - Any additional setup costs.
 
 >  		Some class types do additional setup when they are instantiated (e.g. such as opening a file or database, or allocating a certain amount of dynamic memory to hold an object of a variable size). 
->			
+>				
 >  		It’s best to assume that most standard library classes have setup costs, unless you know otherwise that they don’t.
 
 ​		accessing an object through a reference is slightly more expensive than accessing an object through a normal variable identifier. 

@@ -89,6 +89,22 @@ if (auto keywords = {"if", "for", "while"};
 
 
 
+​		The most common case is testing a variable against **0** (or the **nullptr**). To do that, simply leave out the explicit mention of the condition. Prefer to use this terser and simpler form when you can.
+
+```c++
+void do_something(vector<int>& v)
+{
+        if (auto n = v.size()) {
+                // ... we get here if n!=0 ...
+        }
+        // ...
+}
+```
+
+
+
+
+
 
 
 ## switch
