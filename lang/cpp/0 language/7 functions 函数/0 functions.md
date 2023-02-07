@@ -21,6 +21,24 @@ return-type identifier() // identifier replaced with the name of your function
 
 
 
+## 信息传递
+
+​		程序中语言本身提供的信息传递机制有三种：函数调用，类对象中成员共享，全局变量。
+
+​		在程序之外，通过操作系统提供的多种机制也可以进行信息传递：文件，socket，管道，共享内存等本地IPC或网络。
+
+
+
+### 信息传递的方式
+
+​		信息传递可以根据需要选择不同的方式，关注的重点在于：
+
+- 传递是拷贝、共享还是留空移动的
+
+- 共享的传递是否可变
+
+  
+
 
 
 ## 函数四元素
@@ -113,7 +131,7 @@ int getValueFromUser();
 
 
 
-### return aggregate type
+#### return aggregate type
 
 ​		Structs are usually returned by value, so as not to return a dangling reference.
 
@@ -276,7 +294,7 @@ void printSize(int array[5])
 - Any additional setup costs.
 
 >  		Some class types do additional setup when they are instantiated (e.g. such as opening a file or database, or allocating a certain amount of dynamic memory to hold an object of a variable size). 
->				
+>					
 >  		It’s best to assume that most standard library classes have setup costs, unless you know otherwise that they don’t.
 
 ​		accessing an object through a reference is slightly more expensive than accessing an object through a normal variable identifier. 
