@@ -1,24 +1,39 @@
 # object size & align
 
- memory on modern machines is typically organized into byte-sized units, with each byte of memory having a unique address. 
+---
 
-most objects actually take up more than 1 byte of memory. A single object may use 2, 4, 8, or even more consecutive memory addresses. The amount of memory that an object uses is based on its data type.
+​		memory on modern machines is typically organized into byte-sized units, with each byte of memory having a unique address. 
 
-we typically access memory through variable names (and not directly via memory addresses), the compiler is able to hide the details of how many bytes a given object uses from us. 
+​		most objects actually take up more than 1 byte of memory. A single object may use 2, 4, 8, or even more consecutive memory addresses. The amount of memory that an object uses is based on its data type.
+
+​		we typically access memory through variable names (and not directly via memory addresses), the compiler is able to hide the details of how many bytes a given object uses from us. 
 
 ## object size
 
-the more memory an object uses, the more information it can hold，an object with *n* bits can hold 2n unique values.
+​		the more memory an object uses, the more information it can hold，an object with *n* bits can hold 2n unique values.
 
-C++ only guarantees that each fundamental data types will have a minimum size:
+​		C++ only guarantees that each fundamental data types will have a minimum size:
 
-![image-20220416095657013](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220416095657013.png)
+![image-20230312121144984](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230312121144984.png)
 
- the actual size of the variables may be different on your machine。
+​		 the actual size of the variables may be different on your machine。
+
+​		`1 <=> sizeof(char) <= sizeof(short) <= sizeof(int) <= sizeof(long) <= sizeof(long long)`
+
+​		`1 <= sizeof(bool) <= sizeof(long)`
+
+​		`sizeof(char) <= sizeof(wchar_t) <= sizeof(long)`
+
+​		`sizeof(float) < sizeof(double) < sizeof(long double)`
+
+​		`sizeof(N) <=> sizoef(signed N) <=> sizeof(unsigned N)`
+
+- char 是机器上最适合保存和操作字符的类型，能够保存机器字符集中的任意字符。通常占一个8位的字节。
+- int 是机器上最适合保存和操作整型的类型，通常4字节。不能假定Int和指针尺寸一样大，因为很多64位机器上，指针的尺寸比整数大（8字节）
 
 ### sizeof
 
-The **sizeof operator** is a unary operator that takes either a type or a variable, and returns its size in bytes. 
+​		The **sizeof operator** is a unary operator that takes either a type or a variable, and returns its size in bytes. 
 
 ```c++
 #include <iostream>
@@ -44,7 +59,7 @@ int main()
 // Your results may vary if you are using a different type of machine, or a different compiler.
 ```
 
-can also use the *sizeof* operator on a variable name:
+​		can also use the *sizeof* operator on a variable name:
 
 ```c
 #include <iostream>
@@ -58,9 +73,9 @@ int main()
 }
 ```
 
-On modern machines, objects of the fundamental data types are fast, so performance while using these types should generally not be a concern.
+​		On modern machines, objects of the fundamental data types are fast, so performance while using these types should generally not be a concern.
 
-#### 对齐
+## 对齐
 
 You might assume that types that use less memory would be faster than types that use more memory. This is not always true. CPUs are often optimized to process data of a certain size (e.g. 32 bits), and types that match that size may be processed quicker. On such a machine, a 32-bit *int* could be faster than a 16-bit *short* or an 8-bit *char*.
 
@@ -114,7 +129,14 @@ int main()
 
 -   `alignas`，要求更严格的对齐（更大的对齐要求）
 
-    `#pragma pack(n)`
+    ```c++
+    constexpr int bufmax = 1024;
+    alignas(X) buffer[bufmax];
+    ```
+    
+    
+    
+-   `#pragma pack(n)`
 
     >   ​		当使用 `alignas`使某个类型的对齐比 `std::max_align_t`的更严格（更大）时，称其为具有扩展对齐（extended alignment）要求的类型.
     >

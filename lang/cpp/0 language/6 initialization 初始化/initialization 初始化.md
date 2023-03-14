@@ -97,6 +97,8 @@ To recap:
 
 ## 初始化器形制
 
+​		《TC++PL》中称为初始化器的形式，这里用更加学术风味的“形制”来表达初始化器的外观。	
+
 ​		For each declarator, the initializer may be one of the following:
 
 ```c++
@@ -115,7 +117,9 @@ int c( 6 ); 	// initializer in parenthesis
 int d { 7 }; 	// initializer in braces  
 ```
 
-> 这是c++中常用的四种初始化形态，但它们之间的差异不仅限于形式上的不同，不同的初始化形态具有不同的规则。
+​		这是c++中常用的四种初始化形态，但它们之间的差异不仅限于形式上的不同，不同的初始化形态具有不同的规则。
+
+- 初始化器列表的形式可以确保不会发生可能导致信息丢失的类型转换，如窄化类型转换。
 
 
 
@@ -164,9 +168,8 @@ public:
 
 ```c++
 T object ;	(1)			// automatic, static, or thread-local storage duration, declared with no initializer;
-
-
 new T		(2)			// dynamic storage duration, created by a new-expression with no initializer;
+    
 new T ( ) 	( before C++03 )  // (3) constructor is called, but base class or a non-static data member is not mentioned in a constructor initializer list 
 ```
 
@@ -217,6 +220,8 @@ Fraction frac; // Default-initialization, calls default constructor
 ​		When an initializer is provided inside parenthesis / brace, this is called **direct initialization**.
 
 ​		直接初始化是相对拷贝初始化而言的，形式上是不需要等号参与到初始化的语法表达上。
+
+​		当括号为空时，以默认值进行初始化。
 
 ```c++
 T object ( arg );
@@ -423,6 +428,22 @@ Fraction seven({7});
 ## 初始化语义
 
 ​		初始化语义是从`c++`语义学的角度来对初始化的形式进行分类。
+
+### uninitialized
+
+​		在初始化器形制为无初始化器时，可能发生未初始化。即对象的内存被分配，但内存上的值未被指明可能是任意值。
+
+- 全局变量、名字空间中的变量、局部static变量、static成员变量，这些统称静态变量，会以`{}`的初始化器形制进行初始化。
+- 局部变量、自由存储上的对象，除非它们是用户自定义类型且拥有默认构造函数，否则发生未初始化
+
+​		未初始化变量最有用的场景是使用大的缓冲区时， 对这样的缓冲区进行初始化看肯恩对程序性能造成非常严重的影响。程序应当避免直接操作缓冲区，并且除非确信未初始化缓冲区远胜初始化缓冲区，否则不要轻易让缓冲区处于未初始化状态。
+
+```c++
+char buf[1024 * 1024];
+// char buf[1024 * 1024] {} 进行初始化
+```
+
+
 
 ### object initialization
 

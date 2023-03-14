@@ -378,6 +378,8 @@ int main()
 
 ​		`std::unique_ptr`是c++11中使用完备移动语义基础来替换`std::auto_ptr`的新moveable smart pointer。用来管理任何不被多个对象共享的动态分配的对象。
 
+> 建议使用`std::unique_ptr`来引用多态类型的对象。
+
 ```c++
 #include <iostream>
 #include <memory> // for std::unique_ptr
@@ -591,6 +593,8 @@ int main()
   the std::unique_ptr will try to delete an already deleted resource, again leading to undefined behavior.
 
 ## std::shared_ptr
+
+​		使用`std::shared_ptr`来管理共享对象——不止一个所有者负责其析构的对象。
 
 ​		std::shared_ptr is meant to solve the case where you need multiple smart pointers co-owning a resource.
 

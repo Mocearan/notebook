@@ -8,7 +8,7 @@
 
 ## 标识符命名规则
 
-有效的标识符必须以一个非数字字符（拉丁字母、下划线、Unicode非数字字符）开头。标识符区分大小写，每个字符都起作用。
+​		有效的标识符必须以一个非数字字符（拉丁字母、下划线、Unicode非数字字符）开头。标识符区分大小写，每个字符都起作用。
 
 >   **note：**
 >
@@ -21,8 +21,10 @@
 >   ​	ps：c++/基本语言/表达式/初等表达式/字面量/字符字面量/转义序列
 
 ​		c++语言的保留字不能被用作标识符。
-​		c++也为标准库保留了一些名字。用户自定义的标识符中不能连续出现两个下划线，也不能以下划线紧连大写字母开头。
-​		此外，定义在函数体外的标识符不能以下划线开头
+​		c++也为标准库保留了一些名字。
+
+> 用户自定义的标识符中不能连续出现两个下划线，也不能以下划线紧连大写字母开头。
+> 此外，定义在函数体外的标识符不能以下划线开头
 
 
 
@@ -32,9 +34,9 @@
 -   阿拉伯数字（不能做首字符）
 -   下划线
 
-编译器的字符解析支持Unicode之后，实质上已经可以包含世界上所有的自然语言了。唯一一条保留的规定是：阿拉伯数字不能做首字符。
+​		编译器的字符解析支持Unicode之后，实质上已经可以包含世界上所有的自然语言了。唯一一条保留的规定是：阿拉伯数字不能做首字符。
 
-但是，作为语言的保留关键字和运算符不能作为变量名。
+​		但是，作为语言的保留关键字和运算符不能作为变量名。
 
 
 
@@ -77,6 +79,16 @@ Sometimes you’ll see a mix of the two: underscores used for variables and inte
 When working in an existing program, use the conventions of that program (even if they don’t conform to modern best practices). Use modern best practices when you’re writing new programs.
 
 In any case, avoid abbreviations.
+
+​		不建议将类型信息加到名字中
+
+- 降低了抽象水平，尤其不利于泛型编程
+- 编译器更加擅长追踪类型信息
+- 改变名的类型时，需要修改所有该名字
+- 随着用到的类型越来越多，设计的缩写集会越来越大，有些含糊不清，有些过于啰嗦
+- 名字应当
+
+
 
 ## 声明中的名字与标识符
 
@@ -222,10 +234,10 @@ In any case, avoid abbreviations.
 
 # 名字
 
-​	名字用来代表某个实体或者某个标号，它可以是以下之一：
+​		名字用来代表某个实体或者某个标号，它可以是以下之一：
 
 -   标识符
--   函数写法的重载运算福的名字（`operator+ 、operator new`)
+-   函数写法的重载运算符的名字（`operator+ 、operator new`)
 -   用户定义的转换函数的名字（`operator bool`）
 -   用户定义的字面量运算符的名字（`operator "" _km`）
 -   模板的名字后随是参列表(``TempName<int>``)
@@ -260,7 +272,7 @@ In any case, avoid abbreviations.
 
 ## 名字的作用域
 
-​		作用域（scope）是程序的一部分，在其中名字有其特定的含义。
+​		作用域（scope）是程序的一部分，在其中名字有其特定的含义。换言之，名字只能在程序文本的某个特定区域使用。
 
 ​		An identifier’s `scope` determines where an identifier can be accessed within the source code. 
 
@@ -291,17 +303,20 @@ local variable 拥有块作用域。将复合语句声明的代码块称为块�
 >
 > 如果内层作用域中有可能用到外层作用域或**全局作用域**的名字，则不宜再定义一个同名的局部对象。会因为产生冲突而造成名字遮蔽。
 >
-> 详见：c++语言/基础语法/基本概念/名字与标识符/名字/名字查找
 
-一般也将局部作用域称为局部作用域（local scope）。
+- 函数或lambda表达式引起的`{}`中的块作用域称为局部作用域
 
-Local variables are destroyed in the opposite order of creation at the end of the set of curly braces in which it is defined (or for a function parameter, at the end of the function).
+  ​	函数中的标签具有局部作用域
+
+- `for/while/if/switch`语句中的`()`和`{}`构成的块作用域称为语句作用域
+
+​		Local variables are destroyed in the opposite order of creation at the end of the set of curly braces in which it is defined (or for a function parameter, at the end of the function).
 
 
 
 ### 函数形参作用域
 
-
+​		
 
 ### 命名空间作用域
 
@@ -814,19 +829,21 @@ c++语言支持分离式编译（separate compilation）机制，为此c++将声
 
 对某个作用域中的名字进行查找 会找到该名字的所有声明，
 
-但有一种例外，被称作**“ struct hack ”或“类型/非类型名字隐藏”**：
+### 名字遮蔽
 
-​	同一作用域中，某个名字的一些出现可以引用非 typedef声明的 class/struct/union/enum ，而其他相同的名称要么全都引用同一个变量、非静态数据成员 或者枚举项，要么全都是指可能的重载函数或函数模板名。
+​		但有一种例外，被称作**“ struct hack ”或“类型/非类型名字隐藏”**：
 
-此情况下无错误，但类型名在查找中被隐藏（代码必须用**详述类型说明符**来访问它）。
+​		同一作用域中，某个名字的一些出现可以引用非 typedef声明的 `class/struct/union/enum` ，而其他相同的名称要么全都引用同一个变量、非静态数据成员 或者枚举项，要么全都是指可能的重载函数或函数模板名。
+
+​		此情况下无错误，但类型名在查找中被隐藏（代码必须用**详述类型说明符**来访问它）。
 
 >   **详述类型说明符：**
 >
->   详述类型说明符可用于指代先前声明的类名（class、struct 或 union）或先前声明的 enum 名，即使该名字被非类型声明所隐藏。它们亦可声明新的类名。
+>   ​		详述类型说明符可用于指代先前声明的类名（class、struct 或 union）或先前声明的 enum 名，即使该名字被非类型声明所隐藏。它们亦可声明新的类名。
 >
 >   ps：c++语言/基本语法/声明/说明符/类型说明符/详述类型说明符
 
-当同名变量定义在有重合的作用域下时，较大范围的作用域中的变量名被较小范围的作用域中的变量名屏蔽（name hiding / shadowing)。
+​		当同名变量定义在有重合的作用域下时，较大范围的作用域中的变量名被较小范围的作用域中的变量名屏蔽（name hiding / shadowing)。
 
 ```c++
 #include <iostream>

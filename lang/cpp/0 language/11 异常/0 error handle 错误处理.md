@@ -400,6 +400,10 @@ if (c=='y')
 - Halt the program
 - Throw an exception
 
+​		由于模块化和抽象机制的应用，运行时的错误捕获与处理往往是分离的。即，在抽象的组件中往往不能应付具体使用者面临的问题，能做的处理很有限；而使用者不能保证不出现问题。
+
+​		因此，对于运行时错误的处理往往是由实现者通知使用者进行处理。
+
 
 
 **Handling the error within the function**

@@ -14,15 +14,17 @@
 
 ​		They are constants because their values can not be changed dynamically (you have to change them, and then recompile for the change to take effect).
 
+​		不要滥用含义不明显的字符常量，最好只在给`const / constexpr / enum`赋初值时使用。
+
 ### letaral type
 
 ​		The type of a literal is assumed from the value and format of the literal itself.
 
-![image-20220427164338625](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220427164338625.png)
+![image-20230312150458247](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230312150458247.png)
 
 ​		If the default type of a literal is not as desired, you can change the type of a literal by adding a suffix:
 
-![image-20220427164436405](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220427164436405.png)
+![image-20230312150528601](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230312150528601.png)
 
 ```c++
 std::cout << 5; // 5 (no suffix) is type int (by default)
@@ -35,13 +37,38 @@ std::cout << 5.0f; // 5.0f is type float
 
 
 
+#### charactor literals
+
+​		字符字面量是指单引号内的一个字符，数据类型是`char`，可以隐式的转换当前机器所用字符集中对应的整型值。
+
+​		如ASCII字符集，utf-8字符集等。
+
+​		字符集中的字符可以用任意进制的数字的整型值来表示，常用十进制数组来表示ASCII字符集的值。也可以用1~3位的八进制数`\num`或十六进制数`\xNum`。序列里十六进制数字的数量没有限制，遇到第一个不为八进制或十六进制的字符，表明当前8/16进制序列结束。
+
+​		这使得我们可以表示出字符集中的每一个字符，还可以在长字符串中嵌入它们。
+
+​		宽字符字面量`L'ab'`，数据类型是`wchar_t`，单引号内字符的数量及其含义依赖于具体实现。
+
+​		c++程序可以操作Unicode等其他字符集，这些字符集的规模远超ASCII，通常表示成4个或8个十六进制数字。字面量形如`u'\uABCD'` 、`u'\xDEAD'`、`U'\UABCDECBA`。对任意十六进制数字X而言，较短的`U'\UXXXX'`和`U\U0000XXXX`等价，但是字面量长度只能是4个或8个，称为通用字符名字。
+
 ### string literals
 
-​		#### C-style Null-terminated strings
+![image-20230312155024656](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230312155024656.png)
+
+- `“”`，字符串，`“mass”`
+- `R""`，原始字符串，`“R(\b)”`
+- `u8""`，UTF-8字符串，`u8"hello"`
+- `u""`，UTF-16字符串，`u"foo"`
+- `U""`，UTF-32字符串，`U"foo"`
+- `L""`，wchar_t字符串，`L"foo"`
+
+#### C-style Null-terminated strings
 
 ​		a string as a collection of sequential characters. 
 
 ​		The sequence of character constants inside double quotes represents a string constant.
+
+
 
 `operator""`
 
@@ -55,9 +82,9 @@ std::cout << 5.0f; // 5.0f is type float
   std::cout << "Hello," " world!";
   ```
 
-
-
 > C++ also has literals for std::string and std::string_view. In most cases these won’t be needed, but they may occasionally come in handy when using type deduction, either via the `auto` keyword, or class template argument deduction.
+
+
 
 #### C++-style strings
 
@@ -90,7 +117,16 @@ int main()
 
 ### integer literals
 
-​		整数字面量拥有以下形式:
+​		整型字面量的类型由它的进制、取值和后缀共同决定。
+
+#### 进制
+
+- 整型字面量默认是十进制的
+- 以`0b`为前缀的是二进制字面量
+- 以`0`为前缀的是八进制字面量
+- 以`0x`为前缀的是十六进制字面量
+
+​		可以使用`‘`来分隔字面量，拥有以下形式:
 
 - *decimal-literal*	 *integer-suffix*(optional)(1)
 
@@ -122,7 +158,11 @@ int bin { 0b1011'0010 };  // assign binary 1011 0010 to the variable, c++14
 int bin { 0b'1011'0010 };  // error: ' used before first digit of value
 ```
 
-#### *integer-suffix*
+
+
+
+
+####  *integer-suffix*
 
  if provided, may contain one or both of the following (if both are provided, they may appear in any order:
 
@@ -132,11 +172,13 @@ int bin { 0b'1011'0010 };  // error: ' used before first digit of value
   - lonog-long-suffix(`ll/LL`) （c++11)
   - size-suffix(`z/Z`)  (c++23)
 
+![image-20230312153109983](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230312153109983.png)
+
 #### 整型选择
 
 整数字面量的类型，是依赖于所用数字基底和 *整数后缀* 的列表中，首个能适合其值的类型。
 
-![image-20220427173527304](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220427173527304.png)
+
 
 ```c++
 #include <cstddef>
@@ -164,48 +206,6 @@ std::cout << 123    << '\n'
      static_assert(std::is_same_v<decltype(0UZ), std::size_t>);
      static_assert(std::is_same_v<decltype(0Z), std::make_signed_t<std::size_t>>);
 #endif
-}
-```
-
-
-
-#### printng decimal / octal / hexadecimal / binary number
-
- Printing in decimal, octal, or hex is easy via use of std::dec, std::oct, and std::hex:
-
-```c++
-#include <iostream>
-
-int main()
-{
-    int x { 12 };
-    std::cout << x << '\n'; // decimal (by default)
-    std::cout << std::hex << x << '\n'; // hexadecimal
-    std::cout << x << '\n'; // now hexadecimal
-    std::cout << std::oct << x << '\n'; // octal
-    std::cout << std::dec << x << '\n'; // return to decimal
-    std::cout << x << '\n'; // decimal
-
-    return 0;
-}
-```
-
-To use std::bitset, we can define a std::bitset variable and tell std::bitset how many bits we want to store. The number of bits must be a compile time constant. std::bitset can be initialized with an unsigned integral value (in any format, including decimal, octal, hex, or binary).
-
-```c++
-#include <bitset> // for std::bitset
-#include <iostream>
-
-int main()
-{
-	// std::bitset<8> means we want to store 8 bits
-	std::bitset<8> bin1{ 0b1100'0101 }; // binary literal for binary 1100 0101
-	std::bitset<8> bin2{ 0xC5 }; // hexadecimal literal for binary 1100 0101
-
-	std::cout << bin1 << ' ' << bin2 << '\n';
-	std::cout << std::bitset<4>{ 0b1010 } << '\n'; // create a temporary std::bitset and print it
-
-	return 0;
 }
 ```
 
@@ -246,6 +246,46 @@ In two’s complement, the leftmost (most significant) bit is used as the sign b
   ​	Negative signed numbers are represented in binary as the bitwise inverse of the positive number, plus 1.
 
   
+
+#### printng decimal / octal / hexadecimal / binary number
+
+​	Printing in decimal, octal, or hex is easy via use of std::dec, std::oct, and std::hex:
+
+```c++
+#include <iostream>
+
+int main()
+{
+    int x { 12 };
+    std::cout << x << '\n'; // decimal (by default)
+    std::cout << std::hex << x << '\n'; // hexadecimal
+    std::cout << x << '\n'; // now hexadecimal
+    std::cout << std::oct << x << '\n'; // octal
+    std::cout << std::dec << x << '\n'; // return to decimal
+    std::cout << x << '\n'; // decimal
+
+    return 0;
+}
+```
+
+​	To use std::bitset, we can define a std::bitset variable and tell std::bitset how many bits we want to store. The number of bits must be a compile time constant. std::bitset can be initialized with an unsigned integral value (in any format, including decimal, octal, hex, or binary).
+
+```c++
+#include <bitset> // for std::bitset
+#include <iostream>
+
+int main()
+{
+	// std::bitset<8> means we want to store 8 bits
+	std::bitset<8> bin1{ 0b1100'0101 }; // binary literal for binary 1100 0101
+	std::bitset<8> bin2{ 0xC5 }; // hexadecimal literal for binary 1100 0101
+
+	std::cout << bin1 << ' ' << bin2 << '\n';
+	std::cout << std::bitset<4>{ 0b1010 } << '\n'; // create a temporary std::bitset and print it
+
+	return 0;
+}
+```
 
 
 
@@ -316,6 +356,10 @@ C++ actually has two different kinds of constants:
 
 ​		Any variable that should not be modifiable after initialization and whose initializer is not known at compile-time should be declared as const.
 
+​		`const`的含义是”承诺不改变对象的值”，主要用于接口说明。
+
+> 把变量传入函数时就不必担心变量会在函数内部被改变，编译器负责确认并执行const的承诺。
+
 #### compile-time constants
 
 ​		simply put the `const` keyword either before or after the variable type, like so:
@@ -354,6 +398,8 @@ void printInt(const int x) // x is a runtime constant because the value isn't kn
 
 ​		ensures that a constant must be a compile-time constant.
 
+​		`constexpr`含义是常量表达式求值，即在编译时求值，用于说明常量，允许将数据放置在只读内存中以及提升性能。
+
 ```c++
 constexpr double gravity { 9.8 }; // ok, the value of 9.8 can be resolved at compile-time
 constexpr int sum { 4 + 5 }; // ok, the value of 4 + 5 can be resolved at compile-time
@@ -375,15 +421,21 @@ std::cout << x + y; // x + y evaluated at compile-time
 //Similar to the literal case, the compiler can substitute in the value 7.
 ```
 
+​		如果某个函数参与常量表达式求值，则函数需要声明为`constexpr`：`constexpr double func(double p1);`
 
+- 定义为`constexpr`的函数必须非常简单，只能有一条用于计算某个值的`return`语句。
+
+- 接受非常量实参的`constexpr`函数其结果就不会是一个常量表达式。
+
+  > 即`constexpr`函数可以兼容常量表达式求值，和非常量表达式求值两种上下文环境，不必进行常量性重载。
 
 ### macro
 
 ​		Avoid using #define to create symbolic constants macros. Use const or constexpr variables instead.
 
 - because these #defined values aren’t variables, you can’t add a watch in the debugger to see their values. 
--  macros can have naming conflicts with normal code
--  macros don’t follow normal scoping rules
+- macros can have naming conflicts with normal code
+- macros don’t follow normal scoping rules
 
 
 
@@ -448,3 +500,6 @@ const int maxStudentsPerSchool{ numClassrooms * maxStudentsPerClass };
 > idGenerator = idGenerator + 1; // fine: we're just incrementing our generator
 > int kmtoM(int km) { return km * 1000; } // fine: it's obvious 1000 is a conversion factor
 > ```
+
+
+

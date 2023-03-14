@@ -4,7 +4,9 @@
 
 ---
 
-Prior to compilation, the code file goes through a phase known as **translation**.
+​	c++是一种编译型语言，需要先用编译器将源文件翻译成对象文件，然后再用链接器把所有对象文件组合成可执行文件。	
+
+​	Prior to compilation, the code file goes through a phase known as **translation**.
 
 
 
@@ -127,7 +129,7 @@ Prior to compilation, the code file goes through a phase known as **translation*
 >   int foo = 1;
 >   int bar = 0xE+foo;   // 错误：非法的预处理数字 0xE+foo
 >   int baz = 0xE + foo; // OK
->                     
+>                         
 >   int quux = bar+++++baz; // 错误：bar++ ++ +baz，而非 bar++ + ++baz。
 >   ```
 >
