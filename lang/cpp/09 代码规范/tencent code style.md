@@ -1,4 +1,5 @@
 # C++代码规范 <a id="top" />
+
 [TOC]
 
 ---
@@ -4378,7 +4379,7 @@ vector<char *> x;
   // 好
   int SomeModule::SomeBusinessProcess() {
     SomeBusinessProcessClient client(context_);
-
+  
     auto& req = client.request();  /* 不同区域大量的设置一个对象，上方添加空行 */
     req.set_uin(base_request_.uin());
     req.set_seed_version(0);
@@ -4390,26 +4391,26 @@ vector<char *> x;
     req.set_device_version(actual_request_.protocol_version());
     req.set_device_model_id(actual_request_.device_model_id());
     req.set_device_type(device_type_);
-
+  
     auto& user_context = *req.mutable_user_context();  /* 设置另一组数据，空行隔开 */
     user_context.set_session_id(base_request_.session_id());
     user_context.mutable_client_info()->set_session_lang(request_.lang());
     user_context.mutable_client_info()->set_client_version(base_request_.client_version());
     user_context.mutable_client_info()->set_device_id(base_request_.device_id());
     user_context.mutable_client_info()->set_client_ip(request_.client_ip());
-
+  
     // 开始远程调用并同时返回 XX 结果，此时 XX 数据已经完成计算并返回
     int ret = client();
-
+  
     // RPC 远程调用异常处理
     if (ret) return ret;
-
+  
     // 解析回包数据最重要的是拿到 XX 结果作为 YY，YY 数据要进行 Base64 转换
     const auto& resp = client.response();
     const auto& buffer = resp.encrypted_seed_data();
     Comm::Buffer2Base64(&buffer[0], buffer.size(), response_.mutable_xx_info());
     response.set_svr_time(resp.svr_time());
-
+  
     return 0;  /* 此时 return 语句和大段数据处理块不同增加空行提升阅读效率 */
   }
   ```

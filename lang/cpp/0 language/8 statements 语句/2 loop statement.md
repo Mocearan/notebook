@@ -90,9 +90,19 @@ for(element_declaration : container)
     statement;
 ```
 
-​		 the loop will iterate through each element in array, assigning the value of the current array element to the variable declared in element_declaration. 
-
 ​		`element_declaration` 具有相同的类型，因此，通常使用`auto`来进行类型推断。对于只读的复合类型，往往使用`const auto &`来进行访问。
+
+​		支持`range-for`需要为被迭代的类中实现`begin() / end()`函数。
+
+```c++
+template<typename T>
+T* begin(Container<T>& x) { return &x[0];}
+
+template<typename T>
+T* end(Container<T>& x) { return x.begin() + x.size(); }
+```
+
+​		
 
 ```c++
 constexpr int fibonacci[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };

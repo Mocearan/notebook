@@ -24,7 +24,9 @@
 
 ​		A good rule of thumb is to create normal at first, and then convert them into templates if you find you need an overload for different parameter/member types.
 
+​		模板是一种编译期技术，是生成代码的技术。因此不会增加运行时开销，但会增加编译时间。
 
+​	
 
 ## syntax
 
@@ -129,6 +131,69 @@ int max(int x, int y)
 ​		Note how the syntax in the bottom case looks identical to a normal function call! This is usually the preferred syntax used when invoking function templates.
 
 > 当在模板实例化时，在实参中传递中包含模板参数时，就可以使用模板实参推导。
+
+### 可变参数模板
+
+​		实现可变参数模板时，如果传递多个参数，需要将第一个参数和其他参数区分对待。
+
+```c++
+template<typename T, typename... Tail>
+void f(T head, Tail... tail)
+{
+	g(head);
+    f(tail...);
+}
+
+void f() {}
+```
+
+​		可变参数的解析实际上是递归解参数包，直到参数包为空时，需要一个另外的同名空参函数作为终结条件。
+
+```c++
+template<typename T>
+void g(T x)
+{
+    cout << x << " ";
+}
+
+f(0.2, 'c', "hello", 0, false);
+```
+
+
+
+### 模板参数技巧
+
+​		参数化的类型通常会进行别名处理，如标准库容器都提供了`value_type`作为其值的别名。这使得所有定义了`value_type`的容器上都可以进行某些规范的操作。
+
+```c++
+template<typename T>
+class Vector{
+ public:
+    using value_type = T;
+};
+
+template<typename T>
+using Elem_type = typename C::value_type;
+
+template<typename Container>
+void algo(Container& c)
+{
+    Vector<Elem_type<Container>> vec;
+    //...
+}
+```
+
+​		使用别名机制和偏特化能够直接定义新的模板：
+
+```c++
+template<typename K, typename V>
+class Map{};
+
+template<typename V>
+using StringMap = Map<std::string, V>;
+```
+
+
 
 
 
@@ -454,6 +519,36 @@ pair p2{ 1, 2 };     // CTAD used to deduce pair<int, int> from the initializers
 
 
 
+### functor
+
+​		将一般的函数对象模板化，使其能够接受泛型的参数。
+
+​		标准库中的谓词（predicate ）就是一个函子，用于指明算法关键操作的含义。
+
+> 谓词，用来描述或判定客体性质、特征或者客体之间关系的词项。
+>
+> 即给客体下定义，是或不是。故返回一个`bool`值。
+
+```c++
+template<typename T>
+class LessThan{
+    const T val;
+    public:
+    LessThan(const T& v) : val {v} {}
+    bool operator() (const T& x) const { return x < val; }
+}
+```
+
+​		函数对象的妙处在于，可以在类内部携带所需要的值。函数对象的实现相当麻烦，在c++11后，lambda表达式作为函数对象的语法糖简化了这一过程，将需要在别处定义的函数对象，直接在所需要处进行定义。
+
+```c++
+Vector<int> vec{...};
+int x = 10;
+count(v, [&](int a){return a < x;});
+```
+
+​		复杂的`lambda`会显得很晦涩，影响可读性。往往将复杂的操作抽离为一个函数，然后在`lambda`中调用该函数，以便清晰的表达它的目的和复用。
+
 ## 模板特化
 
 ​		针对特定类型，对模板的实现进行特殊的实现。
@@ -722,7 +817,7 @@ int main()
 }
 ```
 
-> 这里不是对print()进行偏特化，而是使用StaticArray的不同偏特化对print进行重载。
+> 这里不是对print()进行偏特化，而是使用``StaticArray``的不同偏特化对print进行重载。
 
 
 
@@ -923,3 +1018,4 @@ int main()
 ```
 
 ​		
+
