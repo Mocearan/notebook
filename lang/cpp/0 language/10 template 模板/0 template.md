@@ -10,6 +10,8 @@
 
 ​		Templates have one job: to generate functions / class (that are compiled and executed).
 
+​		Templates are a compile-time mechanism, so their use incurs no run-time overhead compared to hand-crafted code.
+
 ​		And because templates can be written agnostically of specific types, programming with templates is sometimes called **generic programming**.
 
 ​		templates do have a few drawbacks:
@@ -36,7 +38,33 @@ template < 形参列表 > concept 概念名 = 约束表达式 ;	// (3)	(C++20 �
 
 
 
+## parameterized 参数化
+
+​		The **template<typename T>** prefix makes **T** a type parameter of the declaration it prefixes.
+
+​		 It is C++’s version of the mathematical “for all T” or more precisely “for all types T.” If you want the mathematical “for all T, such that P(T),” you use concepts。
+
+> 这是一种无约束的对所有类型都不做检查的抽象。
+>
+> 而概念就是对模板参数的一种约束。
+
+​		通常，模板只对满足特定条件的模板参数有意义。
+
+> 如容器提供拷贝操作，那么容器要求元素类型是可拷贝的。
+
+​		This **template<Element T>** prefix is C++’s version of mathematic’s “for all T such that **Element(T)**”; that is, **Element** is a predicate that checks whether **T** has all the properties that a **Vector** requires. Such a predicate is called a *concept*。
+
+​		A template argument for which a concept is specified is called a *constrained argument* and a template for which an argument is constrained is called a *constrained template*.
+
+### parameterized type 参数化类型
+
+### parameterized operations 参数化操作
+
+
+
 ## template instantiation 模板实例化
+
+​		A template plus a set of template arguments is called an *instantiation* or a *specialization*.
 
 ​		The process of creating functions / class (with specific types) from templates (with template types) is called **template instantiation** (or **instantiation** for short).
 

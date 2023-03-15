@@ -67,9 +67,10 @@
 
 
 
-
-
-
-
-
+| **Standard-Library Suffixes for Literals** |                                     |                                           |
+| :----------------------------------------- | :---------------------------------- | ----------------------------------------- |
+| **<chrono>**                               | **std::literals::chrono_literals**  | **h, min**, **s**, **ms**, **us**, **ns** |
+| **<string>**                               | **std::literals::string_literals**  | **s**                                     |
+| **<string_view>**                          | **std::literals::string_literals**  | **sv**                                    |
+| **<complex>**                              | **std::literals::complex_literals** | **i**, **il**, **if**                     |
 
