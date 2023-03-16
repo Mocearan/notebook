@@ -58,11 +58,78 @@ template < 形参列表 > concept 概念名 = 约束表达式 ;	// (3)	(C++20 �
 
 ​		A template argument for which a concept is specified is called a *constrained argument* and a template for which an argument is constrained is called a *constrained template*.
 
-### parameterized type 参数化类型
+​		For unconstrained parameters, that type check cannot be done until the types of all entities involved are available, so it can occur unpleasantly late in the compilation process, at instantiation time , and the error messages are often atrocious.
 
-### parameterized operations 参数化操作
+​		类型模板参数可以使用具体的值。
 
+```c++
+template<typename T, int N>
+struct Buffer {
+        constexpr int size() { return N; }
+        T elem[N];
+        // ...
+};
 
+Buffer<char,1024> glob;
+```
+
+​		由于技术原因，不能使用字符串字面量作为模板值参数。可以使用字符数组来代替：
+
+```c++
+template<char* s>
+void outs() { cout << s; }
+
+outs<"straightforward use">();        // error (for now)
+char arr[] = "Weird workaround!";
+outs<arr>();             // writes: Weird workaround!
+```
+
+​		There are three ways of expressing an operation parameterized by types or values:
+
+- A function template
+
+  ```c++
+  template<typename Sequence, typename Value>
+  Value sum(const Sequence& s, Value v)
+  {
+          for (auto x : s)
+                  v+=x;
+          return v;
+  }
+  
+  void user(Vector<int>& vi, list<double>& ld, vector<complex<double>>& vc)
+  {
+          int x = sum(vi,0);                                         // the sum of a vector of ints (add ints)
+          double d = sum(vi,0.0);                               // the sum of a vector of ints (add doubles)
+          double dd = sum(ld,0.0);                             // the sum of a list of doubles
+          auto z = sum(vc,complex{0.0,0.0});           // the sum of a vector of complex<double>s
+  }
+  ```
+
+  ​	函数模板可以是成员函数，但不能是虚函数。因为函数模板不能提供编译器所需的所有实例化信息，无法生成`vtbl`。
+
+- A function object: an object that can carry data and be called like a function
+
+  ```c++
+  template<typename T>
+  class Less_than {
+          const T val;       // value to compare against
+  public:
+          Less_than(const T& v) :val{v} { }
+          bool operator()(const T& x) const { return x<val; }  // call operator
+  };
+  ```
+
+  ​	用于指定通用算法的键操作的含义的函数对象有时被称为策略对象。
+
+- A lambda expression: a shorthand notation for a function object
+
+  ```c++
+  cout << "number of values less than " << s << ": " << count(lst,[&](const string& a){ return a<s; })
+                  << '\n';
+  ```
+
+   	lambda表达式会以捕获列表生成一个具有相同函数原型的函数对象。如果成员函数中定义的lambda需要使用此类对象时，需要捕获`[this / *this]`
 
 ## template instantiation 模板实例化
 
@@ -493,7 +560,24 @@ std::pair p2{1, 2}; // CTAD used to deduce std::pair<int, int> from the initiali
   std::pair<int> p2 { 3, 4 }; // error: too few template arguments, second argument not deduced
   ```
 
-​		
+​				CTAD有一些意外情况：
+
+- 字符串字面量的默认推断为`const char*`
+
+  ```c++
+  Vector<string> vs {"Hello", "World"};      // OK: Vector<string>
+  Vector vs1 {"Hello", "World"};                  // OK: deduces to Vector<const char*> 
+  Vector vs2 {"Hello"s, "World"s};              // OK: deduces to Vector<string>
+  ```
+
+- 当初始化器提供的类型不同时，因二义性不能推断。
+
+  ```c++
+  Vector vs3 {"Hello"s, "World"};                // error: the initializer list is not homogenous
+  Vector<string> vs4 {"Hello"s, "World"};  // OK: the element type is explicit
+  ```
+
+  
 
 ​		**deduction guide**, which tells the compiler how to deduce the template arguments for a given class template.
 
@@ -513,11 +597,30 @@ pair(T, U) -> pair<T, U>;
 pair p2{ 1, 2 };     // CTAD used to deduce pair<int, int> from the initializers (C++17)
 ```
 
+​		对于具有二义性的推断，deduction guide说明了推断的规则：
+
+```c++
+Vector v2(v1.begin(),v1.begin()+2);          // a pair of iterators or a pair of values (of type iterator)?
+
+// “a pair of values of the same type should be considered iterators.”
+template<typename Iter>
+Vector(Iter,Iter) -> Vector<typename Iter::value_type>;
+
+
+Vector v2(v1.begin(),v1.begin()+2);           // pair-of-iterators: element type is int
+Vector v3 {v1.begin(),v1.begin()+2};         // element type is Vector2::iterator
+
+// The {} initializer syntax always prefers the initializer_list constructor (if present), so v3 is a vector of iterators: Vector<Vector<int>::iterator>.
+// The () initialization syntax  is conventional for when we don’t want an initializer_list.
+```
+
+​		对此，我们可以使用概念来约束类型做到二义性的消除，但未引入概念时就需要提供deduction guide。
+
 ​		 C++20 added the ability for the compiler to automatically generate deduction guides for aggregate class types, so the version of `pair` without the deduction guides should compile in C++20.
 
 > This assumes your compiler supports feature P1816
 
-
+​		The effects of deduction guides are often subtle, so it is best to design class templates so that deduction guides are not needed.
 
 ### functor
 
