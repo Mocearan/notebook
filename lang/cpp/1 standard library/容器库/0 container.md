@@ -10,7 +10,7 @@
 
 ## 容器分类
 
-### Aequence Container 顺序容器
+### Sequence Container 顺序容器
 
 ​		顺序容器用于存储有顺序的元素，因此能够以位置来选择插入的元素。
 

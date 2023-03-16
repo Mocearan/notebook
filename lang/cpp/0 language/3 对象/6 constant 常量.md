@@ -41,7 +41,7 @@ std::cout << 5.0f; // 5.0f is type float
 
 ​		字符字面量是指单引号内的一个字符，数据类型是`char`，可以隐式的转换当前机器所用字符集中对应的整型值。
 
-​		如ASCII字符集，utf-8字符集等。
+​		如``ASCII``字符集，``utf-8``字符集等。
 
 ​		字符集中的字符可以用任意进制的数字的整型值来表示，常用十进制数组来表示ASCII字符集的值。也可以用1~3位的八进制数`\num`或十六进制数`\xNum`。序列里十六进制数字的数量没有限制，遇到第一个不为八进制或十六进制的字符，表明当前8/16进制序列结束。
 
@@ -49,14 +49,29 @@ std::cout << 5.0f; // 5.0f is type float
 
 ​		宽字符字面量`L'ab'`，数据类型是`wchar_t`，单引号内字符的数量及其含义依赖于具体实现。
 
-​		c++程序可以操作Unicode等其他字符集，这些字符集的规模远超ASCII，通常表示成4个或8个十六进制数字。字面量形如`u'\uABCD'` 、`u'\xDEAD'`、`U'\UABCDECBA`。对任意十六进制数字X而言，较短的`U'\UXXXX'`和`U\U0000XXXX`等价，但是字面量长度只能是4个或8个，称为通用字符名字。
+​		c++程序可以操作``Unicode``等其他字符集，这些字符集的规模远超``ASCII``，通常表示成4个或8个十六进制数字
+
+- 字面量形如`u'\uABCD'` 、`u'\xDEAD'`、`U'\UABCDECBA`。
+- 对任意十六进制数字X而言，较短的`U'\UXXXX'`和`U\U0000XXXX`等价，但是字面量长度只能是4个或8个，称为通用字符名字。
+
+> 如`u'0430'`是斯拉夫语小写字母`a`，utf-8中是两字节的十六进制值`D0B0`，utf-16中是2字节的十六进制值`0430`，utf-32中是四字节的十六进制值`00000430`
+
+![image-20230316215839727](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230316215839727.png)
+
+- `''`，ascii字符，`‘m’`
+- `u8''`，UTF-8字符，`u8'm'`，可变宽字符编码，常用字符包括ascii字符为1字节，不常用字符占据2字节，特别罕见的字符3或4字节。
+- `u''`，UTF-16字符，`u'm'`
+- `U''`，UTF-32字符，`U'm'`
+- `L''`，wchar_t字符，`L'm'`
 
 ### string literals
 
 ![image-20230312155024656](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230312155024656.png)
 
-- `“”`，字符串，`“mass”`
+- `“”`，ascii字符串，`“mass”`
 - `R""`，原始字符串，`“R(\b)”`
+  - `R""`可以与其他的字符串前缀组合表达对应编码的原始字符串，但顺序敏感，R必须紧邻`“”`
+
 - `u8""`，UTF-8字符串，`u8"hello"`
 - `u""`，UTF-16字符串，`u"foo"`
 - `U""`，UTF-32字符串，`U"foo"`
@@ -68,12 +83,14 @@ std::cout << 5.0f; // 5.0f is type float
 
 ​		The sequence of character constants inside double quotes represents a string constant.
 
+​		C风格字符串是以``‘\0’``作为空终止符的`char`数组，字符串字面量是静态分配的以`‘\0’`为空终止符的`char`常量数组。
 
+> 两个完全一样的字符串字面值是否同一存储依赖于实现。
 
 `operator""`
 
 ```cpp
-"Hello, world!"; // "Hello, world!" is a C-style string literal
+"Hello, world!"; // "Hello, world!" is a C-style string literal, static const char[]
 ```
 
 - C++ will concatenate sequential string literals
@@ -83,6 +100,32 @@ std::cout << 5.0f; // 5.0f is type float
   ```
 
 > C++ also has literals for std::string and std::string_view. In most cases these won’t be needed, but they may occasionally come in handy when using type deduction, either via the `auto` keyword, or class template argument deduction.
+
+​		字符串字面值中的空白符会截断字符串。
+
+#### raw strings
+
+​		ASCII编码的字符串字面量，有部分字符需要以``‘\’``来进行转义才能使用。在正则表达式或其他一些复杂字符串中会变得相当复杂难懂，并造成潜在的错误。
+
+​		为此c++提供了原始字符串字面量（raw string literal），在其中所有的字符都按所见表达，反斜线不会进行转义。
+
+​		原始字符串字面量以`R"(chars)"`的形式表示`chars`字符序列，`()`是想要以裸字符串字面量表现的序列，对于字符串需要加上`“”`.
+
+```c++
+"\\w\\\\W";
+R"("\w\\W")";
+```
+
+​		在两侧括号外与`“”`之间还可以插入对称的任意符号序列，与`()`共同组成对`()`的转义，使得在`chars`序列中能够使用`()`字符。
+
+​		允许在`chars`序列中以换行进行美化而不会被视作换行符。
+
+```c++
+R"***("quoted string 
+containing 
+the usual terminator ("))")***";
+// "quoted string containing the usual terminator ("))"
+```
 
 
 
