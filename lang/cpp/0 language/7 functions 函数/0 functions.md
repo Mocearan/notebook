@@ -149,6 +149,14 @@ return Point3d { 0.0, 0.0, 0.0 }; // return an unnamed Point3d
 
 
 
+#### return reference
+
+​		函数返回值可以是引用类型，但返回引用时要注意所返回的对象的生命周期，避免造成空悬引用。
+
+​		一般用于类返回类的成员引用。
+
+​		可以使用`const &`返回来避免不经类接口的对类成员的修改。
+
 
 
 ### 函数名
@@ -176,6 +184,8 @@ return Point3d { 0.0, 0.0, 0.0 }; // return an unnamed Point3d
 #### 机理
 
 ​		Therefore, we can conclude that C++ really passes everything by value! The properties of pass by address (and reference) come solely from the fact that we can dereference the passed address to change the argument, which we can not do with a normal value parameter!
+
+​		参数传递的本质是声明与初始化，使用调用函数时传入的值作为初始化器，初始化一个函数栈帧上局部作用域的变量。
 
 ##### pass by value
 
@@ -294,7 +304,7 @@ void printSize(int array[5])
 - Any additional setup costs.
 
 >  		Some class types do additional setup when they are instantiated (e.g. such as opening a file or database, or allocating a certain amount of dynamic memory to hold an object of a variable size). 
->					
+>						
 >  		It’s best to assume that most standard library classes have setup costs, unless you know otherwise that they don’t.
 
 ​		accessing an object through a reference is slightly more expensive than accessing an object through a normal variable identifier. 
@@ -377,6 +387,28 @@ void nullify(int*& refptr) // refptr is now a reference to a pointer
 > `int&*` 是错误的语法，因为不能有指向引用的指针(因为指针必须保存对象的地址，而引用不是对象)。
 
 ​		If they can’t be optimized away entirely, references are normally implemented by the compiler using pointers. This means that behind the scenes, pass by reference is essentially just a pass by address (with access to the reference doing an implicit dereference).
+
+​		不同于使用指针，使用左值引用的参数传递，在函数调用时，不能显式的以语法形式表征传入的参数会被函数内部所改变。
+
+```c++
+void increment(int& a)
+{
+    ++a;
+}
+int x = 10;
+increment(x);
+
+void increment(int* p)
+{
+	++(*p);	
+}
+int x= 10;
+increment(&x);
+```
+
+​		从调用形式上无法判断传入的实参是否被修改，除非函数名能明确的表示对实参的修改，否则不要使用左值引用作为函数的形参。
+
+
 
 ### 函数体
 
