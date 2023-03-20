@@ -129,7 +129,7 @@ outs<arr>();             // writes: Weird workaround!
                   << '\n';
   ```
 
-   	lambda表达式会以捕获列表生成一个具有相同函数原型的函数对象。如果成员函数中定义的lambda需要使用此类对象时，需要捕获`[this / *this]`
+- lambda表达式会以捕获列表生成一个具有相同函数原型的函数对象。如果成员函数中定义的lambda需要使用此类对象时，需要捕获`[this / *this]`
 
 ## template instantiation 模板实例化
 
