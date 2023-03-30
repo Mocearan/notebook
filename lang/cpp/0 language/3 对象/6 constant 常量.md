@@ -370,6 +370,24 @@ Use the following procedure:
 
 
 
+### user-defined lieraral type
+
+​		含有`constexpr`构造函数的类称为字面值常量类型。
+
+​		构造函数必须足够简单才能声明成`constexpr`：
+
+- 函数体必须为空
+- 所有成全都是用潜在的常量表达式初始化的
+
+```c++
+constexpr Point origo{0,0};
+constexpr int z = origo.x;
+
+constexpr Point a[] = {
+    origo, Point{1,1}, Point{2,2}, origo.move{3,3};
+}
+```
+
 
 
 
@@ -380,10 +398,18 @@ Use the following procedure:
 
 - 编译时常量：表达式在编译时求值
   - constexpr / enum / macro
-- 运行时常量
+- 运行时常变量
   - const variables
 
 ​		对于`constexpr`和`const`的区别，`constexpr`表征一个编译期计算为常量的表达式，而`const`约束对一个变量的访问接口是常量性（只读）的。
+
+​		人们更倾向于使用命名的符号常量而非字面量，因为：
+
+- 命名常量使得代码易于理解和维护
+- 某些语境下要求必须使用常量表达式（数组尺寸、case标签、template中的常量模板参数
+- 嵌入式系统中，不可修改的数据往往置于只读内存，因为与动态内存想必，只读内存更廉价（价格、功耗）、空间也更大。系统崩溃时只读内存的数据也基本上不受影响。
+- 如果在编译时完成了初始化操作，即使在多线程系统中也不会发生针对该对象的数据竞争。
+- 编译时求值一次，把你在运行时多次求值的效率高很多。
 
 
 
@@ -441,9 +467,51 @@ std::cout << x + y; // x + y evaluated at compile-time
 
 - 定义为`constexpr`的函数必须非常简单，只能有一条用于计算某个值的`return`语句。
 
+- 当接受常量（字面值、符号常量中的编译时常量、被常量表达式初始化的常变量）时，结果就是一个常量表达式。
+
 - 接受非常量实参的`constexpr`函数其结果就不会是一个常量表达式。
 
   > 即`constexpr`函数可以兼容常量表达式求值，和非常量表达式求值两种上下文环境，不必进行常量性重载。
+  
+- `constexpr`的基底含义仍旧是只读，因此声明为`constexpr`的函数不必限定为`const`函数
+
+  ```c++
+  class Point{
+     constexpr Point move(int dx, intdy) /* const */ {return {x+dx, y + dy};} 
+  };
+  
+  ```
+
+- `constexpr`函数能够接收`const&`参数，因为`const&`引用的是值。
+
+  ```c++
+  template<>
+  class complex<double>
+  {
+  public:
+      constexpr complex(double re = 0.0, double im = 0.0);
+      constexpr complex(const complex<float>&);
+      explicit constexpr complex(const complex<long double>&);
+      
+      constexpr double real();
+      void real(double);
+      constexpr double image();
+      void image(double);
+  
+  	complex<double>& operator=(double);
+      complex<double>& operator+=(double);
+  };
+  
+  /////
+  constexpr complex<float> z1{1,2};
+  constexpr double re = z1.real();
+  constexpr double im = z1.image();
+  
+  constexpr complex<double> z2{re, im};
+  constexpr complex<double> z3{z1}; // 编译器识别出 z1是一个字面值常量类型，而const complex<double>&引用的是一个常量值（不是指针或引用等其他东西）
+  ```
+
+  
 
 #### macro
 
@@ -472,11 +540,16 @@ std::cout << x + y; // x + y evaluated at compile-time
 #### 常变量的性质
 
 - 常变量只能初始化，不能被赋值
+  - 常变量可以被常量表达式初始化，这种常变量可以用在常量表达式中
+  - 常变量可以被非常量表达式初始化，这种常变量不可以用在常量表达式中
+  - 通常，定义概念上的常量时，指符号化的字面量，应该使用`constexpr`
+    - 不能使用c++11时，常用枚举值类代替`constexpr`的功能，来替换`const`
+
 - 常变量可以赋值变量，常变量不能被赋值
 - 指针可以赋值给常指针，表示以常量访问的形式访问原指针索引的对象
 - 常指针不能赋值给指针，常指针的常量性限定丢失
 
-> 常变量可以来自于字面量、常变量或变量，因为常变量的创建是拷贝的独立变量。
+> 常变量可以初始化自字面量、常变量或变量，因为常变量的创建是独立变量的拷贝。
 >
 > 常指针间接访问对象，这里的常是限定指针对索引对象的访问形式，而非指针本身。除非将指针本身声明为常变量（常指针常变量）
 

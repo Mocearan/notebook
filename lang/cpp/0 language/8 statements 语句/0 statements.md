@@ -1,4 +1,4 @@
-# statements
+# statements 语句
 
 ​		A computer program is a sequence of instructions that tell the computer what to do.
 
@@ -11,6 +11,12 @@
 - end in a semicolon
 
   ​	a line that ends in a semicolon, it’s probably a statement.
+
+​		不同于表达式的目的是求值，语句本身没有值，语句的作用是指定执行的顺序。
+
+​		为了提高程序的性能，编译器可能会在确保执行结果不变的前提下调整代码的顺序。
+
+
 
 ## classification 分类
 
@@ -40,9 +46,36 @@
 
 
 
-## compound statements
+## 表达式语句
 
-A **compound statement** (also called a **block**, or **block statement**) is a group of *zero or more statements* that is treated by the compiler as if it were a single statement.
+​		表达式的末尾加上分号就称为一条语句。
+
+> 赋值、函数调用本身是表达式的一部分。
+
+### 声明语句
+
+​		一个声明就是一条语句。
+
+​		除`static`变量外，当控制线程到达当前声明语句的时候，会同时执行初始化器。这样做的目的是为了减少由未初始化变量造成的程序错误，并且让代码的局部性更好。
+
+> 在绝大多数情况下，如果没有为变量找到一个合适的值，就暂时不要声明它。
+
+​		对于用户自定义的数据类型，先确定一个合适的初始化器再定义变量能获得更好的性能：
+
+```c++
+std::string s1;
+s1 = "hello world";
+
+std:;string s2{"hello world"};
+```
+
+​		缺少初始化器的变量声明常常是因为，需要后续一条专门的语句给变量赋值。
+
+
+
+## compound statements 复合语句
+
+​		A **compound statement** (also called a **block**, or **block statement**) is a group of *zero or more statements* that is treated by the compiler as if it were a single statement.
 
 `{...}`
 
@@ -91,20 +124,20 @@ Despite what C++ technically supports, it’s a good idea to keep your nesting l
 
 ​	
 
-## conditional statements
+## conditional statements 条件语句
 
 - if-else statement
 - switch statement
 
 
 
-## jump statements
+## jump statements 跳转语句
 
 
 
 
 
-## **flow control**
+## **flow control** 控制流
 
  allow the programmer to change the normal path of execution through the program.
 

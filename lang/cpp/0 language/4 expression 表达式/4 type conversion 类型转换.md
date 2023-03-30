@@ -6,19 +6,17 @@
 
 
 
-​		Type conversion can be invoked in one of two ways: either implicitly (as needed by the compiler), or explicitly (when requested by the programmer). \
+​		Type conversion can be invoked in one of two ways: either implicitly (as needed by the compiler), or explicitly (when requested by the programmer). 
 
-
-
-## The standard conversions
+## The standard conversions 标准转换
 
 ​		The C++ language standard defines how different fundamental types (and in some cases, compound types) can be converted to other types.These conversion rules are called the **standard conversions**.
 
 ​		The standard conversions can be broadly divided into 4 categories, each covering different types of conversions:
 
-- Numeric promotions 
-- Numeric conversions 
-- Arithmetic conversions 
+- Numeric promotions 数值提升
+- Numeric conversions 数值转换
+- Arithmetic conversions 算数转换
 - Other conversions (which includes various pointer and reference conversions)
 
 ​		When a type conversion is needed, the compiler will see if there are standard conversions that it can use to convert the value to the desired type. The compiler may apply zero, one, or more than one standard conversions in the conversion process.
@@ -37,6 +35,18 @@
 > - Other 32-bit CPUs (like the PowerPC), can only operate on 32-bit values, and additional tricks must be employed to manipulate narrower values.
 >
 > ​		C++ is designed to be portable and performant across a wide range of architectures,C++ defines a category of type conversions informally called the `numeric promotions`.
+
+​		保护值不被改变类型转换成为提升（promotion）。执行算数运算之前，通常把较短的整数类型通过整型提升（integral promotion）成`int`。提升的结果一般不会是`long`（除非运算对象的类型是`char16_t / char32_t / wchar_t`或者本身比`int`大的一个普通枚举类型）或`long double`。这反映了C语言中类型提升的本质：把算数对象变得复合算数运算的“自然尺寸”。
+
+​		整型提升的规则：
+
+- 如果`int`能表示类型为`char / signed char / unsigned char / short char / short int / unsigned short int`的值
+  - 则将该数据转换为`int`
+  - 否则转化`unsigned int`
+- `char16_t / char32_t / wchar_t`或普通枚举类型的数据转换成下列类型中的第一个能够表示其全部值的类型：`int / usigned int / long / unsigned long / unsigned long long`
+- 如果位域的全局值能用`int`表示，则它转换为`int`；否则如果全部值能用`unsigned int`表示，则它转换为`unsignedint``
+  - 如果`int`和`unsigned int`都不行，则不执行任何整数提升
+- `bool`值转换成`int`，其中`false -> 0 / true -> 1`
 
 ​		A **numeric promotion** is the type conversion of a narrower numeric type (such as a `char`) to a wider numeric type (typically `int` or `double`) that can be processed efficiently and is less likely to have a result that overflows.
 
@@ -138,27 +148,50 @@ int main()
 
 ​		**numeric conversions**, that cover additional type conversions not covered by the numeric promotion rules.
 
-​		5 basic typed of numeric conversions:
+​		五中基础类型的数值转换：
 
-1. Converting an integral type to any other integral type(excluding integral promotions):
+1. 整数类型转换：整数类型能被转换为其他整数类型(excluding integral promotions):
 
    ```c++
    short s = 3; // convert int to short
    long l = 3; // convert int to long
    char ch = s; // convert short to char
+   // 普通枚举类型值也能被转换成整数类型
+   // 如果目标类型是unsigned的，结果值所占的二进制位数以目标类型为准，如果有必要会丢掉前部的二进制位
+   	// 确切的说，转换前的整数值对2的n次幂取模后所得的结果值就是转换结果，其中n是目标类型所占的位数
+   	unsigned char uc = 1023;  // 1023->001111111111   uc->11111111->255
+   // 如果目标类型是signed，则当前原值能用目标类型表示时，不发生改变；反之结果毅力阿玉实现
+   	signed char sc = 1023; // 依赖于实现
    ```
 
-2. Converting a floating point type to any other integral type(excluding integral promotions):
+2. 浮点类型转换：浮点数类型能被转换为其他浮点数类型(excluding point promotions):
 
    ```c++
+   // 如果原值能用目标类型完整地表示，则所得的结果与原值相等
    float f = 3.0; // convert double to float
    long double ld = 3.0; // convert fouble to long double
+   
+   float f = FLT_MAX;
+   double d = f;
+   // 如果原值结语两个相邻的目标值之间，则结果取他们中的一个
+   double d2 = DBL_MAX;
+   long double ld = d2;
+   // 其他情况下结果是未定义的
+   double d2 = DBL_MAX;
+   float f2 = d2;  // 如果FLT_MAX < DBL_MAC，UB
+   
+   long double ld2 = numeric_cast<long double>::max();
+   double d3 = ld2; // 如果sizeof(long double) > sizeof(double)， UB
    ```
 
-3. Converting a floating point type to any integral type:
+3. 浮点向整数转换:
+
+   ​	浮点值的小数部分被忽略。
 
    ```c++
    int i = 3.5; // convert double to int
+   
+   char b = 2000.7; // 2000.7 -> 2000 -> 整形转换
    ```
 
 4. Converting an integral type to any floating point type:
@@ -167,7 +200,9 @@ int main()
    double d = 3; // convert int to double
    ```
 
-5. Converting an integral type or a floating point type to a bool:
+5. 布尔类型转换：整数、浮点数、指针都能隐式地转换成`bool`类型:
+
+   ​	`!0 == true / 0 == false`
 
    ```c++
    bool b1 = 3; // convert int to bool
@@ -176,13 +211,40 @@ int main()
 
 
 
-> ​		brace initialization disallows some numeric conversions.
+
+​	`{}`禁止一些窄化类型转换，如果潜在的窄化类型住哪换确实无法避免，则应该考虑使用一些在运行时执行检查的类型转换函数（如`narrow_cast<>`
+
+
+
+​		指针和引用类型转换：
+
+- 任何指向对象类型的指针都能隐式地转换成`void*`
+
+- 指向派生类的指针或引用，能隐式地转换成其可访问的且明确无二义的基类指针或引用
+
+- 指向函数的指针和指向成员的指针不能隐式的转换成`void*`
+
+- 求值结果为0的常量表达式能隐式的转换成
+
+  - 任意指针类型的空指针
+
+    ```c++
+    double* p = (1+2)*(2*(1-1)); // 最好直接使用 nullptr
+    ```
+
+  - 指向成员的指针类型
+
+- `T*` 可以隐式转换成`const T*`。类似地，`T&`能隐式的转换成`const T&`
+
+> 指向成员的指针或引用的类型在类中介绍。
 
 
 
 #### Narrowing conversions
 
-​		A narrowing conversion is a numeric conversion that may result in the loss of data.
+​		窄化类型转换是结果可能会损失数据的数值转换。
+
+> 把某个类型的值转换到另一个类型，如果再转换回原类型并且初始值不变，该转换就成为值保护的转换，否则就是窄化类型转化。
 
 ​		In general, narrowing conversions should be avoided. If you do need to perform one, use explicit conversion, Such as `static_cast` 
 
@@ -223,9 +285,13 @@ int main()
 
 
 
-#### Brace initialization disallows narrowing conversions
+##### `{}` disallows narrowing conversions
 
 ​		Narrowing conversions are strictly disallowed when using brace initialization(which is one of the primary reasons this initialization form is preferred).
+
+```c++
+char c{2.3};
+```
 
 
 
@@ -258,6 +324,27 @@ int main()
 > - long
 > - unsigned int
 > - int (lowest)
+
+
+
+​		适用于二元运算符运算对象的算数类型转换，用于把他们转换成一种常见的类型，并且该类型作为运算结果的类型：
+
+> 这个规则使得转换后的结果要么是无符号整型，要么是在实现中尺寸更大的带符号的整型。这也是我么你要求避免在同一条表达式中混用有无符号整型的原因之一。
+
+- 如果一个运算对象的类型是`long double`，则另一个也转换成`long double`
+  - 否则，如果一个运算对象的类型是`double`，则另一个也转换成`double`
+  - 否则，若谷一个运算对象的类型是`float`，则另一个也转换`float`
+  - 否则，两个运算对象都执行整数提升
+- 否则，如果一个运算对象的类型是`unsigned long long`，则另一个也转化成`unsigned long long`
+  - 否则，如果一个运算对象的类型是`long long int`，而另一个运算对象的类型是`unsigned long int`
+    - 则当`long long int`能表示所有`unsigned long int`的值时，该`unsigned long int`转换成`long long int`
+    - 否则，两个运算对象都转换成`unsigned long long int`
+  - 否则，如果一个运算对象的类型是`long int`，而另一个运算对象的类型是`unsigned int`
+    - 则当`long int`能表示所有`unsigned int`的值时，该`unsigned int`转化成`long int`
+    - 否则，两个运算对象都转换成`unsigned long int`
+  - 否则，如果一个运算对象的类型是`long`，则另一个对象也转化成`long`
+  - 否则，如果一个运算对象的类型是`unsigned`，则另一个也转化成`unsigned`
+  - 否则，两个运算对象都转换成`int`
 
 
 
