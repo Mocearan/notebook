@@ -1,26 +1,152 @@
-socket 编程
+# socket
+
+​		`socket`是系统``TCP/IP``协议栈的编程接口，用于网际交互，本地进程间通信。
 
 ---
 
+- 在linux上，`socket`是一种文件类型，在使用`socket`进行网络数据交互的过程中，使用文件``I/O``接口读写数据。
 
+  ​	socket的编程句柄也是文件描述符，文件描述符是系统分配给文件的数字ID，用以代表系统中的一个输入输出设备。
 
-## socket 概念
+  ​	其中0,1,2被用作标准输入、标准输出、标准错误的设备ID。
+
+- 这点在win上是不同的。
 
 ​		![image-20210903151813901](https://gitee.com/masstsing/picgo-picserver/raw/master/20210903151814.png)
 
-socket是用户进程和内核TCP/IP协议栈进行交互的编程接口，可以用于网际不同程序之间的交互，还可以用于本地进程间通信。
+​		
 
-socket也是一种文件类型，在使用`socket`进行网络数据交互的过程中，使用文件I/O进行数据的I/O操作。
+## 定长数据类型
 
-> 这点在win上是不同的。
-
-​		因为套接字的编程句柄也是文件描述符。
-
-### 协议栈中的定长数据类型
+​		网络编程中要处理大量的数据传递、IO，因此协议的设计是紧凑的，相关的接口一般使用定长数据类型来表示。
 
 ![image-20220316233833186](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220316233833186.png)
 
-### 套接字地址结构
+
+
+## 字节序
+
+#### 大端字节序 Big Endian
+
+​		最高有效位（MSB：Most Significant Bit）存储在最低内存地址处。
+
+​		最低有效位（LSB：Lowest Significant Bit）存储在最高内存地址处。
+
+![image-20220316235119658](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220316235119658.png)
+
+#### 小端字节序 Littel endian
+
+​		MSB存储在最高内存地址，LSB存储在最低内存地址。
+
+![image-20220316235127982](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220316235127982.png)
+
+
+
+##### 主机字节序与网络字节序
+
+​		不同的主机有不同的字节序，为了使得各种异构平台之间能够通信，在通信时使用同一的网络字节序。
+
+**网络字节序使用大端字节序**。
+
+> x86 小端字节序
+>
+> Motorola6800 大端字节序
+>
+> ARM字节序可配置*99*
+
+
+
+#### 字节序转换函数
+
+```c
+#include <arpa/inet.h>
+
+uint32_t htonl(uint32_t hostlong);
+
+uint16_t htons(uint16_t hostshort);
+
+uint32_t ntohl(uint32_t netlong);
+
+uint16_t ntohs(uint16_t netshort);
+
+// h - host 本地主机字节序
+// n - network 网络字节序
+// s - short  16位
+// l - long   32位
+```
+
+
+
+
+
+## 套接字类型
+
+​		如果C/S两端通信使用的套接字类型不同，在客户端连接时，会提示“Protocol wrong type for socket ”
+
+```c
+/* Types of sockets.  */
+enum __socket_type
+{
+  SOCK_STREAM = 1,		/* Sequenced, reliable, connection-based
+				   byte streams.  */
+#define SOCK_STREAM SOCK_STREAM
+  SOCK_DGRAM = 2,		/* Connectionless, unreliable datagrams
+				   of fixed maximum length.  */
+#define SOCK_DGRAM SOCK_DGRAM
+  SOCK_RAW = 3,			/* Raw protocol interface.  */
+#define SOCK_RAW SOCK_RAW
+  SOCK_RDM = 4,			/* Reliably-delivered messages.  */
+#define SOCK_RDM SOCK_RDM
+  SOCK_SEQPACKET = 5,		/* Sequenced, reliable, connection-based,
+				   datagrams of fixed maximum length.  */
+#define SOCK_SEQPACKET SOCK_SEQPACKET
+  SOCK_DCCP = 6,		/* Datagram Congestion Control Protocol.  */
+#define SOCK_DCCP SOCK_DCCP
+  SOCK_PACKET = 10,		/* Linux specific way of getting packets
+				   at the dev level.  For writing rarp and
+				   other similar things on the user level. */
+#define SOCK_PACKET SOCK_PACKET
+
+  /* Flags to be ORed into the type parameter of socket and socketpair and
+     used for the flags parameter of paccept.  */
+
+  SOCK_CLOEXEC = 02000000,	/* Atomically set close-on-exec flag for the
+				   new descriptor(s).  */
+#define SOCK_CLOEXEC SOCK_CLOEXEC
+  SOCK_NONBLOCK = 00004000	/* Atomically mark descriptor(s) as
+				   non-blocking.  */
+#define SOCK_NONBLOCK SOCK_NONBLOCK
+};
+
+```
+
+
+
+### 面向连接的流式套接字 SOCK_STREAM
+
+​		提供面向连接的、可靠的数据传输服务，数据无差错，无重复的发送，且按发送顺序接收。对应TCP协议。
+
+> 一个连接的表示使用四元组：
+>
+> （ local_ip:local_port , peer_ip, peer_port）
+
+​		因为面向无连接，故可以在一个建立好连接的通信信道上任意持续发送或接收数据。数据经套接字内核缓冲区，被消弭掉多次发送之间的边界。
+
+### 面向无连接的数据报式套接字 SOCK_DGRAM
+
+​		提供无连接服务，不提供无错保证，数据可能丢失或重复，并且接收顺序混乱。对应UDP协议。
+
+​		因为面向无连接，所以两次发送的数据之间是不关联的，各自独立称为一个自封闭的报文。每个数据报文需要单独的接收。
+
+### 原始裸套接字 SOCK_RAW
+
+​		跨越传输层，直接对IP层进行封装操作。
+
+​		
+
+
+
+## 套接字地址结构
 
 ```c
 #include <sockaddr.h>
@@ -33,7 +159,7 @@ socket也是一种文件类型，在使用`socket`进行网络数据交互的过
 
 
 
-#### 通用地址结构 sockaddr
+### 通用地址结构 sockaddr
 
 socket编程不仅能够用于TCP/IP协议栈的编程，还能够用于UNIX域协议的编程等。不同的协议栈之间的地址结构可能存在分歧，而通用地址结构使用一个缓冲区来存放可能的任何形式，用`sin_family`来决定以何种方式来解析该地址。
 
@@ -51,7 +177,7 @@ struct sockaddr
 
 > 14字节的socket address data用于填充：`sin_port(2),sin_addr(4),sin_zero(8)`。
 
-#### 网际套接口地址结构 sockaddr_in
+### 网际套接口地址结构 sockaddr_in
 
 ​		通常称为**网际套接字地址结构**，实际使用中，会在填充完网际套接字地址结构后转换成通用地址结构，交给相应socket api进行使用。
 
@@ -185,7 +311,7 @@ struct in_addr {
 >
 > INADDR_ANY（0.0.0.0）的另一好处在于，如果是多宿主计算机（多网卡，多IP），只要端口号一致，就可以从不同IP地址接收数据。服务器优先考虑这种方式。
 
-#### 本地套接口地址结构 sockaddr_un
+### 本地套接口地址结构 sockaddr_un
 
 ```c
 #define	__SOCKADDR_COMMON(sa_prefix) \
@@ -203,135 +329,228 @@ struct sockaddr_un
 
 
 
-### 网络字节序 和 本地字节序
+### sockaddr
 
-#### 字节序
+#### 地址获取
 
-##### 大端字节序 Big Endian
-
-​		最高有效位（MSB：Most Significant Bit）存储在最低内存地址处。
-
-​		最低有效位（LSB：Lowest Significant Bit）存储在最高内存地址处。
-
-![image-20220316235119658](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220316235119658.png)
-
-##### 小端字节序 Littel endian
-
-​		MSB存储在最高内存地址，LSB存储在最低内存地址。
-
-![image-20220316235127982](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220316235127982.png)
-
-
-
-##### 主机字节序与网络字节序
-
-不同的主机有不同的字节序，为了使得各种异构平台之间能够通信，在通信时使用同一的网络字节序。
-
-**网络字节序使用大端字节序**。
-
-> x86 小端字节序
->
-> Motorola6800 大端字节序
->
-> ARM字节序可配置*99*
-
-
-
-#### 字节序转换函数
+##### getsockname 
 
 ```c
+#include <sys/socket.h>
+
+// 获取
+int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+
+// sockfd, 本地使用的 socket 套接字
+// sockaddr, 用于传出地址结构
+// addrlen， 地址结构长度
+```
+
+>![image-20210912232319613](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210912232319613.png)
+>
+>```c
+>if ( ( connect( conn_fd, (struct sockaddr *) &srvaddr, sizeof( srvaddr ) ) ) < 0 )
+>   ERR_EXIT( "connect" );
+>
+>struct sockaddr_in localaddr;
+>socklen_t addrlen = sizeof( socklen_t );
+>if ( getsockname( conn_fd, (struct sockaddr *) &localaddr, &addrlen ) < 0 )
+>ERR_EXIT("getsockname failed");
+>
+>printf( "peer ip: %s, port: %d\n", inet_ntoa( localaddr.sin_addr )
+>  , ntohs( localaddr.sin_port ) );
+>```
+>
+
+##### getpeername
+
+```c
+#include <sys/socket.h>
+
+// 获取连接对端的地址
+int   getpeername(int   sockfd,   struct   sockaddr  *addr,  socklen_t *addrlen);
+```
+
+> 当accept时，传出地址结构使用的是空指针，后续如果需要使用地址，就需要用getpeername来获取。
+>
+> > accept地址结构使用NULL时，长度指针也需要使用NULL。
+>
+> ![image-20210912234929422](C:/Users/msi-/AppData/Roaming/Typora/typora-user-images/image-20210912234929422.png)
+
+
+
+##### gethostname / sethostname
+
+```c
+#include <unistd.h>
+
+// 获取主机名（主机名即域名）
+int gethostname(char *name, size_t len);
+int sethostname(const char *name, size_t len);
+```
+
+
+
+##### gethostbyname / gethostbyaddr
+
+```c
+#include <netdb.h>
+extern int h_errno;
+
+// 根据主机名获取所有IP地址
+struct hostent *gethostbyname(const char *name);
+
+#include <sys/socket.h>       /* for AF_INET */
+// 根据addr地址结构获取域名
+struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
+```
+
+##### `struct hostent`
+
+```c
+// The hostent structure is defined in <netdb.h> as follows:
+
+struct hostent {
+ char  *h_name;            /* official name of host */
+ char **h_aliases;         /* alias list */
+ int    h_addrtype;        /* host address type */
+ int    h_length;          /* length of address */
+ char **h_addr_list;       /* list of addresses */
+}
+#define h_addr h_addr_list[0] /* for backward compatibility */
+
+
+
+/*
+h_name -----------------> official hostname \0
+h_alias -----[]  ---> alias #1 \0
+             []  ---> alias #2 \0
+    		NULL
+h_addrtype
+h_length
+h_addr_list ----[]----> IP addr #1
+    	        []----> IP addr #2
+     		   NULL
+*/
+```
+
+The members of the hostent structure are:
+
+- `h_name `
+   The official name of the host.
+  官方域名，代表某一主页，实际上一些著名公司的域名并未使用官方域名注册
+
+- `h_aliases`
+      An array of alternative names for the host, terminated by a NULL pointer.
+      可以通过多个域名访问同一主页，同一Ip可以绑定多个域名。因此，除官方域名之外，还可以指定其他域名，通过h_aliases获得
+
+- `h_addrtype`
+      The type of address; always AF_INET or AF_INET6 at present.
+      不仅支持IPv4还支持IPv6，因此可以通过此变量获取保存在h_addr_list中的ip地址的地址族信息，若是IPv4，则此变量为AF_INET
+
+- `h_length`
+      The length of the address in bytes.
+      保存ip地址长度，IPv4为4字节，若IPv6为16字节
+
+- `h_addr_list`
+      An array of pointers to network addresses for the host (in network byte order), terminated by a NULL pointer.
+      最重要的成员，易整数形式保存域名对应的ip地址。用户较多的网站可能分配多个ip给同一域名，利用多个服务器进行负载均衡。此时同样可以通过此变量获取ip地址信息。
+
+- `h_addr `
+
+  ​	The first address in h_addr_list for backward compatibility.
+
+- 相关扩展函数
+
+  ```c++
+  void sethostent(int stayopen);
+  
+  void endhostent(void);
+  
+  void herror(const char *s);
+  
+  const char *hstrerror(int err);
+  
+  /* System V/POSIX extension */
+  struct hostent *gethostent(void);
+  
+  /* GNU extensions */
+  struct hostent *gethostbyname2(const char *name, int af);
+  
+  int gethostent_r(
+   struct hostent *ret, char *buf, size_t buflen,
+   struct hostent **result, int *h_errnop);
+  
+  int gethostbyaddr_r(const void *addr, socklen_t len, int type,
+                   struct hostent *ret, char *buf, size_t buflen,
+                   struct hostent **result, int *h_errnop);
+  
+  int gethostbyname_r(const char *name,
+                   struct hostent *ret, char *buf, size_t buflen,
+                   struct hostent **result, int *h_errnop);
+  
+  int gethostbyname2_r(const char *name, int af,
+                    struct hostent *ret, char *buf, size_t buflen,
+                    struct hostent **result, int *h_errnop);
+  ```
+
+  
+
+
+
+
+
+#### 地址转换函数
+
+​		地址转换函数将一个点分十进制的可读IP地址，和32位整数（ipv4)的标准协议地址相互转换
+
+```c
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
-uint32_t htonl(uint32_t hostlong);
+// 将一个点分十进制的可读IP地址，转换为一个包含32位整数（ipv4)的标准协议地址的in_addr结构体
+int inet_aton(const char *cp, struct in_addr *inp);
+	// inet_aton(addr, &addr_inet.sin_addr);
 
-uint16_t htons(uint16_t hostshort);
+// 将一个点分十进制的可读IP地址，转换为一个32位整数（ipv4)的标准协议地址(网络字节序)。
+// 并且可以检测无效的IP地址。
+in_addr_t inet_addr(const char *cp);
 
-uint32_t ntohl(uint32_t netlong);
+in_addr_t inet_network(const char *cp);
 
-uint16_t ntohs(uint16_t netshort);
+// 将一个32位整数（ipv4)的标准协议地址，转换为一个点分十进制的可读IP地址。
+char *inet_ntoa(struct in_addr in); // 注意char*
 
-// h - host 本地主机字节序
-// n - network 网络字节序
-// s - short  16位
-// l - long   32位
+struct in_addr inet_makeaddr(int net, int host);
+
+in_addr_t inet_lnaof(struct in_addr in);
+
+in_addr_t inet_netof(struct in_addr in);
+
+
+// Feature Test Macro Requirements for  glibc (see feature_test_macros(7)):
+inet_aton(),  inet_ntoa(): _BSD_SOURC || _SVID_SOURCE
+    
+ 
+
+// a - address, 可读的点分十进制IP字符串
+// n - network, 包含32位整数（ipv4)的标准协议地址的in_addr结构体
 ```
 
 
 
-### 套接字类型
-
-​		如果C/S两端通信使用的套接字类型不同，在客户端连接时，会提示“Protocol wrong type for socket ”
-
-```c
-/* Types of sockets.  */
-enum __socket_type
-{
-  SOCK_STREAM = 1,		/* Sequenced, reliable, connection-based
-				   byte streams.  */
-#define SOCK_STREAM SOCK_STREAM
-  SOCK_DGRAM = 2,		/* Connectionless, unreliable datagrams
-				   of fixed maximum length.  */
-#define SOCK_DGRAM SOCK_DGRAM
-  SOCK_RAW = 3,			/* Raw protocol interface.  */
-#define SOCK_RAW SOCK_RAW
-  SOCK_RDM = 4,			/* Reliably-delivered messages.  */
-#define SOCK_RDM SOCK_RDM
-  SOCK_SEQPACKET = 5,		/* Sequenced, reliable, connection-based,
-				   datagrams of fixed maximum length.  */
-#define SOCK_SEQPACKET SOCK_SEQPACKET
-  SOCK_DCCP = 6,		/* Datagram Congestion Control Protocol.  */
-#define SOCK_DCCP SOCK_DCCP
-  SOCK_PACKET = 10,		/* Linux specific way of getting packets
-				   at the dev level.  For writing rarp and
-				   other similar things on the user level. */
-#define SOCK_PACKET SOCK_PACKET
-
-  /* Flags to be ORed into the type parameter of socket and socketpair and
-     used for the flags parameter of paccept.  */
-
-  SOCK_CLOEXEC = 02000000,	/* Atomically set close-on-exec flag for the
-				   new descriptor(s).  */
-#define SOCK_CLOEXEC SOCK_CLOEXEC
-  SOCK_NONBLOCK = 00004000	/* Atomically mark descriptor(s) as
-				   non-blocking.  */
-#define SOCK_NONBLOCK SOCK_NONBLOCK
-};
-
-```
 
 
+## socket
 
-#### 面向连接的流式套接字 SOCK_STREAM
+​	`<sys/socket.h>`
 
-​		提供面向连接的、可靠的数据传输服务，数据无差错，无重复的发送，且按发送顺序接收。对应TCP协议。
-
-> 一个连接的表示使用四元组：
->
-> （ local_ip:local_port , peer_ip, peer_port）
-
-因为面向无连接，故可以在一个建立好连接的通信信道上任意持续发送或接收数据。数据经套接字内核缓冲区，被消弭掉多次发送之间的边界。
-
-#### 面向无连接的数据报式套接字 SOCK_DGRAM
-
-​		提供无连接服务，不提供无错保证，数据可能丢失或重复，并且接收顺序混乱。对应UDP协议。
-
-因为面向无连接，所以两次发送的数据之间是不关联的，各自独立称为一个自封闭的报文。每个数据报文需要单独的接收。
-
-#### 原始裸套接字 SOCK_RAW
-
-​		跨越传输层，直接对IP层进行封装操作。
-
-
-
-
-
-## socket api
+----
 
 ### socket
 
-#### socket
-
-​		创建一个套接字文件并返回一个套接字描述符。
+​		在系统中创建一个套接字文件并返回一个套接字描述符。
 
 > 与一般文件操作的`creat / open`类同。
 
@@ -344,7 +563,6 @@ int socket(int domain, int type, int protocol);
 // domain 指定通信协议族 protocol family
 // type  指定socket类型
 //    SOCK_STREAM   流式套接字.
-
 //	  SOCK_DGRAM	数据报套接字
 //	  SOCK_RAW		原始裸套接字
 //    ...
@@ -356,141 +574,136 @@ int socket(int domain, int type, int protocol);
 // 失败返回-1
 ```
 
-##### domain
+- domain
 
-协议地址族，提供套接字使用的协议分类。
+  ​	协议地址族，提供套接字使用的协议分类。
 
-![image-20210905005310112](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905005310112.png)
+  ​	![image-20210905005310112](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905005310112.png)
 
-> `AF_*` 与 `PF_*`是通过宏来一致定义的，不同之处在于，AF是 address family ，表示地址族， PF 是 protocol family ， 表示协议族。
+  > `AF_*` 与 `PF_*`是通过宏来一致定义的，不同之处在于，AF是 address family ，表示地址族， PF 是 protocol family ， 表示协议族。
 
-##### type
+- type
 
-套接字类型是指套接字的数据传输方式。
+  ​	套接字类型是指套接字的数据传输方式。
 
-```C
-/* Types of sockets.  */
-enum __socket_type
-{
-  SOCK_STREAM = 1,		/* Sequenced, reliable, connection-based
-				   byte streams.  */
-#define SOCK_STREAM SOCK_STREAM
-  SOCK_DGRAM = 2,		/* Connectionless, unreliable datagrams
-				   of fixed maximum length.  */
-#define SOCK_DGRAM SOCK_DGRAM
-  SOCK_RAW = 3,			/* Raw protocol interface.  */
-#define SOCK_RAW SOCK_RAW
-  SOCK_RDM = 4,			/* Reliably-delivered messages.  */
-#define SOCK_RDM SOCK_RDM
-  SOCK_SEQPACKET = 5,		/* Sequenced, reliable, connection-based,
-				   datagrams of fixed maximum length.  */
-#define SOCK_SEQPACKET SOCK_SEQPACKET
-  SOCK_DCCP = 6,		/* Datagram Congestion Control Protocol.  */
-#define SOCK_DCCP SOCK_DCCP
-  SOCK_PACKET = 10,		/* Linux specific way of getting packets
-				   at the dev level.  For writing rarp and
-				   other similar things on the user level. */
-#define SOCK_PACKET SOCK_PACKET
-
-  /* Flags to be ORed into the type parameter of socket and socketpair and
-     used for the flags parameter of paccept.  */
-
-  SOCK_CLOEXEC = 02000000,	/* Atomically set close-on-exec flag for the
-				   new descriptor(s).  */
-#define SOCK_CLOEXEC SOCK_CLOEXEC
-  SOCK_NONBLOCK = 00004000	/* Atomically mark descriptor(s) as
-				   non-blocking.  */
-#define SOCK_NONBLOCK SOCK_NONBLOCK
-};
-
-```
-
-> **SOCK_NONBLOCK**
->
-> ​		同`fcntl`将文件设置成`O_NONBLOCK`非阻塞是一样的。
->
-> **SOCK_CLOEXEC**
->
-> ​		如果没有该选项，需要使用`F_SETFD(long)`设置文件描述符的`FD_CLOEXEC`选项。
-
-
-
-##### protocol
-
-如果在同一协议族存在多个数据传输方式相同的协议，那么protocol将决定具体使用的协议。
-
-```c
-/* Standard well-defined IP protocols.  */
-enum
+  ```c++
+  /* Types of sockets.  */
+  enum __socket_type
   {
-    IPPROTO_IP = 0,	   /* Dummy protocol for TCP.  */
-#define IPPROTO_IP		IPPROTO_IP
-    IPPROTO_ICMP = 1,	   /* Internet Control Message Protocol.  */
-#define IPPROTO_ICMP		IPPROTO_ICMP
-    IPPROTO_IGMP = 2,	   /* Internet Group Management Protocol. */
-#define IPPROTO_IGMP		IPPROTO_IGMP
-    IPPROTO_IPIP = 4,	   /* IPIP tunnels (older KA9Q tunnels use 94).  */
-#define IPPROTO_IPIP		IPPROTO_IPIP
-    IPPROTO_TCP = 6,	   /* Transmission Control Protocol.  */
-#define IPPROTO_TCP		IPPROTO_TCP
-    IPPROTO_EGP = 8,	   /* Exterior Gateway Protocol.  */
-#define IPPROTO_EGP		IPPROTO_EGP
-    IPPROTO_PUP = 12,	   /* PUP protocol.  */
-#define IPPROTO_PUP		IPPROTO_PUP
-    IPPROTO_UDP = 17,	   /* User Datagram Protocol.  */
-#define IPPROTO_UDP		IPPROTO_UDP
-    IPPROTO_IDP = 22,	   /* XNS IDP protocol.  */
-#define IPPROTO_IDP		IPPROTO_IDP
-    IPPROTO_TP = 29,	   /* SO Transport Protocol Class 4.  */
-#define IPPROTO_TP		IPPROTO_TP
-    IPPROTO_DCCP = 33,	   /* Datagram Congestion Control Protocol.  */
-#define IPPROTO_DCCP		IPPROTO_DCCP
-    IPPROTO_IPV6 = 41,     /* IPv6 header.  */
-#define IPPROTO_IPV6		IPPROTO_IPV6
-    IPPROTO_RSVP = 46,	   /* Reservation Protocol.  */
-#define IPPROTO_RSVP		IPPROTO_RSVP
-    IPPROTO_GRE = 47,	   /* General Routing Encapsulation.  */
-#define IPPROTO_GRE		IPPROTO_GRE
-    IPPROTO_ESP = 50,      /* encapsulating security payload.  */
-#define IPPROTO_ESP		IPPROTO_ESP
-    IPPROTO_AH = 51,       /* authentication header.  */
-#define IPPROTO_AH		IPPROTO_AH
-    IPPROTO_MTP = 92,	   /* Multicast Transport Protocol.  */
-#define IPPROTO_MTP		IPPROTO_MTP
-    IPPROTO_BEETPH = 94,   /* IP option pseudo header for BEET.  */
-#define IPPROTO_BEETPH		IPPROTO_BEETPH
-    IPPROTO_ENCAP = 98,	   /* Encapsulation Header.  */
-#define IPPROTO_ENCAP		IPPROTO_ENCAP
-    IPPROTO_PIM = 103,	   /* Protocol Independent Multicast.  */
-#define IPPROTO_PIM		IPPROTO_PIM
-    IPPROTO_COMP = 108,	   /* Compression Header Protocol.  */
-#define IPPROTO_COMP		IPPROTO_COMP
-    IPPROTO_SCTP = 132,	   /* Stream Control Transmission Protocol.  */
-#define IPPROTO_SCTP		IPPROTO_SCTP
-    IPPROTO_UDPLITE = 136, /* UDP-Lite protocol.  */
-#define IPPROTO_UDPLITE		IPPROTO_UDPLITE
-    IPPROTO_MPLS = 137,    /* MPLS in IP.  */
-#define IPPROTO_MPLS           IPPROTO_MPLS
-    IPPROTO_RAW = 255,	   /* Raw IP packets.  */
-#define IPPROTO_RAW		IPPROTO_RAW
-    IPPROTO_MAX
+    SOCK_STREAM = 1,		/* Sequenced, reliable, connection-based
+  				   byte streams.  */
+  #define SOCK_STREAM SOCK_STREAM
+    SOCK_DGRAM = 2,		/* Connectionless, unreliable datagrams
+  				   of fixed maximum length.  */
+  #define SOCK_DGRAM SOCK_DGRAM
+    SOCK_RAW = 3,			/* Raw protocol interface.  */
+  #define SOCK_RAW SOCK_RAW
+    SOCK_RDM = 4,			/* Reliably-delivered messages.  */
+  #define SOCK_RDM SOCK_RDM
+    SOCK_SEQPACKET = 5,		/* Sequenced, reliable, connection-based,
+  				   datagrams of fixed maximum length.  */
+  #define SOCK_SEQPACKET SOCK_SEQPACKET
+    SOCK_DCCP = 6,		/* Datagram Congestion Control Protocol.  */
+  #define SOCK_DCCP SOCK_DCCP
+    SOCK_PACKET = 10,		/* Linux specific way of getting packets
+  				   at the dev level.  For writing rarp and
+  				   other similar things on the user level. */
+  #define SOCK_PACKET SOCK_PACKET
+  
+    /* Flags to be ORed into the type parameter of socket and socketpair and
+       used for the flags parameter of paccept.  */
+  
+    SOCK_CLOEXEC = 02000000,	/* Atomically set close-on-exec flag for the
+  				   new descriptor(s).  */
+  #define SOCK_CLOEXEC SOCK_CLOEXEC
+    SOCK_NONBLOCK = 00004000	/* Atomically mark descriptor(s) as
+  				   non-blocking.  */
+  #define SOCK_NONBLOCK SOCK_NONBLOCK
   };
+  
+  ```
 
-```
+  - **SOCK_NONBLOCK**
+
+    ​	同`fcntl`将文件设置成`O_NONBLOCK`非阻塞是一样的。
+
+  - **SOCK_CLOEXEC**
+
+    ​	如果没有该选项，需要使用`F_SETFD(long)`设置文件描述符的`FD_CLOEXEC`选项。
+
+- protocol
+
+  ​	如果在同一协议族存在多个数据传输方式相同的协议，那么protocol将决定具体使用的协议。
+
+  ```c++
+  /* Standard well-defined IP protocols.  */
+  enum
+    {
+      IPPROTO_IP = 0,	   /* Dummy protocol for TCP.  */
+  #define IPPROTO_IP		IPPROTO_IP
+      IPPROTO_ICMP = 1,	   /* Internet Control Message Protocol.  */
+  #define IPPROTO_ICMP		IPPROTO_ICMP
+      IPPROTO_IGMP = 2,	   /* Internet Group Management Protocol. */
+  #define IPPROTO_IGMP		IPPROTO_IGMP
+      IPPROTO_IPIP = 4,	   /* IPIP tunnels (older KA9Q tunnels use 94).  */
+  #define IPPROTO_IPIP		IPPROTO_IPIP
+      IPPROTO_TCP = 6,	   /* Transmission Control Protocol.  */
+  #define IPPROTO_TCP		IPPROTO_TCP
+      IPPROTO_EGP = 8,	   /* Exterior Gateway Protocol.  */
+  #define IPPROTO_EGP		IPPROTO_EGP
+      IPPROTO_PUP = 12,	   /* PUP protocol.  */
+  #define IPPROTO_PUP		IPPROTO_PUP
+      IPPROTO_UDP = 17,	   /* User Datagram Protocol.  */
+  #define IPPROTO_UDP		IPPROTO_UDP
+      IPPROTO_IDP = 22,	   /* XNS IDP protocol.  */
+  #define IPPROTO_IDP		IPPROTO_IDP
+      IPPROTO_TP = 29,	   /* SO Transport Protocol Class 4.  */
+  #define IPPROTO_TP		IPPROTO_TP
+      IPPROTO_DCCP = 33,	   /* Datagram Congestion Control Protocol.  */
+  #define IPPROTO_DCCP		IPPROTO_DCCP
+      IPPROTO_IPV6 = 41,     /* IPv6 header.  */
+  #define IPPROTO_IPV6		IPPROTO_IPV6
+      IPPROTO_RSVP = 46,	   /* Reservation Protocol.  */
+  #define IPPROTO_RSVP		IPPROTO_RSVP
+      IPPROTO_GRE = 47,	   /* General Routing Encapsulation.  */
+  #define IPPROTO_GRE		IPPROTO_GRE
+      IPPROTO_ESP = 50,      /* encapsulating security payload.  */
+  #define IPPROTO_ESP		IPPROTO_ESP
+      IPPROTO_AH = 51,       /* authentication header.  */
+  #define IPPROTO_AH		IPPROTO_AH
+      IPPROTO_MTP = 92,	   /* Multicast Transport Protocol.  */
+  #define IPPROTO_MTP		IPPROTO_MTP
+      IPPROTO_BEETPH = 94,   /* IP option pseudo header for BEET.  */
+  #define IPPROTO_BEETPH		IPPROTO_BEETPH
+      IPPROTO_ENCAP = 98,	   /* Encapsulation Header.  */
+  #define IPPROTO_ENCAP		IPPROTO_ENCAP
+      IPPROTO_PIM = 103,	   /* Protocol Independent Multicast.  */
+  #define IPPROTO_PIM		IPPROTO_PIM
+      IPPROTO_COMP = 108,	   /* Compression Header Protocol.  */
+  #define IPPROTO_COMP		IPPROTO_COMP
+      IPPROTO_SCTP = 132,	   /* Stream Control Transmission Protocol.  */
+  #define IPPROTO_SCTP		IPPROTO_SCTP
+      IPPROTO_UDPLITE = 136, /* UDP-Lite protocol.  */
+  #define IPPROTO_UDPLITE		IPPROTO_UDPLITE
+      IPPROTO_MPLS = 137,    /* MPLS in IP.  */
+  #define IPPROTO_MPLS           IPPROTO_MPLS
+      IPPROTO_RAW = 255,	   /* Raw IP packets.  */
+  #define IPPROTO_RAW		IPPROTO_RAW
+      IPPROTO_MAX
+    };
+  ```
+
+- 返回值
+
+  ![image-20210905005418723](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905005418723.png)
 
 
 
-##### 返回值
+### bind
 
-![image-20210905005418723](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905005418723.png)
+​		绑定一个本地主机地址到套接字，实质是将``socket``文件和网卡设备关联。
 
-
-
-#### bind
-
-绑定一个本地主机地址到套接字。
-
-![image-20210905014638364](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905014638364.png)
+​		![image-20210905014638364](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905014638364.png)
 
 ```c
 #include <sys/types.h>          /* See NOTES */
@@ -512,11 +725,23 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
 
 
-#### listen
+### listen
 
-将套接字用于监听进入的连接。
+​		套接字用于监听进入的连接。
 
-![image-20220704223103242](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220704223103242.png)
+​		![image-20220704223103242](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220704223103242.png)
+
+​		listen在bind之后和accept之前调用，将套接字从主动套接字变为被动套接字。
+
+​		对于一个listen之后的监听套接字，内核要维护两个队列：
+
+- 未完成队列（连接请求等待队列）
+
+  客户端发起连接后，服务器收到连接请求，等待完成TCP三次握手过程
+
+- 已完成队列
+
+​		![image-20220704223036202](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220704223036202.png)
 
 ```c
 #include <sys/types.h>          /* See NOTES */
@@ -530,35 +755,25 @@ int listen(int sockfd, int backlog);
 //  成功返回0， 失败返回-1
 ```
 
-> **backlog**
->
-> 连接请求首先会通过等待连接请求的服务端监听套接字，进入连接请求等待队列。在内核完成相关创建工作后，将连接请求队列的请求添加到已完成队列中。
->
-> 推荐使用SOMAXCONN
->
-> ![image-20220704223011409](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220704223011409.png)
+- **backlog**
 
-> listen在bind之后和accept之前调用，将套接字从主动套接字变为被动套接字。
->
-> 对于一个listen之后的监听套接字，内核要维护两个队列：
->
-> - 未完成队列（连接请求等待队列）
->
->   客户端发起连接后，服务器收到连接请求，等待完成TCP三次握手过程
->
-> - 已完成队列
->
-> ![image-20220704223036202](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220704223036202.png)
+  ​	连接请求首先会通过等待连接请求的服务端监听套接字，进入连接请求等待队列。在内核完成相关创建工作后，将连接请求队列的请求添加到已完成队列中。
 
-#### accept
+  推荐使用SOMAXCONN
 
-从已完成队列返回第一个连接，如果已完成连接队列为空，则阻塞。
+  ![image-20220704223011409](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220704223011409.png)
 
-客户端调用connect函数之前，服务器端可能率先调用accept函数，进入阻塞状态等待客户端连接请求。
+  
 
-accept自动创建与该连接请求对应的客户端通信的socket，并通过`accept`返回该socket的fd。
+### accept
 
-![](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905024228253.png)
+​		从已完成队列返回第一个连接，如果已完成连接队列为空，则阻塞。
+
+​		客户端调用connect函数之前，服务器端可能率先调用accept函数，进入阻塞状态等待客户端连接请求。
+
+​		accept自动创建与该连接请求对应的客户端通信的socket，并通过`accept`返回该socket的fd。
+
+​		![](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905024228253.png)
 
 ```c
 #include <sys/types.h>          /* See NOTES */
@@ -584,7 +799,7 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
 //				Set the close-on-exec (FD_CLOEXEC) flag on the new file descriptor.  See the description of the O_CLOEXEC flag  in  open(2) for reasons why this may be useful.
 ```
 
-##### EMFILE
+#### EMFILE
 
 ​		`accept`接收连接并创建套接字时，发现进程所打开的套接字达到了上限。
 
@@ -781,7 +996,7 @@ int accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags);
   
   
 
-#### connect
+### connect
 
 ![image-20210905031020483](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210905031020483.png)
 
@@ -800,7 +1015,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
 
 
-#### close
+### close
 
 ​		关闭套接字。
 
@@ -823,15 +1038,16 @@ int close(int fd);
 
 ​		套接字可以被多个进程共享，比如fork的子进程会共享父进程的套接字。多个进程通过引用计数的方式来共享该套接字。close 会将当前进程引用的套接字计数减去，直到所有的进程都close该套接字，最后一个调用的close才会真正的关闭该套接字。
 
-​		关闭套接字时，
+​		关闭套接字时：
 
-​		输入方向，内核会将该套接字设置为不可读，任何读操作都会返回异常。
-
-​		输出方向，内核会尝试将发送缓冲区剩余的数据发送给对端，并最后向对端发送一个FIN报文，接下来对该套接字的写操作会返回异常。
+- 输入方向，内核会将该套接字设置为不可读，任何读操作都会返回异常。
+- 输出方向，内核会尝试将发送缓冲区剩余的数据发送给对端，并最后向对端发送一个FIN报文，接下来对该套接字的写操作会返回异常。
 
 ​		此时，如果对端没有检测到套接字关闭，还继续发送数据，就会收到一个RST报文，通知对端本侧已关闭。
 
-##### shutdown
+
+
+#### shutdown
 
 ​		有选择的立即终止某个单向的数据发送或接收，也可以同时终止两个方向。
 
@@ -1055,217 +1271,9 @@ int main( int argc, char *argv [] )
 >
 >   ​		客户端连续输入1,2，shutdown时，因服务端模拟处理，未能及时返回，shutdown仅关闭写端保留读端，服务端读到EOF立即向客户端发送FIN，客户端在read中感知EOF，进行了正常退出。
 
-### sockaddr
-
-#### 地址获取
-
-##### getsockname / getpeername
-
-```c
-#include <sys/socket.h>
-
-// 获取
-int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-
-// sockfd, 本地使用的 socket 套接字
-// sockaddr, 用于传出地址结构
-// addrlen， 地址结构长度
-```
-
->![image-20210912232319613](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210912232319613.png)
->
->```c
->if ( ( connect( conn_fd, (struct sockaddr *) &srvaddr, sizeof( srvaddr ) ) ) < 0 )
->        ERR_EXIT( "connect" );
->
->struct sockaddr_in localaddr;
->socklen_t addrlen = sizeof( socklen_t );
->if ( getsockname( conn_fd, (struct sockaddr *) &localaddr, &addrlen ) < 0 )
->    ERR_EXIT("getsockname failed");
->
->printf( "peer ip: %s, port: %d\n", inet_ntoa( localaddr.sin_addr )
->       , ntohs( localaddr.sin_port ) );
->```
->
->
-
-```c
-#include <sys/socket.h>
-
-// 获取连接对端的地址
-int   getpeername(int   sockfd,   struct   sockaddr  *addr,  socklen_t *addrlen);
-```
-
-> 当accept时，传出地址结构使用的是空指针，后续如果需要使用地址，就需要用getpeername来获取。
->
-> > accept地址结构使用NULL时，长度指针也需要使用NULL。
->
-> ![image-20210912234929422](C:/Users/msi-/AppData/Roaming/Typora/typora-user-images/image-20210912234929422.png)
 
 
-
-##### gethostname / gethostbyname / gethostbyaddr
-
-- hostname
-
-  ```c
-  #include <unistd.h>
-  
-  // 获取主机名（主机名即域名）
-  int gethostname(char *name, size_t len);
-  int sethostname(const char *name, size_t len);
-  ```
-
-- hostbyname / hostbyaddr
-
-  ```c
-  #include <netdb.h>
-  extern int h_errno;
-  
-  // 根据主机名获取所有IP地址
-  struct hostent *gethostbyname(const char *name);
-  
-  #include <sys/socket.h>       /* for AF_INET */
-  // 根据addr地址结构获取域名
-  struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
-  ```
-
-  - `struct hostent`
-  
-    ```c
-    // The hostent structure is defined in <netdb.h> as follows:
-    
-    struct hostent {
-     char  *h_name;            /* official name of host */
-     char **h_aliases;         /* alias list */
-     int    h_addrtype;        /* host address type */
-     int    h_length;          /* length of address */
-     char **h_addr_list;       /* list of addresses */
-    }
-    #define h_addr h_addr_list[0] /* for backward compatibility */
-    
-    
-    
-    /*
-    h_name -----------------> official hostname \0
-    h_alias -----[]  ---> alias #1 \0
-                 []  ---> alias #2 \0
-        		NULL
-    h_addrtype
-    h_length
-    h_addr_list ----[]----> IP addr #1
-        	        []----> IP addr #2
-         		   NULL
-    */
-    ```
-  
-    > The members of the hostent structure are:
-    >
-    > - `h_name `
-    >   	 The official name of the host.
-    >   	官方域名，代表某一主页，实际上一些著名公司的域名并未使用官方域名注册
-    >
-    > - `h_aliases`
-    >        An array of alternative names for the host, terminated by a NULL pointer.
-    >        可以通过多个域名访问同一主页，同一Ip可以绑定多个域名。因此，除官方域名之外，还可以指定其他域名，通过h_aliases获得
-    >
-    > - `h_addrtype`
-    >       The type of address; always AF_INET or AF_INET6 at present.
-    >       不仅支持IPv4还支持IPv6，因此可以通过此变量获取保存在h_addr_list中的ip地址的地址族信息，若是IPv4，则此变量为AF_INET
-    >
-    > - `h_length`
-    >       The length of the address in bytes.
-    >       保存ip地址长度，IPv4为4字节，若IPv6为16字节
-    >
-    > - `h_addr_list`
-    >       An array of pointers to network addresses for the host (in network byte order), terminated by a NULL pointer.
-    >       最重要的成员，易整数形式保存域名对应的ip地址。用户较多的网站可能分配多个ip给同一域名，利用多个服务器进行负载均衡。此时同样可以通过此变量获取ip地址信息。
-    >
-    > - `h_addr `
-    >
-    >   ​	The first address in h_addr_list for backward compatibility.
-  
-    
-  
-  - 相关扩展函数
-  
-    ```c
-    void sethostent(int stayopen);
-    
-    void endhostent(void);
-    
-    void herror(const char *s);
-    
-    const char *hstrerror(int err);
-    
-    /* System V/POSIX extension */
-    struct hostent *gethostent(void);
-    
-    /* GNU extensions */
-    struct hostent *gethostbyname2(const char *name, int af);
-    
-    int gethostent_r(
-     struct hostent *ret, char *buf, size_t buflen,
-     struct hostent **result, int *h_errnop);
-    
-    int gethostbyaddr_r(const void *addr, socklen_t len, int type,
-                     struct hostent *ret, char *buf, size_t buflen,
-                     struct hostent **result, int *h_errnop);
-    
-    int gethostbyname_r(const char *name,
-                     struct hostent *ret, char *buf, size_t buflen,
-                     struct hostent **result, int *h_errnop);
-    
-    int gethostbyname2_r(const char *name, int af,
-                      struct hostent *ret, char *buf, size_t buflen,
-                      struct hostent **result, int *h_errnop);
-    ```
-  
-    
-  
-  
-
-#### 地址转换函数
-
-​		地址转换函数将一个点分十进制的可读IP地址，和32位整数（ipv4)的标准协议地址相互转换
-
-```c
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-// 将一个点分十进制的可读IP地址，转换为一个包含32位整数（ipv4)的标准协议地址的in_addr结构体
-int inet_aton(const char *cp, struct in_addr *inp);
-	// inet_aton(addr, &addr_inet.sin_addr);
-
-// 将一个点分十进制的可读IP地址，转换为一个32位整数（ipv4)的标准协议地址(网络字节序)。
-// 并且可以检测无效的IP地址。
-in_addr_t inet_addr(const char *cp);
-
-in_addr_t inet_network(const char *cp);
-
-// 将一个32位整数（ipv4)的标准协议地址，转换为一个点分十进制的可读IP地址。
-char *inet_ntoa(struct in_addr in); // 注意char*
-
-struct in_addr inet_makeaddr(int net, int host);
-
-in_addr_t inet_lnaof(struct in_addr in);
-
-in_addr_t inet_netof(struct in_addr in);
-
-
-// Feature Test Macro Requirements for  glibc (see feature_test_macros(7)):
-inet_aton(),  inet_ntoa(): _BSD_SOURC || _SVID_SOURCE
-    
- 
-
-// a - address, 可读的点分十进制IP字符串
-// n - network, 包含32位整数（ipv4)的标准协议地址的in_addr结构体
-```
-
-
-
-### sockopt
+## sockopt
 
 ```c
 #include <sys/types.h>          /* See NOTES */

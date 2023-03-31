@@ -453,19 +453,67 @@ using Jstring = basic_string<Jchar>;
 
 ## basic_string_view
 
-​		initializing (or copying) a `std::string` is slow.To address the issue with `std::string` being expensive to initialize (or copy), C++17 introduced `std::string_view`。
+​		字符序列上进行的最常见的操作是作为参数传递给一个函数去读，可以是pass by value，pass by reference 或者传递C风格的字符串指针。
 
-​		`std::string_view` provides read-only access to an *existing* string (a C-style string literal, a `std::string`, or a char array) without making a copy.
+​		在许多系统中，还提供其他标准库没有的字符串类型。
 
->  could view `std::string_view` as an improved `const reference to string`.
+​		拷贝或初始化一个`std::string`是比较慢的，因为涉及到独立内存空间的构建。
+
+​		在所有这些情况下，传递子字符串时，会有额外的复杂性。为此标准库提供了``string_view``，表示字符序列的一对指针和长度。
+
+```c++
+std::string_view => {std::stirng::begin(), std::string::size()}
+							↓
+                              |H|e|l|l|o| |w|o|r|l|d|\0|
+```
+
+​		`std::string_view`提供了对已经分配存储的字符串(包括 C风格字符串字面值， `std::string`，或``char``数组)的只读访问，而无需复制。它不拥有它所指向的字符，是`std::string`的观察者模式。
+
+>  ​		可以将``std::string_view``视为改进的``const std::string&``：
+>
+>  - 它可以用于以多种不同方式存储的字符序列
+>  - 可以很容易地传递一个子字符串
+>  - 不需要创建一个字符串来传递c风格的字符串参数
+>
+>  ​        `std::string_view`的一个重要限制是它是某个字符序列的只读视图。
+>
+>  ​		例如，不能使用``string_view``将字符序列传递给将参数修改为小写的函数。为此，可以考虑使用``std::span``
 
 ```c++
 std::string_view text{ "hello" }; // view the text "hello", which is stored in the binary
 std::string_view str{ text }; // view of the same "hello"
 std::string_view more{ str }; // view of the same "hello"
+
+/////////////////////////////////////////////////////////////////////
+
+string cat(string_view sv1, string_view sv2)
+{
+     string res {sv1};           // initialize from sv1
+     return res += sv2;        // append from sv2 and return
+}
+
+string king = "Harold";
+auto s1 = cat(king,"William");                          // HaroldWilliam: string and const char*
+auto s2 = cat(king,king);                                   // HaroldHarold: string and string
+auto s3 = cat("Edward","Stephen"sv);           // EdwardStephen: const char * and string_view
+auto s4 = cat("Canute"sv,king);                      // CanuteHarold
+auto s5 = cat({&king[0],2},"Henry"sv);           // HaHenry
+auto s6 = cat({&king[0],2},{&king[2],4});         // Harold
 ```
 
 > no more copies of the string “hello” are created. The string “hello” is stored in the binary and is not allocated at run-time.
+
+​		`string_view`定义了一个范围，因此我们可以遍历它的字符。
+
+```c++
+void print_lower(string_view sv1)
+{
+    for (char ch : sv1)
+        cout << tolower(ch);
+}
+```
+
+
 
 ​		When we copy a `std::string_view`, the new `std::string_view` observes the same string as the copied-from `std::string_view` is observing. 
 
@@ -518,17 +566,17 @@ void printString(std::string str) { std::cout << str << '\n'; }
 printString(static_cast<std::string>(sv)); // okay, we can explicitly cast a std::string_view to a std::string
 ```
 
-​		We can create string literals with type `std::string_view` by using a `sv` suffix after the double-quoted string literal.
+​		可以把``string_view``看作是一种指针，要被使用，它必须指向某物。因此函数返回``std::string_view`` 常常是危险的。返回的字符串在`string_view`被使用之前就销毁了。
 
 ```c++
-std::cout << "foo\n";   // no suffix is a C-style string literal
-std::cout << "goo\n"s;  // s suffix is a std::string literal
-std::cout << "moo\n"sv; // sv suffix is a std::string_view literal
+string_view bad()
+{
+    string s = "Once upon a time";
+    return {&s[5],4};                // bad: returning a pointer to a local
+}
 ```
 
-> The “sv” suffix lives in the namespace `std::literals::string_view_literals`. The easiest way to access the literal suffixes is via using directive `using namespace std::literals`.
-
-​		Returning a std::string_view from a function is usually a bad idea. 
+ 		对``std::string_view``的范围外访问行为是未定义的。使用``at()``进行范围检查的访问，会抛出``std::out_of_range``来尝试超出范围的访问，或者使用``gsl::string_span``.
 
 ​		change the viewed string, the changes are reflected in the `std::string_view`
 
@@ -663,6 +711,20 @@ std::cout << (static_cast<std::string>(v) + s) << '\n';
 ```
 
 
+
+### `std::string_view` literal
+
+​		We can create string literals with type `std::string_view` by using a `sv` suffix after the double-quoted string literal.
+
+```c++
+std::cout << "foo\n";   // no suffix is a C-style string literal
+std::cout << "goo\n"s;  // s suffix is a std::string literal
+std::cout << "moo\n"sv; // sv suffix is a std::string_view literal
+```
+
+​		The “sv” suffix lives in the namespace `std::literals::string_view_literals`. The easiest way to access the literal suffixes is via using directive `using namespace std::literals`.
+
+​		当从``const char*``构造一个``string_view``，这需要计算字符数。对于``"Stephen"sv``，长度在编译时计算。
 
 ## char_traits
 
