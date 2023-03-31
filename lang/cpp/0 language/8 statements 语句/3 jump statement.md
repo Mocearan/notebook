@@ -41,3 +41,19 @@ tryAgain: // this is a statement lable
 ​		Avoid `goto statements` (unless the alternatives are significantly worse for code readability).
 
 > ​		One notable exception is when you need to exit a nested loop but not the entire function -- in such a case, a `goto` to just beyond the loops is probably the cleanest solution.
+>
+> ```c++
+> void do_something(int n, int m)
+> {
+>     for(int i = 0; i < n; ++i)
+>         for(int j = 0; j < m; ++j)
+>             if(nm[i][j] == a)
+>                 goto found;
+>     found:
+>     
+> }
+> ```
+>
+> 
+
+​		c++中使用`goto`离开块，块上的自动变量的析构函数仍然会被调用。

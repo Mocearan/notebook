@@ -33,6 +33,50 @@ while (condition);
 
 ​		Favor while loops over do-while when given an equal choice.
 
+
+
+### do-while(0)
+
+​		`do-while(0)`的作用是使得多条语句成块。
+
+- 一个应用是在编写宏函数时，使得多条语句成块避免编译错误。
+
+  ```c++
+  #define F(x) do { \
+  	statement_one; \
+  	statement_two; \
+  }while(0)
+  
+  
+  if(cond) 
+      Foo(x);
+  else
+      ...
+  ```
+
+- 另一个应用是构成局部作用域，用以跳过代码，避免goto的使用
+
+  ```c++
+  void func()
+  {
+  	do {
+          if(cond)
+              break; // goto error handle
+          
+          // some work
+      } while(0);
+      
+      
+      // error handle
+  }
+  ```
+
+  
+
+
+
+
+
 ## for
 
 ​		The **for statement** (also called a **for loop**) is preferred when we have an obvious loop variable because it lets us easily and concisely define, initialize, test, and change the value of loop variables.
@@ -92,7 +136,12 @@ for(element_declaration : container)
 
 ​		`element_declaration` 具有相同的类型，因此，通常使用`auto`来进行类型推断。对于只读的复合类型，往往使用`const auto &`来进行访问。
 
-​		支持`range-for`需要为被迭代的类中实现`begin() / end()`函数。
+​		支持`range-for`需要为被迭代的类中实现`begin() / end()`函数，或者允许通过`begin(x) / end(x)`得到相应的迭代器。
+
+- 编译器首先查找可用的成员`begin / end`
+  - 找到但不可用则`range-for`错误
+- 否则，则外层作用域继续寻找`begin / end`
+  - 如果找不到或找到的不能用，则`range-for`错误。
 
 ```c++
 template<typename T>
@@ -102,7 +151,7 @@ template<typename T>
 T* end(Container<T>& x) { return x.begin() + x.size(); }
 ```
 
-​		
+​		对于内置数组，编译器用`arr / arr+N`来代替`begin / end`。】=、
 
 ```c++
 constexpr int fibonacci[]{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };

@@ -1,8 +1,10 @@
 # constant
 
-​		a **constant** is a fixed value that may not be changed. 
+​		常量具有不能改变的固定值。
 
-​		C++ has two kinds of constants: literal constants, and symbolic constants.
+​		从形式上说，c++有两种常量：字面常量和符号常量。
+
+​		
 
 ## literal constant
 
@@ -364,15 +366,52 @@ Use the following procedure:
 - Trim off any leading zeros (on the left end of the significand)
 - Trim off any trailing zeros (on the right end of the significand) only if the original number had no decimal point. We’re assuming they’re not significant unless otherwise specified.
 
-![image-20220417120743894](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220417120743894.png)
+![image-20230318154929611](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230318154929611.png)
 
 
+
+### user-defined lieraral type
+
+​		含有`constexpr`构造函数的类称为字面值常量类型。
+
+​		构造函数必须足够简单才能声明成`constexpr`：
+
+- 函数体必须为空
+- 所有成全都是用潜在的常量表达式初始化的
+
+```c++
+constexpr Point origo{0,0};
+constexpr int z = origo.x;
+
+constexpr Point a[] = {
+    origo, Point{1,1}, Point{2,2}, origo.move{3,3};
+}
+```
 
 
 
 
 
 ## symbolic constant
+
+​		c++提供了两种符号常量：
+
+- 编译时常量：表达式在编译时求值
+  - constexpr / enum / macro
+- 运行时常变量
+  - const variables
+
+​		对于`constexpr`和`const`的区别，`constexpr`表征一个编译期计算为常量的表达式，而`const`约束对一个变量的访问接口是常量性（只读）的。
+
+​		人们更倾向于使用命名的符号常量而非字面量，因为：
+
+- 命名常量使得代码易于理解和维护
+- 某些语境下要求必须使用常量表达式（数组尺寸、case标签、template中的常量模板参数
+- 嵌入式系统中，不可修改的数据往往置于只读内存，因为与动态内存想必，只读内存更廉价（价格、功耗）、空间也更大。系统崩溃时只读内存的数据也基本上不受影响。
+- 如果在编译时完成了初始化操作，即使在多线程系统中也不会发生针对该对象的数据竞争。
+- 编译时求值一次，把你在运行时多次求值的效率高很多。
+
+
 
 ### symbolic type
 
@@ -395,49 +434,9 @@ C++ actually has two different kinds of constants:
 
   ​	Compile-time constants enable the compiler to perform optimizations that aren’t available with runtime constants.
 
-### const variables
+### compile-time constants
 
-​		Any variable that should not be modifiable after initialization and whose initializer is not known at compile-time should be declared as const.
-
-​		`const`的含义是”承诺不改变对象的值”，主要用于接口说明。
-
-> 把变量传入函数时就不必担心变量会在函数内部被改变，编译器负责确认并执行const的承诺。
-
-#### compile-time constants
-
-​		simply put the `const` keyword either before or after the variable type, like so:
-
-```c++
-const double gravity { 9.8 };  // preferred use of const before type
-int const sidesInSquare { 4 }; // "east const" style, okay, but not preferred
-const int something { 1 + 2 }; // the compiler can resolve this at compiler time
-```
-
-​		Const variables *must* be initialized when you define them, and then that value can not be changed via assignment:
-
-```c++
-const double gravity; // error: const variables must be initialized
-gravity = 9.9; // error: const variables can not be changed
-```
-
-#### Runtime constants
-
-​		Any variable that should not be modifiable after initialization and whose initializer is known at compile-time should be declared as constexpr.
-
-​		const variables can be initialized from other variables (including non-const ones):
-
-```c++
-const int usersAge { age };
-
-void printInt(const int x) // x is a runtime constant because the value isn't known until the program is run
-{
-    std::cout << x;
-}
-```
-
-
-
-### constexpr
+#### constexpr
 
 ​		ensures that a constant must be a compile-time constant.
 
@@ -468,11 +467,53 @@ std::cout << x + y; // x + y evaluated at compile-time
 
 - 定义为`constexpr`的函数必须非常简单，只能有一条用于计算某个值的`return`语句。
 
+- 当接受常量（字面值、符号常量中的编译时常量、被常量表达式初始化的常变量）时，结果就是一个常量表达式。
+
 - 接受非常量实参的`constexpr`函数其结果就不会是一个常量表达式。
 
   > 即`constexpr`函数可以兼容常量表达式求值，和非常量表达式求值两种上下文环境，不必进行常量性重载。
+  
+- `constexpr`的基底含义仍旧是只读，因此声明为`constexpr`的函数不必限定为`const`函数
 
-### macro
+  ```c++
+  class Point{
+     constexpr Point move(int dx, intdy) /* const */ {return {x+dx, y + dy};} 
+  };
+  
+  ```
+
+- `constexpr`函数能够接收`const&`参数，因为`const&`引用的是值。
+
+  ```c++
+  template<>
+  class complex<double>
+  {
+  public:
+      constexpr complex(double re = 0.0, double im = 0.0);
+      constexpr complex(const complex<float>&);
+      explicit constexpr complex(const complex<long double>&);
+      
+      constexpr double real();
+      void real(double);
+      constexpr double image();
+      void image(double);
+  
+  	complex<double>& operator=(double);
+      complex<double>& operator+=(double);
+  };
+  
+  /////
+  constexpr complex<float> z1{1,2};
+  constexpr double re = z1.real();
+  constexpr double im = z1.image();
+  
+  constexpr complex<double> z2{re, im};
+  constexpr complex<double> z3{z1}; // 编译器识别出 z1是一个字面值常量类型，而const complex<double>&引用的是一个常量值（不是指针或引用等其他东西）
+  ```
+
+  
+
+#### macro
 
 ​		Avoid using #define to create symbolic constants macros. Use const or constexpr variables instead.
 
@@ -480,44 +521,58 @@ std::cout << x + y; // x + y evaluated at compile-time
 - macros can have naming conflicts with normal code
 - macros don’t follow normal scoping rules
 
+### const variables
 
+​		任何语义上一经初始化就不应该再改变，并且初始化器在编译期不能确定的变量都应当声明为常变量。
 
-## Const function parameters and return values
+> ​		Any variable that should not be modifiable after initialization and whose initializer is not known at compile-time should be declared as const.
 
-```cpp
-void printInt(const int x)
-{
-    std::cout << x;
-}
+​		`const`的含义是”承诺不改变对象的值”，其说明的主体是对象的访问形式，主要用于接口说明。即“对象接口、或对对象的访问操作承诺不改变对象的值”。
+
+> 需要注意的是直接使用对象也是一种对象访问的接口形式。
+>
+> 在声明符一节详细说明了对象访问。
+>
+> 一个指针或引用涉及两个对象，关于它们的常量性讨论在指针或引用小节进行说明。这里只讨论一般的常变量性质。对于指针或引用，其本质上也是对这种常变量的应用。
+
+​		声明常变量就不必担心变量会在操作内部被改变，编译器负责确认并执行`const`的承诺。
+
+#### 常变量的性质
+
+- 常变量只能初始化，不能被赋值
+  - 常变量可以被常量表达式初始化，这种常变量可以用在常量表达式中
+  - 常变量可以被非常量表达式初始化，这种常变量不可以用在常量表达式中
+  - 通常，定义概念上的常量时，指符号化的字面量，应该使用`constexpr`
+    - 不能使用c++11时，常用枚举值类代替`constexpr`的功能，来替换`const`
+
+- 常变量可以赋值变量，常变量不能被赋值
+- 指针可以赋值给常指针，表示以常量访问的形式访问原指针索引的对象
+- 常指针不能赋值给指针，常指针的常量性限定丢失
+
+> 常变量可以初始化自字面量、常变量或变量，因为常变量的创建是独立变量的拷贝。
+>
+> 常指针间接访问对象，这里的常是限定指针对索引对象的访问形式，而非指针本身。除非将指针本身声明为常变量（常指针常变量）
+
+#### 常变量的声明
+
+##### 常变量替换字面量
+
+​		simply put the `const` keyword either before or after the variable type, like so:
+
+```c++
+const double gravity { 9.8 };  // preferred use of const before type
+int const sidesInSquare { 4 }; // "east const" style, okay, but not preferred
+const int something { 1 + 2 }; // the compiler can resolve this at compiler time
 ```
 
-​		Making a function parameter const enlists the compiler’s help to ensure that the parameter’s value is not changed inside the function. Note that we did not provide an explicit initializer for our const parameter -- the value of the argument in the function call will be used as the initializer in this case.
+​		Const variables *must* be initialized when you define them, and then that value can not be changed via assignment:
 
-​		Function parameters for arguments passed by value should not be made const.
+```c++
+const double gravity; // error: const variables must be initialized
+gravity = 9.9; // error: const variables can not be changed
+```
 
-> we generally don’t care if the function changes the value of the parameter (since it’s just a copy that will be destroyed at the end of the function anyway)
-
-​		Don’t use const with return by value.
-
-## const variable name
-
-- Some programmers prefer to use all upper-case names for const variables. 
-
-- Others use normal variable names with a ‘k’ prefix. 
-
-- However, we will use normal variable naming conventions, which is more common. 
-
-  > ​		Const variables act exactly like normal variables in every case except that they can not be assigned to, so there’s no particular reason they need to be denoted as special.
-
-
-
-## symbolic constants in multi-file program
-
-​		In many applications, a given symbolic constant needs to be used throughout your code (not just in one location). These can include physics or mathematical constants that don’t change (e.g. pi or Avogadro’s number), or application-specific “tuning” values (e.g. friction or gravity coefficients). Instead of redefining these every time they are needed, it’s better to declare them once in a central location and use them wherever needed. That way, if you ever need to change them, you only need to change them in one place.
-
-
-
-## magic numbers
+###### magic numbers
 
 ​		**Avoid magic numbers, use symbolic constants instead**
 
@@ -543,6 +598,83 @@ const int maxStudentsPerSchool{ numClassrooms * maxStudentsPerClass };
 > idGenerator = idGenerator + 1; // fine: we're just incrementing our generator
 > int kmtoM(int km) { return km * 1000; } // fine: it's obvious 1000 is a conversion factor
 > ```
+
+
+
+##### 变量的常变量副本
+
+​		Any variable that should not be modifiable after initialization and whose initializer is known at compile-time should be declared as constexpr.
+
+​		const variables can be initialized from other variables (including non-const ones):
+
+```c++
+const int usersAge { age };
+
+void printInt(const int x) // x is a runtime constant because the value isn't known until the program is run
+{
+    std::cout << x;
+}
+```
+
+
+
+
+
+
+
+#### 操作的常量性
+
+​		Const function parameters and return values。
+
+​		函数的参数列表，通过不同的声明符，说明了对实参对象的访问方式。
+
+​		函数的返回值，通过不同的声明符，说明了操作限定的对返回值的访问方式。
+
+- 首先说明，`const &`能够延长对象的生命周期。
+
+```cpp
+void printInt(const int x)
+{
+    std::cout << x;
+}
+```
+
+​		Making a function parameter const enlists the compiler’s help to ensure that the parameter’s value is not changed inside the function. Note that we did not provide an explicit initializer for our const parameter -- the value of the argument in the function call will be used as the initializer in this case.
+
+​		Function parameters for arguments passed by value should not be made const.
+
+> we generally don’t care if the function changes the value of the parameter (since it’s just a copy that will be destroyed at the end of the function anyway)
+
+​		不要在`return by value`的函数返回值上使用`const`，`return by value`往往有用。但`return by pointer`往往比较危险。
+
+
+
+#### 常量性操作
+
+​		用在类成员中，说明成员函数的操作对对象是常量性的，不会改变对象的状态。
+```c++
+void A::getX() const;
+```
+
+
+
+
+
+#### const variable name
+
+- Some programmers prefer to use all upper-case names for const variables. 
+
+- Others use normal variable names with a ‘k’ prefix. 
+
+- However, we will use normal variable naming conventions, which is more common. 
+
+  > ​		Const variables act exactly like normal variables in every case except that they can not be assigned to, so there’s no particular reason they need to be denoted as special.
+
+
+
+### symbolic constants in multi-file program
+
+​		In many applications, a given symbolic constant needs to be used throughout your code (not just in one location). These can include physics or mathematical constants that don’t change (e.g. pi or Avogadro’s number), or application-specific “tuning” values (e.g. friction or gravity coefficients). Instead of redefining these every time they are needed, it’s better to declare them once in a central location and use them wherever needed. That way, if you ever need to change them, you only need to change them in one place.
 
 
 
