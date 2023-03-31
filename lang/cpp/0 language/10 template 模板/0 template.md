@@ -40,9 +40,35 @@ template < 形参列表 > concept 概念名 = 约束表达式 ;	// (3)	(C++20 �
 
 
 
-## parameterized 参数化
+## tempalte compilaiton model 模板编译检查
 
-​		The **template<typename T>** prefix makes **T** a type parameter of the declaration it prefixes.
+​		模板参数会根据其概念对参数进行检查。在此处发现的错误将立即报告。
+
+​		无法在此时检查的内容（如，无约束模板形参的参数）将推迟到使用一组模板参数生成模板代码的时间：“在模板实例化时”。
+
+​		实例化时类型检查的一个副作用是，类型错误在编译期较晚的时候才被检测到。
+
+> ​		此外，由于编译器没有类型信息来提示程序员的意图，并且通常只有在组合了程序中多个位置的信息后才会发现问题，因此，延迟检查通常会导致非常糟糕的复杂错误消息。
+
+​		模板实例化时类型检查，检查模板定义中参数的使用。这提供了一种通常被称为`duck type`的编译时变体。
+
+> ​		如果它像鸭子一样走路，它像鸭子一样嘎嘎叫，它就是鸭子。
+
+​		或者更专业的说，对值进行操作，操作的存在和意义完全取决于它的操作数值。
+
+> ​		这与另一种观点不同，即对象具有类型，类型决定操作的存在和含义。值“活”在对象中。
+>
+> ​		这就是c++中对象(例如变量)的工作方式，只有满足对象要求的值才能放入其中。在编译时使用模板所做的大多不涉及对象，只涉及值。
+>
+> ​		例外是在``constexpr``函数中作为编译器内部对象使用的局部变量。
+
+​		使用无约束模板，其完整定义必须在其使用点的作用域内。当使用头文件和``#include``时，这意味着模板定义在头文件中，而不是在``.cpp``文件中。例如，标准头文件``<vector>``保存了vector的定义。
+
+​		当使用模块时，这种情况发生了变化。使用模块，可以以相同的方式组织普通函数和模板函数的源代码。模块被半编译为表示形式，以便快速导入和使用。可以将这种表示方式看作是一个易于遍历的图，其中包含所有可用的范围和类型信息，并由允许快速访问单个实体的符号表支持。
+
+## parameterized 类型参数化
+
+​		The ``template<typename T>`` prefix makes **T** a type parameter of the declaration it prefixes.
 
 ​		 It is C++’s version of the mathematical “for all T” or more precisely “for all types T.” If you want the mathematical “for all T, such that P(T),” you use concepts。
 
@@ -54,11 +80,29 @@ template < 形参列表 > concept 概念名 = 约束表达式 ;	// (3)	(C++20 �
 
 > 如容器提供拷贝操作，那么容器要求元素类型是可拷贝的。
 
-​		This **template<Element T>** prefix is C++’s version of mathematic’s “for all T such that **Element(T)**”; that is, **Element** is a predicate that checks whether **T** has all the properties that a **Vector** requires. Such a predicate is called a *concept*。
+​		This `template<Element T>` prefix is C++’s version of mathematic’s “for all T such that **Element(T)**”; that is, **Element** is a predicate that checks whether **T** has all the properties that a **Vector** requires. Such a predicate is called a *concept*。
 
 ​		A template argument for which a concept is specified is called a *constrained argument* and a template for which an argument is constrained is called a *constrained template*.
 
 ​		For unconstrained parameters, that type check cannot be done until the types of all entities involved are available, so it can occur unpleasantly late in the compilation process, at instantiation time , and the error messages are often atrocious.
+
+### non-type template parameters 非类型模板参数
+
+​		非类型模板参数是一种模板形参，其中形参的类型是预定义的，并被替换为传入的实参的`constexpr`值。
+
+> 非类型模板形参一般在模板类中作为明确的值来使用，且在编译阶段就要使用，如果不是`constexpr`就会产生编译错误。
+
+​		非类型模板参数可以是一下任意一种类型：
+
+- integral type 整型
+- enumeration type 枚举类型
+- pointer or reference to a class object 类对象的指针或引用
+- pointer or reference to a function 函数指针或引用
+- pointer or reference to a class member function 成员函数指针或引用
+- std::nullptr_t 空指针类型
+- floating point type 浮点类型
+
+
 
 ​		类型模板参数可以使用具体的值。
 
@@ -131,6 +175,115 @@ outs<arr>();             // writes: Weird workaround!
 
 - lambda表达式会以捕获列表生成一个具有相同函数原型的函数对象。如果成员函数中定义的lambda需要使用此类对象时，需要捕获`[this / *this]`
 
+
+
+
+
+### variadic tempalte 可变参数模板
+
+​		模板可以接受任意数量任意类型的参数，这样的模板称为可变参数模板
+
+​		传统上，如果模板参数可变，需要将第一个参数和其他参数区分对待，然后递归的用参数列表的后续参数递归解参数包，直到参数包为空。参数包为空时，因为和原有的模板参数列表形式不同，因此需要一个另外的同名空参函数作为递归终结条件（terminator）。
+
+> A parameter declared with a **...** is called a *parameter pack*. 		
+>
+> 终止子本身也是一个实例，可以被实例化使用。
+
+```c++
+template<typename T>
+concept Printable = requires(T t) { std::cout << t; } // just one operation!
+
+void print()
+{
+    // what we do for no arguments: nothing
+}
+
+template<Printable T, Printable... Tail> // The Printable... indicates that Tail is a sequence of types.
+void print(T head, Tail... tail)
+{
+    cout << head << ' ';           // first, what we do for the head
+    print(tail...);                       // then, what we do for the tail
+}
+```
+
+- The **Printable...** indicates that **Tail** is a sequence of types.
+- The **Tail...** indicates that **tail** is a sequence of values of the types in **Tail**.
+
+​		如果不允许零参数的情况，可以通过`if constexpr`编译时消除终止调用`print()`。通过`if constexpr`，和表达式`sizeof...`，能够在函数内部判别终止条件。
+
+```c++
+template<Printable T, Printable... Tail>
+void print(T head, Tail... tail)
+{
+    cout << head << ' ';
+    if constexpr(sizeof...(tail)> 0)
+        print(tail...);
+}
+```
+
+
+
+​		变参模板的优点是可以灵活的接受任何传递的模板实参，缺点是：
+
+- The recursive implementations can be tricky to get right.
+- The type checking of the interface is a possibly elaborate template program.
+- The type checking code is ad hoc, rather than defined in the standard.
+- The recursive implementations can be surprisingly expensive in compile time and compiler memory requirements.
+
+#### 折叠表达式
+
+​		为了简化简单可变模板的实现，C++在参数包的元素上提供了有限形式的迭代：
+
+```c++
+template<Number... T>
+int sum(T... v)
+{
+    return (v + ... + 0);        // add all elements of v starting with 0
+}		// (((((0+v[0])+v[1])+v[2])+v[3])+v[4]). That is, starting from the left where the 0 is.
+```
+
+​		折叠表达式是一个非常强大的抽象，显然与标准库``accumulate()``有关，在不同的语言和社区中有各种各样的名称。在C++中，折叠表达式目前受到限制，以简化可变模板的实现。
+
+​		折叠不必执行算数计算：
+
+```c++
+template<Printable ...T>
+void print(T&&... args)
+{
+    (std::cout << ... << args) << '\n';     // print all arguments
+}
+
+print("Hello!"s,' ',"World ",2017);       // (((((std::cout << "Hello!"s) << ' ') << "World ") << 2017) << '\n');
+```
+
+
+
+#### 参数转发
+
+​		通过接口原样传递参数是可变参数模板的一个重要用途。
+
+​		考虑一个网络输入通道的概念，其移动值的实际方法是一个参数。不同的传输机制有不同的构造函数参数集:
+
+```c++
+template<concepts::InputTransport Transport>
+class InputChannel {
+public:
+    // ...
+    InputChannel(Transport::Args&&... transportArgs)
+            : _transport(std::forward<TransportArgs>(transportArgs)...) {}
+    // ...
+    Transport _transport;
+};
+```
+
+​		`std::forward()`用于将参数以原样的方式转发给另一个函数。
+
+> ​		这里的重点是``InputChannel``的编写器可以构造``Transport``类型的对象，而不必知道构造特定``Transport``需要什么参数。I
+>
+> ​		`nputChannel`的实现者只需要知道所有传输对象的通用用户界面(common user interface)。
+
+​		转发在基础库中非常常见，在这些库中，通用性和低运行时开销是必要的，并且非常通用的接口是常见的。
+
 ## template instantiation 模板实例化
 
 ​		A template plus a set of template arguments is called an *instantiation* or a *specialization*.
@@ -199,33 +352,6 @@ int max(int x, int y)
 
 > 当在模板实例化时，在实参中传递中包含模板参数时，就可以使用模板实参推导。
 
-### 可变参数模板
-
-​		实现可变参数模板时，如果传递多个参数，需要将第一个参数和其他参数区分对待。
-
-```c++
-template<typename T, typename... Tail>
-void f(T head, Tail... tail)
-{
-	g(head);
-    f(tail...);
-}
-
-void f() {}
-```
-
-​		可变参数的解析实际上是递归解参数包，直到参数包为空时，需要一个另外的同名空参函数作为终结条件。
-
-```c++
-template<typename T>
-void g(T x)
-{
-    cout << x << " ";
-}
-
-f(0.2, 'c', "hello", 0, false);
-```
-
 
 
 ### 模板参数技巧
@@ -264,25 +390,9 @@ using StringMap = Map<std::string, V>;
 
 
 
-## non-type template parameters 非类型模板参数
-
-​		非类型模板参数是一种模板形参，其中形参的类型是预定义的，并被替换为传入的实参的`constexpr`值。
-
-> 非类型模板形参一般在模板类中作为明确的值来使用，且在编译阶段就要使用，如果不是`constexpr`就会产生编译错误。
-
-​		费类型模板参数可以是一下任意一种类型：
-
-- integral type 整型
-- enumeration type 枚举类型
-- pointer or reference to a class object 类对象的指针或引用
-- pointer or reference to a function 函数指针或引用
-- pointer or reference to a class member function 成员函数指针或引用
-- std::nullptr_t 空指针类型
-- floating point type 浮点类型
 
 
-
-## 模板的分离编程
+### 模板的分离编程
 
 ​		模板作为产生类和函数的规则，在生成类或函数时，需要具体的类型信息进行填充。如果将模板的实现定义分离在单独的翻译单元中，该翻译单元作为独立的编译产物会单独进行编译，从而没有足够的类型信息支撑。
 

@@ -74,11 +74,7 @@ Alex
 
 ## 宽字节字符串
 
-
-
 # string class 字符串类
-
-​		`#include <string>`
 
 ---
 
@@ -94,7 +90,13 @@ delete[] strHello;
 
 ​		因此C++标准库以类的形式提供了`std::string`和`std::wstring`提供了更好的处理字符串的方式。
 
+## text manipulation
 
+- `std::string`，使大多数用户不必通过指针对C风格的字符数组进行操作
+- `std::string_view`，允许对存储在别处（`std::string / char[]`）的字符序列进行操作
+- `std::regex`，提供了文本查找模式的正则表达式
+
+> `std::string`和`std::regex`对象都可以使用各种字符类型(例如，Unicode)。
 
 ## basic_string
 
@@ -232,9 +234,14 @@ namespace std
 
   ​	访问指定字符
 
-- `c_str()`
+- `c_str() / data()`
 
-- `data()`
+  ```c++
+  printf("For people who like printf: %s\n",s.c_str());           // s.c_str() returns a pointer to s' characters
+  cout << "For people who like streams: " << s << '\n';
+  ```
+
+  
 
 #### 迭代器
 
@@ -259,7 +266,17 @@ namespace std
 ##### 尾插
 
 - `operator+=`
+
+  ```c++
+  void m2(std::string& s1, std::string& s2)
+  {
+      s1 = s1 + '\n';   // append newline
+      s2 += '\n';        // append newline
+  }
+  ```
+
 - `append()`
+
 - `push_back()`
 
 ##### 插入
@@ -278,9 +295,16 @@ namespace std
 
 ##### 更改
 
-- `replace()`
+- `replace()` 替换字符串的指定部分
 
-  ​	替换字符串的指定部分
+  ​	replaces a substring with a value. I
+
+  ```C++
+  string name = "Niels Stroustrup";
+  name.replace(0,5,"nicholas");          // name becomes "nicholas Stroustrup"
+  ```
+
+  
 
 - `resize()`
 
@@ -290,7 +314,20 @@ namespace std
 
   ​	交换两个字符串的值
 
+- `operator[]` 修改指定字符的值
+
+  ```c++
+  string name = "Niels Stroustrup";
+  name[0] = toupper(name[0]);            // name becomes "Nicholas Stroustrup"
+  ```
+
+  
+
 #### 比较
+
+​		lexicographical ordering  字典序
+
+​		**string**s can be compared against each other, against C-style strings §[1.7.1](ch01.xhtml#sec1_7_1)), and against string literals.
 
 - `operator== / operator!=`
 
@@ -332,9 +369,16 @@ namespace std
 
   ​	合并子串
 
-- `substr()`
+- `substr()` 截取子串
 
-  ​	截取子串
+  返回一个字符串，该字符串是由参数指定的字符串的副本
+  
+  - The first argument is an index into the **string** (a position)
+  - and the second is the length of the desired substring.
+  
+  ```c++
+  string name = "Niels Stroustrup";
+  string s = name.substr(6,10);
 
 #### IO
 
@@ -357,6 +401,55 @@ namespace std
 - utf-8和utf-16间的转换（`std::string`和`std::wstring`的转换）
 
 ​		需要自行拓展实现这些功能，或将字符串转换为C-style字符串(``c_str()``)后使用C库函数提供的功能。
+
+
+
+### `std::string` literal
+
+​		一个常规的字符串字面量是`const char*`类型的字符串常量，要得到一个`std::string`类型的字符串常量需要在字符串字面量后面加上`s`后缀。
+
+​		 use the namespace **std::literals::string_literals** 
+
+```c++
+using std::literals::string_literals;
+auto cat = "Cat"s;    // a std::string
+auto dog = "Dog";   // a C-style string: a const char*
+```
+
+
+
+### implement
+
+​		现在，字符串通常使用短字符串优化实现。也就是说，短字符串值保存在字符串对象本身中，只有较长的字符串被放置在自由存储区中。
+
+```c++
+string s1 {"Annemarie"};                          // short string
+string s2 {"Annemarie Stroustrup"};       // long string
+```
+
+​		当字符串的值从短字符串变为长字符串时(反之亦然)，它的表示也会相应调整。
+
+​		一个“短”字符串可以有多少个字符是实现定义的，通常是14个字符。
+
+> ​		字符串的实际性能可能严重依赖于运行时环境。特别是，在多线程实现中，内存分配的成本可能相对较高。此外，当使用大量不同长度的字符串时，可能会导致内存碎片。这些是短串优化变得无处不在的主要原因。
+
+​		为了处理多个字符集，string实际上是字符类型为char的通用模板basic_string的别名：
+
+```c++
+template<typename Char>
+class basic_string {
+        // ... string of Char ...
+};
+using string = basic_string<char>;
+```
+
+​		用户可以定义任意字符类型的字符串。例如，假设我们有一个日文字符类型Jchar，我们可以这样写:
+
+```c++
+using Jstring = basic_string<Jchar>;
+```
+
+
 
 ## basic_string_view
 
@@ -572,3 +665,6 @@ std::cout << (static_cast<std::string>(v) + s) << '\n';
 
 
 ## char_traits
+
+
+
