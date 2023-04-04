@@ -10,7 +10,11 @@
 
   ​	其中0,1,2被用作标准输入、标准输出、标准错误的设备ID。
 
-- 这点在win上是不同的。
+- windows上的`socket`是参考BSD Unix套接字设计的，大致与linux套接字类似。
+
+  - `winsock2.h / ws2_32.lib`
+  - windows socket的变成句柄不是文件描述符
+
 
 ​		![image-20210903151813901](https://gitee.com/masstsing/picgo-picserver/raw/master/20210903151814.png)
 
@@ -22,7 +26,18 @@
 
 ![image-20220316233833186](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220316233833186.png)
 
+​		POSIX中定义的数据类型：
 
+- `int8_t / uint8_t`
+- `int16_t / uint16_t`
+- `int32_t / uint32_t`
+  - `<sys/types.h>`
+- `sa_family_t` 地址族
+- `socklen_t` 
+  - `<sys/socket.h>`
+- `in_addr_t` ip地址，声明为`uint32_t`
+- `in_port_t`，端口号，声明为`uint16_t`
+  - `<netinet/in.h>`
 
 ## 字节序
 
@@ -42,17 +57,21 @@
 
 
 
-##### 主机字节序与网络字节序
+#### 主机字节序与网络字节序
 
-​		不同的主机有不同的字节序，为了使得各种异构平台之间能够通信，在通信时使用同一的网络字节序。
-
-**网络字节序使用大端字节序**。
+​		不同的主机有不同的字节序，为了使得各种异构平台之间能够通信，在通信时统一使用网络字节序。
 
 > x86 小端字节序
 >
 > Motorola6800 大端字节序
 >
 > ARM字节序可配置*99*
+
+- 网络字节序使用大端字节序
+- 协议栈的实现会自动将传输的数据进行大小端转换，但地址结构需要认为保证字节序
+  - 但地址结构是由编写代码的人以文本的方式填充的
+  - 同时地址结构作为协议头部，是传输数据的一部分，协议栈无法判断这些人为填充的字节序
+  - 因此，需要代码编写者来保证字节序的转换
 
 
 
@@ -148,6 +167,10 @@ enum __socket_type
 
 ## 套接字地址结构
 
+
+
+### 协议族 sa_family_t
+
 ```c
 #include <sockaddr.h>
 /* This macro is used to declare the initial common members
@@ -159,9 +182,62 @@ enum __socket_type
 
 
 
+#### `sa_family_t`
+
+```c
+/* Address families.  */
+#define	AF_UNSPEC	PF_UNSPEC
+//#define	AF_LOCAL	PF_LOCAL
+//#define	AF_UNIX		PF_UNIX
+#define	AF_FILE		PF_FILE
+//#define	AF_INET		PF_INET
+#define	AF_AX25		PF_AX25
+#define	AF_IPX		PF_IPX
+#define	AF_APPLETALK	PF_APPLETALK
+#define	AF_NETROM	PF_NETROM
+#define	AF_BRIDGE	PF_BRIDGE
+#define	AF_ATMPVC	PF_ATMPVC
+#define	AF_X25		PF_X25
+//#define	AF_INET6	PF_INET6
+#define	AF_ROSE		PF_ROSE
+#define	AF_DECnet	PF_DECnet
+#define	AF_NETBEUI	PF_NETBEUI
+#define	AF_SECURITY	PF_SECURITY
+#define	AF_KEY		PF_KEY
+#define	AF_NETLINK	PF_NETLINK
+#define	AF_ROUTE	PF_ROUTE
+#define	AF_PACKET	PF_PACKET
+#define	AF_ASH		PF_ASH
+#define	AF_ECONET	PF_ECONET
+#define	AF_ATMSVC	PF_ATMSVC
+#define AF_RDS		PF_RDS
+#define	AF_SNA		PF_SNA
+#define	AF_IRDA		PF_IRDA
+#define	AF_PPPOX	PF_PPPOX
+#define	AF_WANPIPE	PF_WANPIPE
+#define AF_LLC		PF_LLC
+#define AF_IB		PF_IB
+#define AF_MPLS		PF_MPLS
+#define AF_CAN		PF_CAN
+#define AF_TIPC		PF_TIPC
+#define	AF_BLUETOOTH	PF_BLUETOOTH
+#define	AF_IUCV		PF_IUCV
+#define AF_RXRPC	PF_RXRPC
+#define AF_ISDN		PF_ISDN
+#define AF_PHONET	PF_PHONET
+#define AF_IEEE802154	PF_IEEE802154
+#define AF_CAIF		PF_CAIF
+#define AF_ALG		PF_ALG
+#define AF_NFC		PF_NFC
+#define AF_VSOCK	PF_VSOCK
+#define	AF_MAX		PF_MAX
+```
+
+
+
 ### 通用地址结构 sockaddr
 
-socket编程不仅能够用于TCP/IP协议栈的编程，还能够用于UNIX域协议的编程等。不同的协议栈之间的地址结构可能存在分歧，而通用地址结构使用一个缓冲区来存放可能的任何形式，用`sin_family`来决定以何种方式来解析该地址。
+​		`socket`设计用于多种协议族，不同的协议族（协议栈）之间的地质结构可能不同，而通用地址结构使用一个缓冲区来存放可能的任何形式，用`sin_family`来决定以何种方式来解析该地址。
 
 ```c
 #include <sys/socket.h>
@@ -169,7 +245,7 @@ socket编程不仅能够用于TCP/IP协议栈的编程，还能够用于UNIX域�
 struct sockaddr
 {
     __SOCKADDR_COMMON ( sa_ );	/* Common data: address family and length.  */
-    char sa_data[ 14 ];		/* Address data.  */
+    char sa_data[ 14 ];			/* Address data.  */
 };
 ```
 
@@ -179,7 +255,26 @@ struct sockaddr
 
 ### 网际套接口地址结构 sockaddr_in
 
-​		通常称为**网际套接字地址结构**，实际使用中，会在填充完网际套接字地址结构后转换成通用地址结构，交给相应socket api进行使用。
+​		实际使用中，会在填充完网际套接字地址结构后转换成通用地址结构以调用`socket api`。
+
+​		`sockaddr_in`是为``INET``即``IPv4``设计专用的地址结构，但为了与通用地址结构保持一致，所以仍旧需要添加`sin_family`指定地址族。
+
+```c++
+/// man 7 ip
+
+struct sockaddr_in {
+    sa_family_t    sin_family; /* address family: AF_INET */
+    in_port_t      sin_port;   /* port in network byte order */
+    struct in_addr sin_addr;   /* internet address */
+};
+
+/* Internet address. */
+struct in_addr {
+    uint32_t       s_addr;     /* address in network byte order */
+};
+```
+
+​	
 
 ```c
 #include <netinet/in.h>
@@ -205,111 +300,49 @@ struct sockaddr_in
 			   sizeof (in_port_t) -
 			   sizeof (struct in_addr)];
   };
-
-
 ```
+
+#### `sin_port`
+
+​		保存16位端口号，网络字节序。
+
+#### `sin_addr`
+
+​		保存32位IP地址信息，网络字节序。 
+
+#### `sin_zero`
+
+​		padding，为使`sockaddr_in`的大小和`sockaddr`结构体保持一致而插入的成员。
+
+#### 预定义地址
 
 ```c
-/// man 7 ip
-
-struct sockaddr_in {
-    sa_family_t    sin_family; /* address family: AF_INET */
-    in_port_t      sin_port;   /* port in network byte order */
-    struct in_addr sin_addr;   /* internet address */
-};
-
-/* Internet address. */
-struct in_addr {
-    uint32_t       s_addr;     /* address in network byte order */
-};
-
-// sin_addr.s_addr 和 sin_port 都需要转换成网络字节序
-// sin_addr.s_addr 等价的三种赋值方式：
-//    srvaddr.sin_addr.s_addr = htonl( INADDR_ANY );
-//    srvaddr.sin_addr.s_addr = inet_addr("0.0.0.0");
-//    inet_aton("0.0.0.0", &servaddr.sin_addr);
-//    sin_addr.s_addr 都被赋值为0
+/* Address to accept any incoming messages.  */
+#define	INADDR_ANY		((in_addr_t) 0x00000000) // 0.0.0.0
+/* Address to send to all hosts.  */
+#define	INADDR_BROADCAST	((in_addr_t) 0xffffffff)
+/* Address indicating an error return.  */
+#define	INADDR_NONE		((in_addr_t) 0xffffffff)
 ```
 
-> `sockaddr_in`是为INET即IPv4设计专用的地址结构，但为了与通用地址结构保持一致，所以仍旧需要添加`sin_family`指定地址族。
+- `0.0.0.0`  和 `127.0.0.1` 的区别
+  - `0.0.0.0`
+    - 接受所有入口的消息
+    - `INADDR_ANY（0.0.0.0）`在多宿主计算机（多网卡，多IP），只要端口号一致，就可以从不同IP地址接收数据。服务器优先考虑这种方式。
+  - `127.0.0.1`只能接受本地局域网内的消息，127.0.0.1可以使用本地域名`localhost`替代。
 
-##### `sin_family`
 
-协议族使用的对应地址族。
 
-> ```c
->/* Address families.  */
-> #define	AF_UNSPEC	PF_UNSPEC
-> //#define	AF_LOCAL	PF_LOCAL
-> //#define	AF_UNIX		PF_UNIX
-> #define	AF_FILE		PF_FILE
-> //#define	AF_INET		PF_INET
-> #define	AF_AX25		PF_AX25
-> #define	AF_IPX		PF_IPX
-> #define	AF_APPLETALK	PF_APPLETALK
-> #define	AF_NETROM	PF_NETROM
-> #define	AF_BRIDGE	PF_BRIDGE
-> #define	AF_ATMPVC	PF_ATMPVC
-> #define	AF_X25		PF_X25
-> //#define	AF_INET6	PF_INET6
-> #define	AF_ROSE		PF_ROSE
-> #define	AF_DECnet	PF_DECnet
-> #define	AF_NETBEUI	PF_NETBEUI
-> #define	AF_SECURITY	PF_SECURITY
-> #define	AF_KEY		PF_KEY
-> #define	AF_NETLINK	PF_NETLINK
-> #define	AF_ROUTE	PF_ROUTE
-> #define	AF_PACKET	PF_PACKET
-> #define	AF_ASH		PF_ASH
-> #define	AF_ECONET	PF_ECONET
-> #define	AF_ATMSVC	PF_ATMSVC
-> #define AF_RDS		PF_RDS
-> #define	AF_SNA		PF_SNA
-> #define	AF_IRDA		PF_IRDA
-> #define	AF_PPPOX	PF_PPPOX
-> #define	AF_WANPIPE	PF_WANPIPE
-> #define AF_LLC		PF_LLC
-> #define AF_IB		PF_IB
-> #define AF_MPLS		PF_MPLS
-> #define AF_CAN		PF_CAN
-> #define AF_TIPC		PF_TIPC
-> #define	AF_BLUETOOTH	PF_BLUETOOTH
-> #define	AF_IUCV		PF_IUCV
-> #define AF_RXRPC	PF_RXRPC
-> #define AF_ISDN		PF_ISDN
-> #define AF_PHONET	PF_PHONET
-> #define AF_IEEE802154	PF_IEEE802154
-> #define AF_CAIF		PF_CAIF
-> #define AF_ALG		PF_ALG
-> #define AF_NFC		PF_NFC
-> #define AF_VSOCK	PF_VSOCK
-> #define	AF_MAX		PF_MAX
-> ```
+```c
+// sin_addr.s_addr 和 sin_port 都需要转换成网络字节序
+// sin_addr.s_addr 等价的三种赋值方式：
+    srvaddr.sin_addr.s_addr = htonl( INADDR_ANY );
+    srvaddr.sin_addr.s_addr = inet_addr("0.0.0.0");
+    inet_aton("0.0.0.0", &servaddr.sin_addr);
+// sin_addr.s_addr 都被赋值为0
+```
 
-##### `sin_port`
 
-保存16位端口号，网络字节序。
-
-##### `sin_addr`
-
-保存32位IP地址信息，网络字节序。
-
-> **三种预定义地址**
->
-> ```c
-> /* Address to accept any incoming messages.  */
-> #define	INADDR_ANY		((in_addr_t) 0x00000000) // 0.0.0.0
-> /* Address to send to all hosts.  */
-> #define	INADDR_BROADCAST	((in_addr_t) 0xffffffff)
-> /* Address indicating an error return.  */
-> #define	INADDR_NONE		((in_addr_t) 0xffffffff)
-> ```
->
-> > 0.0.0.0  和 127.0.0.1 的区别在于，0.0.0.0能接受所有入口的消息，而127.0.0.1只能接受本地局域网内的消息。
-> >
-> > 127.0.0.1可以使用本地域名`localhost`替代。
->
-> INADDR_ANY（0.0.0.0）的另一好处在于，如果是多宿主计算机（多网卡，多IP），只要端口号一致，就可以从不同IP地址接收数据。服务器优先考虑这种方式。
 
 ### 本地套接口地址结构 sockaddr_un
 
@@ -502,7 +535,9 @@ The members of the hostent structure are:
 
 #### 地址转换函数
 
-​		地址转换函数将一个点分十进制的可读IP地址，和32位整数（ipv4)的标准协议地址相互转换
+​		IP地址本质上是一个整形数据，但常以易于记忆的点分十进制表示法来表示。
+
+​		地址转换函数将一个 点分十进制的可读IP地址，和 32位整数（ipv4) 的标准协议地址相互转换
 
 ```c
 #include <sys/socket.h>
@@ -530,9 +565,8 @@ in_addr_t inet_netof(struct in_addr in);
 
 
 // Feature Test Macro Requirements for  glibc (see feature_test_macros(7)):
-inet_aton(),  inet_ntoa(): _BSD_SOURC || _SVID_SOURCE
+//		inet_aton(),  inet_ntoa(): _BSD_SOURC || _SVID_SOURCE
     
- 
 
 // a - address, 可读的点分十进制IP字符串
 // n - network, 包含32位整数（ipv4)的标准协议地址的in_addr结构体
@@ -561,7 +595,7 @@ inet_aton(),  inet_ntoa(): _BSD_SOURC || _SVID_SOURCE
 int socket(int domain, int type, int protocol);
 
 // domain 指定通信协议族 protocol family
-// type  指定socket类型
+// type  指定socket 数据传输类型
 //    SOCK_STREAM   流式套接字.
 //	  SOCK_DGRAM	数据报套接字
 //	  SOCK_RAW		原始裸套接字
