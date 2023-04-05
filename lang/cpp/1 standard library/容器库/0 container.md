@@ -73,7 +73,7 @@ for (int index=0; index < deq.size(); ++index)
 
 ### Associative Container 关联容器
 
-​		关联容器是会自动将插入的元素排序的容器。
+​		关联容器会自动将插入的元素排序。
 
 > 默认通过元素的`operator<`进行排序。
 
