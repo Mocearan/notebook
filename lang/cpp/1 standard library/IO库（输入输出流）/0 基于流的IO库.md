@@ -2,10 +2,9 @@
 
 ---
 
-​		c++语言并未定义任何输入输出（IO）语句，取而代之，包含了一个全面的标准库来提供IO机制。
-（以及其他很多设施）。对于很多用途，我们只需要了解IO库中一部分基本概念和操作。	
+​		c++包含以 I/O流库的形式 提供了文本和数值的格式化和非格式化缓冲I/O。它是可扩展的，可以完全像内置类型和类型安全一样支持用户定义的类型。
 
-
+​		文件系统库提供了操作文件和目录的基本工具。
 
 ## I/O的基本概念
 
@@ -14,6 +13,8 @@
 ​		A **buffer** (also called a data buffer) is simply a piece of memory set aside for storing data temporarily while it’s moved from one place to another. 
 
 ​		未缓冲的输出通常立即处理，而缓冲的输出通常作为块存储和写入。
+
+​		
 
 ### 流
 
@@ -28,9 +29,98 @@
 
 ​		当用户按下键盘上的一个键时，键代码就被放入输入流中。然后，程序从流中提取值，以便使用它。您将值插入到流中，数据消费者(例如监视器)使用它们。
 
+​		使用格式化的I/O操作通常比逐个操作字符更不容易出错，效率更高，代码也更少。特别是，istreams负责内存管理和范围检查。我们可以使用stringstreams或memory streams对内存进行格式化。
+
+- ostream将类型化对象转换为字符流(字节):
+  - obj -> ostream -> stream buffer -> byte sequences
+- istream将字符流(字节)转换为类型化对象:
+  - byte sequences -> stream buffer -> ostream -> obj
+
+### std::getline
+
+```c++
+#include <string> // For std::string and std::getline
+#include <iostream>
+
+int main()
+{
+    std::cout << "Enter your full name: ";
+    std::string name{};
+    std::getline(std::cin >> std::ws, name); // read a full line of text into name
+
+    std::cout << "Enter your age: ";
+    std::string age{};
+    std::getline(std::cin >> std::ws, age); // read a full line of text into age
+
+    std::cout << "Your name is " << name << " and your age is " << age << '\n';
+
+    return 0;
+}
+```
+
+If using `std::getline` to read strings, use the `std::ws` `input manipulator` to ignore leading whitespace.
+
+​	默认情况下，一个空白字符，如空格或换行符，会终止读取,可以使用getline()函数读取整行。
+
+### 类型敏感
+
+​		字符常量是用单引号括起来的字符。请注意，字符是作为字符而不是作为数值输出的。
+
+```c++
+int b = 'b';         //  note: char implicitly converted to int
+char c = 'c';
+cout << 'a' << b << c;
+
+// a98c
+```
+
+
+
+## IO state
+
+​		iostream有一个状态，我们可以检查它来确定操作是否成功。最常见的用途是读取一个值序列:
+
+```c++
+vector<int> read_ints(istream& is)
+{
+    vector<int> res;
+    for (int i; is>>i; )
+         res.push_back(i);
+    return res;
+}
+```
+
+​		一般来说，I/O状态保存了读或写所需的所有信息，例如格式化信息，错误状态，以及使用哪种类型的缓冲。特别是，用户可以设置状态来反映错误发生，并在错误不严重时清除状态。
+
+```c++
+vector<int> read_ints(istream& is, const string& terminator)
+{
+     vector<int> res;
+     for (int i; is >> i; )
+      	res.push_back(i);
+
+     if (is.eof())                            // fine: end of file
+		return res;
+     if (is.fail()) {                         // we failed to read an int; was it the terminator?
+        is.clear();          // reset the state to good()
+        string s;
+        if (is>>s && s==terminator)
+            return res;
+        is.setstate(ios_base::failbit);           // add fail() to is's state
+     }
+     return res;
+}
+
+auto v = read_ints(cin,"stop");
+```
+
+
+
 ## 类层次图
 
 ​		按照流的类型，`iostream`库包含两个基础类型，``istream``和``ostream``，分别表示输入流和输出流。
+
+​		I/O流类都有析构函数，释放所有拥有的资源(比如缓冲区和文件句柄)。也就是说，它们是“资源获取即初始化”(RAII
 
 > 一个流就是一个字符序列，是从IO设备读出或写入IO设备的。
 
@@ -44,8 +134,6 @@
   - 在输出流上，`operator<<`用来向流中添加数据。
 
 ## 预定义标准流对象
-
-
 
 ### std::cin / wcin
 
@@ -148,26 +236,3 @@ int main()
 
 
 
-## std::getline
-
-```c++
-#include <string> // For std::string and std::getline
-#include <iostream>
-
-int main()
-{
-    std::cout << "Enter your full name: ";
-    std::string name{};
-    std::getline(std::cin >> std::ws, name); // read a full line of text into name
-
-    std::cout << "Enter your age: ";
-    std::string age{};
-    std::getline(std::cin >> std::ws, age); // read a full line of text into age
-
-    std::cout << "Your name is " << name << " and your age is " << age << '\n';
-
-    return 0;
-}
-```
-
-If using `std::getline` to read strings, use the `std::ws` `input manipulator` to ignore leading whitespace.
