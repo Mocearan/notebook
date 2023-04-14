@@ -30,9 +30,84 @@
 
 ## 算法与迭代器
 
-​		STL提供的通用算法，通过迭代器和容器粘合。
+​		STL提供的通用算法，通过迭代器和容器粘合。算法往往通过容器的一对迭代器来访问容器，或通过迭代器来返回有效元素。
 
->  While this is very powerful and can lead to the ability to write complex code very quickly, it’s also got a dark side: some combination of algorithms and container types may not work, may cause infinite loops, or may work but be extremely poor performing. So use these at your risk.
+​		迭代器用于分离算法和容器。这种数据存储和算法分离的模型提供了通用性和和灵活性。
+
+- 算法通过迭代器对其数据进行操作，对存储元素的容器一无所知。
+- 容器对操作其元素的算法一无所知;它所做的只是根据请求提供迭代器
+
+```c++
+bool has_c(const string& s, char c)  // does s contain the character c?
+{
+	return find(s,c)!=s.end();
+}
+
+vector<string::iterator> find_all(string& s, char c)  // find all occurrences of c in s
+{
+      vector<char*> res;
+      for (auto p = s.begin(); p!=s.end(); ++p)
+           if (*p==c) res.push_back(&*p);
+      return res; // move
+}
+
+string m {"Mary had a little lamb"};
+for (auto p : find_all(m, a ))
+  	if (*p!= a ) cerr << "a bug!\n";
+```
+
+>  ​		虽然这非常强大，可以组织复杂代码，但也有不好的一面：算法和容器类型的某些组合可能不起作用，可能会导致无限循环，或者可能会起作用，但性能非常差。所以使用这些，你要承担风险。
+
+​		迭代器在每个不同的容器上的使用方式是等效一致的，因此可以泛化一些迭代器的操作：
+
+```c++
+template<typename C, typename V>
+vector<typename C::iterator> find_all(C& c, V v)           // find all occurrences of v in c
+	// 在上下文中未明确声明为类型的词，需要使用 typename 向编译器提示为类型，否则视为值
+{
+     vector<typename C::iterator> res;
+     for (auto p = c.begin(); p!=c.end(); ++p)
+         if (*p==v) res.push_back(p);
+     return res;
+}
+
+// 或者用一般的指针来代替迭代器
+template<typename C, typename V>
+auto find_all(C& c, V v)           // find all occurrences of v in c
+{
+    vector<range_value_t<C>*> res;
+    for (auto& x : c) if (x==v) res.push_back(&x);
+    return res;
+}
+```
+
+> 使用range-for循环和标准库``range_value_t``来命名元素的类型
+>
+> ```c++
+> template<typename T>
+> using range_value_type_t = T::value_type;
+> ```
+
+```c++
+ string m {"Mary had a little lamb"};
+
+ for (auto p : find_all(m, a ))                              // p is a string::iterator
+  if (*p!= a ) cerr << "string bug!\n";
+
+ list<int> ld {1, 2, 3, 1, -11, 2};
+ for (auto p : find_all(ld,1))                               // p is a list<int>::iterator
+  if (*p!=1) cerr << "list bug!\n";
+
+ vector<string> vs {"red", "blue", "green", "green", "orange", "green"};
+ for (auto p : find_all(vs,"red"))                  // p is a vector<string>::iterator
+  	if (*p!="red") cerr << "vector bug!\n";
+
+ for (auto p : find_all(vs,"green")) *p = "vert";
+```
+
+
+
+
 
 ​		标准库不提供抽象来支持范围检查式写入容器，可以自行定义一个：
 
