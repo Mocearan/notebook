@@ -165,7 +165,7 @@ enum __socket_type
 
 
 
-## 套接字地址结构
+## 套接字地址
 
 
 
@@ -426,6 +426,8 @@ int sethostname(const char *name, size_t len);
 
 ##### gethostbyname / gethostbyaddr
 
+​		通过域名获取IP地址。
+
 ```c
 #include <netdb.h>
 extern int h_errno;
@@ -467,12 +469,9 @@ h_addr_list ----[]----> IP addr #1
 */
 ```
 
-The members of the hostent structure are:
-
 - `h_name `
-   The official name of the host.
-  官方域名，代表某一主页，实际上一些著名公司的域名并未使用官方域名注册
-
+   官方域名，代表某一主页，实际上一些著名公司的域名并未使用官方域名注册
+  
 - `h_aliases`
       An array of alternative names for the host, terminated by a NULL pointer.
       可以通过多个域名访问同一主页，同一Ip可以绑定多个域名。因此，除官方域名之外，还可以指定其他域名，通过h_aliases获得
@@ -482,9 +481,8 @@ The members of the hostent structure are:
       不仅支持IPv4还支持IPv6，因此可以通过此变量获取保存在h_addr_list中的ip地址的地址族信息，若是IPv4，则此变量为AF_INET
 
 - `h_length`
-      The length of the address in bytes.
       保存ip地址长度，IPv4为4字节，若IPv6为16字节
-
+  
 - `h_addr_list`
       An array of pointers to network addresses for the host (in network byte order), terminated by a NULL pointer.
       最重要的成员，易整数形式保存域名对应的ip地址。用户较多的网站可能分配多个ip给同一域名，利用多个服务器进行负载均衡。此时同样可以通过此变量获取ip地址信息。
@@ -1332,11 +1330,3 @@ int setsockopt(int sockfd, int level, int optname
 //	  类型：整形，套接口结构， 其他结构类型:linger{}, timeval{ }
 // optlen:  set时为传入参数， get时为传出参数， optval的大小
 ```
-
-> **level 及 optval**
->
-> > https://blog.csdn.net/chary8088/article/details/2486377
-> >
-> > https://www.cnblogs.com/baiduboy/p/8127913.html
-> >
-> > [setsockopt函数解析 _四月的专栏-CSDN博客](https://blog.csdn.net/yufangbo/article/details/4663639)
