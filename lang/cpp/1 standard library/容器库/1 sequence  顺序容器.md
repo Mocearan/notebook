@@ -554,6 +554,44 @@ for ( const auto &rec : vec )
 
 # std::list
 
+- 双向链表
+
+- 插入删除不移动其他元素
+
+  > `vector`在遍历(例如``find()``和``count()``)以及排序和搜索(例如``sort()``和``equal_range()``)方面性能更好
+
+## 基本使用
+
+### 初始化
+
+```c++
+list<Entry> phone_book = {
+     {"David Hume",123456},
+     {"Karl Popper",234567},
+     {"Bertrand Arthur William Russell",345678}
+};
+```
+
+
+
+### 遍历
+
+- 逐一查找
+
+- range-for
+
+  ```c++
+  for (const auto& x : phone_book)
+         if (x.name==s)
+                return x.number;
+  ```
+
+### 访问
+
+
+
+
+
 ## 操作
 
 ### 迭代器
@@ -598,6 +636,10 @@ for ( const auto &rec : vec )
 - `splice()`
 
 # std::forward_list
+
+- singly-linked list
+- 为了节省空间，不保留前驱指针，只允许前向迭代
+- 空``forward_list``的大小仅为一个指针，不保留它的元素数量
 
 ## 操作
 
