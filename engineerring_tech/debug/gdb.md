@@ -143,7 +143,48 @@ gdb --symbol release_g_bin --exec release_bin
 
 ## coredump调试分析
 
-​		
+​		`coredump`会保存程序崩溃现场，给问题排查留下宝贵的信息。但`coredump`在内存占用较高的大型软件中往往很大，落盘很慢。
+
+- `coredump`通常在程序运行的工作目录下创建，但程序中调用`chdir`可能改变当前工作目录，`coredump`文件创建在指定路径下。
+  - 可以通过`echo "/data/coredump/core" > /proc/sys/kernal/core_pattern`将`coredump`文件设置在数据盘上
+  - `echo "/data/coredump/core.%e.%p" > /proc/sys/kernal/core_pattern` 附加崩溃程序名和进程ID信息
+- 产生`coredump`的条件是
+  - 当前会话能够生成`coredump`文件
+    - `ulimit -a / -c`
+    - `ulimit -c NUM/unlimited`
+    - 可在`/etc/profile`中加入上述设置
+  - 执行程序的用户具有对目录的写权限和足够的磁盘空间
+- 产生`coredump`的原因
+  - 内存访问越界
+    - 下标越界
+    - 字符串没有正常使用结束符
+    - `strcpy/strcat/sprintf/strcmp/strcasecmp`字符串操作越界，本质同上，可使用带`n`的系列替换
+  - 多线程程序
+    - 不可重入调用的错误使用
+      - 换用可重入函数 `*_r`
+    - 临界数据竞争
+      - 加锁保护
+  - 非法指针
+    - 空指针
+    - 野指针
+    - 转换导致的错误的指针类型
+  - 堆栈溢出
+    - 栈帧上的局部变量导致系统堆栈结构破坏，称为爆栈
+
+
+
+### `coredump`文件的ELF头
+
+```shell
+readelf -h core.1341
+```
+
+- CORE 文件类型
+- `coredump`文件中没有符号表信息，需要与对应的可执行文件一起使用
+  - `gdb`可以先从可执行文件中读取符号表信息，然后读取`coredump`文件
+  - `objdump -x core.1341 | tail` 可以验证`coredump`文件中没有符号表信息
+
+
 
 ###  死循环
 
