@@ -8,6 +8,17 @@
 
 ​		Once the appropriate type of iterator is created, the programmer can then use the interface provided by the iterator to traverse and access elements without having to worry about what kind of traversal is being done or how the data is being stored in the container. And because C++ iterators typically use the same interface for traversal (operator++ to move to the next element) and access (operator* to access the current element), we can iterate through a wide variety of different container types using a consistent method.
 
+​		迭代器的实现受其类型限制，如`std::vector`和`std::list`的迭代器显然不同。但是迭代器的共有特性是迭代器语义及操作，任何遵守迭代器概念的对象都是迭代器。
+
+​		迭代器一般用在容器上，也可以用在流上。
+
+```c++
+ostream_iterator<string> oo {cout};
+*oo = "Hello, ";              // meaning cout<<"Hello, "
+++oo;
+*oo = "world!\n";          // meaning cout<<"world!\n"
+```
+
 
 
 ## 迭代器与指针
@@ -76,7 +87,44 @@
 | [random_access_iterator](https://zh.cppreference.com/w/cpp/iterator/random_access_iterator)(C++20) | 指定 [`bidirectional_iterator`](https://zh.cppreference.com/w/cpp/iterator/bidirectional_iterator) 为随机访问迭代器，支持常数时间内的前进和下标访问 (概念) |
 | [contiguous_iterator](https://zh.cppreference.com/w/cpp/iterator/contiguous_iterator)(C++20) | 指定 [`random_access_iterator`](https://zh.cppreference.com/w/cpp/iterator/random_access_iterator) 为连续迭代器，指代内存中连续相接的元素 (概念) |
 
+- 输入迭代器成对使用，表示一个序列	
 
+  ```c++
+  istream_iterator<string> ii {cin};
+  istream_iterator<string> eos {};	
+  ```
+
+  通常不直接使用istream迭代器和ostream迭代器。相反，它们被作为算法的参数提供。
+
+  ```c++
+  string from, to;
+  cin >> from >> to;      // get source and target file names
+  
+  ifstream is {from};    // input stream for file "from"
+  istream_iterator<string> ii {is};     // input iterator for stream
+  istream_iterator<string> eos {};   // input sentinel
+  
+  ofstream os {to};            // output stream for file "to"
+  ostream_iterator<string> oo {os,"\n"};    // output iterator for stream plus a separator
+  
+  vector<string> b {ii,eos};  // b is a vector initialized from input
+  sort(b);          // sort the buffer
+  
+  unique_copy(b,oo);   // copy the buffer to output, discard replicated values
+  
+  return !is.eof() || !os;     // return error state (§1.2.1, §11.4)
+  ```
+
+  ​		要同时使用标准库算法的传统迭代器版本和其对应的range版本，我们需要显式限定range版本的调用，或者使用using-声明
+
+  ```c++
+  copy(v, oo);                              // potentially ambiguous
+  ranges::copy(v, oo);                // OK
+  using ranges::copy(v, oo);     // copy(v, oo) OK from here on
+  copy(v, oo);                              // OK
+  ```
+
+  
 
 
 

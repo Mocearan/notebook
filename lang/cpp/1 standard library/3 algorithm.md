@@ -1,5 +1,7 @@
 # Algorithm
 
+​		`<algorithm> / <numeric>`
+
 ---
 
 ​		数据结构本身的作用只是存储数据，而基于数据结构的操作（插入删除访问等）。
@@ -107,8 +109,6 @@ auto find_all(C& c, V v)           // find all occurrences of v in c
 
 
 
-
-
 ​		标准库不提供抽象来支持范围检查式写入容器，可以自行定义一个：
 
 ```c++
@@ -148,6 +148,92 @@ copy(v1,Checked_iter{v2});             // will throw
 for (auto& x : v) cout<<x;   // write out all elements of v
 for (auto p = v.begin(); p!=v.end(); ++p) cout<<*p;  // write out all elements of v
 ```
+
+## 算法与`range`
+
+​		对于每个取``[b:e)``范围的算法，``<ranges>``提供了一个取范围的版本。
+
+​		同时使用迭代器版本和`range`版本，你需要显式限定调用或使用using-声明。
+
+## 谓词 predicate
+
+​		谓词可以通过简单的是否判定，来影响算法的特定关键步骤的逻辑。
+
+​		谓词不应修改所应用的元素。
+
+```c++
+struct Greater_than {
+     int val;
+     Greater_than(int v) : val{v} { }
+     bool operator()(const pair<string,int>& r) const { return r.second>val; }
+};
+auto p = find_if(m,Greater_than{42});
+
+auto p = find_if(m, [](const auto& r) { return r.second>42; });
+```
+
+
+
+## 并行算法
+
+​		当对多个数据项执行相同的任务时，我们可以在每个数据项上并行执行，前提是不同数据项上的计算是独立的:
+
+- 并行执行:任务在多个线程上完成(通常运行在几个处理器核心上)
+- 向量化执行:任务在使用向量化的单个线程上完成，也称为``SIMD``(单指令多数据)。
+
+​		标准库提供了对这两种方式的支持，可以明确地要求顺序执行;在命名空间**execution**中的``<execution>``中:
+
+- **seq**: 顺序执行
+- **par**: 并行执行 (if feasible)
+- **unseq**:未排序(向量化)执行(如果可行)
+- **par_unseq**: 并行 和/或 未排序(向量化)执行(如果可行)。
+
+​		Consider **std::sort()**:
+
+```c++
+sort(v.begin(),v.end());              // sequential
+sort(seq,v.begin(),v.end());          // sequential (same as the default)
+sort(par,v.begin(),v.end());          // parallel
+sort(par_unseq,v.begin(),v.end());    // parallel and/or vectorized
+```
+
+​		执行策略只是提示，是否值得并行化和/或向量化取决于 算法、序列中元素的数量、硬件以及硬件上的程序对硬件的利用。编译器和运行时调度器将决定使用多少并发。
+
+​		不幸的是，并行算法的范围版本还没有在标准中，但如果我们需要它们，它们很容易定义:
+
+```c++
+void sort(auto pol, random_access_range auto& r)
+{
+  sort(pol,r.begin(),r.end());
+}
+```
+
+​		许多并行算法主要用于数值数据.
+
+​		当请求并行执行时，确保避免数据竞争和死锁
+
+## overview
+
+| **Selected Standard Algorithms** **<algorithm>** |                                                              |
+| :----------------------------------------------- | ------------------------------------------------------------ |
+| **f=for_each(b,e,f)**                            | For each element **x** in [**b**:**e**) do **f(x)**          |
+| **p=find(b,e,x)**                                | **p** is the first **p** in [**b**:**e**) so that ***p==x**  |
+| **p=find_if(b,e,f)**                             | **p** is the first **p** in [**b**:**e**) so that **f(*****p)** |
+| **n=count(b,e,x)**                               | **n** is the number of elements ***q** in [**b**:**e**) so that ***q==x** |
+| **n=count_if(b,e,f)**                            | **n** is the number of elements ***q** in [**b**:**e**) so that **f(*****q)** |
+| **replace(b,e,v,v2)**                            | Replace elements ***q** in [**b**:**e**) so that ***q==v** with **v2** |
+| **replace_if(b,e,f,v2)**                         | Replace elements ***q** in [**b**:**e**) so that **f(*****q)** with **v2** |
+| **p=copy(b,e,out)**                              | Copy [**b**:**e**) to [**out**:**p**)                        |
+| **p=copy_if(b,e,out,f)**                         | Copy elements ***q** from [**b**:**e**) so that **f(*****q)** to [**out**:**p**) |
+| **p=move(b,e,out)**                              | Move [**b**:**e**) to [**out**:**p**)                        |
+| **p=unique_copy(b,e,out)**                       | Copy [**b**:**e**) to [**out**:**p**); don’t copy adjacent duplicates |
+| **sort(b,e)**                                    | Sort elements of [**b**:**e**) using **<** as the sorting criterion |
+| **sort(b,e,f)**                                  | Sort elements of [**b**:**e**) using **f** as the sorting criterion |
+| **(p1,p2)=equal_range(b,e,v)**                   | [**p1**:**p2**) is the subsequence of the sorted sequence [**b**:**e**) with the value **v**; basically a binary search for **v** |
+| **p=merge(b,e,b2,e2,out)**                       | Merge two sorted sequences [**b**:**e**) and [**b2**:**e2**) into [**out**:**p**) |
+| **p=merge(b,e,b2,e2,out,f)**                     | Merge two sorted sequences [**b**:**e**) and [**b2**:**e2**) into [**out**:**p**) using **f** as the comparison |
+
+
 
 
 
