@@ -586,6 +586,10 @@ in_addr_t inet_netof(struct in_addr in);
 
 > 与一般文件操作的`creat / open`类同。
 
+​		同文件一样，套接字是网络设备被操作系统抽象的结果。它们都是归属于操作系统管理的资源，提供给进程的只是使用它的方式，即句柄或描述符。
+
+​		所以，这些归属于操作系统的资源，是可以被多个进程共享的。
+
 ```c
 #include <sys/types.h>          /* See NOTES */
 #include <sys/socket.h>
@@ -1085,7 +1089,7 @@ int close(int fd);
 
 > 可以在发送全部完成后通过`shutdown`关闭发送，只等待对端的响应。
 >
-> shutdown会立即关闭指定套接字上的指定方向。
+> `shutdown`会立即关闭指定套接字上的指定方向。
 
 ```c
 #include <sys/socket.h>

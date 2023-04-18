@@ -62,7 +62,7 @@
 
 ### 非阻塞IO
 
-## I/O接口
+## I/O 接口
 
 ​		I/O接口只有同步和异步之分，阻塞和非阻塞是文件描述符（套接字）的属性。
 
@@ -88,6 +88,30 @@ ssize_t write(int fd,  const void *buf, size_t count);
 >   ​		对于sockfd， 代表一个双向连接，write将向tcp发送缓冲区拷贝字节流，拷贝的字节数有可能比请求的数量少。
 
 >    读到FIN包在read看来就是返回0.
+
+
+
+#### readv / writev
+
+​		`readv / writev`批量发送数据，减少I/O函数的调用次数，能提高数据通信效率。
+
+- `writev`可以将多个缓冲中的数据一起发送
+- `readv`可以由多个缓冲分别接收
+
+​		当需要传输的数据在不同的缓冲区中，需要多次调用`write / read`时，可以通过1此`writev / readv`来代替，并提高效率。
+
+```c++
+#include <sys/uio.h>
+
+struct iovec
+{
+    void* iov_vase; // buffer address
+    size_t iov_len; // buffer size
+};
+
+ssize_t writev(int filedes, const struct iovec* iov, int iovcnt); // return bytes / -1
+ssize_t readv(int filedes, const struct iovec* iov, int iovcnt); // return bytes / -1
+```
 
 
 
@@ -117,7 +141,7 @@ ssize_t sendto(int sockfd
 // len ：  用于读取socket缓冲区的 缓冲区大小，或向内核缓冲区拷贝的数据大小。
 // flag :  指定收发的特殊行为，常用的有：
 //       0   ， 
-//    MSG_OOB， 指定接收带外数据，即通过紧急指针发送的数据
+//    MSG_OOB， 指定收发带外数据，即通过紧急指针发送的数据，接收端触发SIGURG信号，recv(..., MSG_OOB)
 //    MSG_PEEK, 读缓冲区的数据但并不取走，数据还保留在缓冲区中
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
@@ -131,13 +155,24 @@ ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags);
 
 
 
-#### select / poll / epoll
+```c
+// MSG_OOB
+void urg_handler(int signo)
+{
+    recv(sock, buf, sizeof(buf)-1, MSG_OOB)；
+}
+
+fcntl(sock, F_SETOWN, getpid()); // getpid()的进程处理sock上的
+signal(SIGURG, urg_handler);
+```
 
 
 
 
 
 ### 异步
+
+#### aio
 
 ```c++
 struct aiocb {
@@ -153,6 +188,257 @@ struct aiocb {
 aio_read;
 aio_write;
 ```
+
+
+
+### IO复用
+
+​		`select/poll/epoll`都是阻塞函数。
+
+#### select
+
+​		`select`通过`fd_set`结构向内核传递要进行I/O事件检测的范围。`fd_set`是以位来表示位置对应的`socket fd`是否有事件发生的数组。
+
+```c++
+typedef struct
+{
+	__fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];
+} fd_set;
+
+/* Access macros for `fd_set'.  */
+#define	FD_SET(fd, fdsetp)		__FD_SET (fd, fdsetp)
+#define	FD_CLR(fd, fdsetp)		__FD_CLR (fd, fdsetp)
+#define	FD_ISSET(fd, fdsetp)	__FD_ISSET (fd, fdsetp)
+#define	FD_ZERO(fdsetp)			__FD_ZERO (fdsetp)
+```
+
+​		
+
+```c++
+#include <sys/select.h>
+#include <sys/time.h>
+
+struct timeval{
+    long tv_sec;
+    long tv_usec; //microseconds
+};
+
+int select(int maxfd, fd_set* rset, fd_set* wset, fd_set* eset, const struct timeval* timeout); // return count/-1;
+// maxfd 检测的数量， 最大文件描述符值+1，因为文件描述符从0开始，+1为数量
+// timeout, select中内置定时器，防止无事件发生时永久阻塞
+```
+
+- 设置文件描述符
+  - 指定检测范围
+  - 设置超时
+- 调用`select`
+- 处理检测结果
+
+​		`select`性能优先，并发处理上百个连接后性能快速下降。
+
+- 要检测所有的文件描述符
+- 每次传递检测对象信息
+  - 向系统调用拷贝传递大量数据的代价很高
+
+#### poll
+
+
+
+#### epoll
+
+​		`epoll`是对`poll`的改进，内核版本`2.5.44`引入
+
+​		相比于`select`，`epoll`无须每次传递检测对象信息，无需检测所有的文件描述符。`epoll`由操作系统负责保存检测对象文件描述符，只提供`epoll`操作接口给用户。
+
+```c++
+#include <sys/epoll.h>
+
+enum
+  {
+    EPOLL_CLOEXEC = 02000000,
+#define EPOLL_CLOEXEC EPOLL_CLOEXEC
+    EPOLL_NONBLOCK = 00004000
+#define EPOLL_NONBLOCK EPOLL_NONBLOCK
+  };
+
+/* Creates an epoll instance.  
+	Returns an fd for the new instance.
+   	The "size" parameter is a hint specifying the number of file
+   descriptors to be associated with the new instance. 
+   	The fd returned by epoll_create() should be closed with close().  */
+extern int epoll_create (int __size) __THROW;
+
+/* Same as epoll_create but with an FLAGS parameter.  The unused SIZE
+   parameter has been dropped.  */
+extern int epoll_create1 (int __flags) __THROW;
+
+
+/* Manipulate an epoll instance "epfd". 
+	Returns 0 in case of success,-1 in case of error ( the "errno" variable will contain the specific error code ) 
+	The "op" parameter is one of the EPOLL_CTL_* constants defined above. 
+	The "fd" parameter is the target of the operation. 
+	The "event" parameter describes which events the caller is interested in and any associated user data.  */
+/* Valid opcodes ( "op" parameter ) to issue to epoll_ctl().  */
+#define EPOLL_CTL_ADD 1	/* Add a file descriptor to the interface.  */
+#define EPOLL_CTL_DEL 2	/* Remove a file descriptor from the interface.  */
+#define EPOLL_CTL_MOD 3	/* Change file descriptor epoll_event structure.  */
+
+extern int epoll_ctl (int __epfd, int __op, int __fd,
+		      struct epoll_event *__event) __THROW;
+
+
+
+/* Wait for events on an epoll instance "epfd". 
+	Returns the number of triggered events returned in "events" buffer. Or -1 in case of error with the "errno" variable set to the specific error code. 
+	The "events" parameter is a buffer that will contain triggered events. 
+	The "maxevents" is the maximum number of events to be returned ( usually size of "events" ). 
+	The "timeout" parameter specifies the maximum wait time in milliseconds (-1 == infinite).
+
+   This function is a cancellation point and therefore not marked with
+   __THROW.  */
+extern int epoll_wait (int __epfd, struct epoll_event *__events,
+		       int __maxevents, int __timeout);
+
+
+/* Same as epoll_wait, but the thread's signal mask is temporarily
+   and atomically replaced with the one provided as parameter.
+
+   This function is a cancellation point and therefore not marked with
+   __THROW.  */
+extern int epoll_pwait (int __epfd, struct epoll_event *__events,
+			int __maxevents, int __timeout,
+			const __sigset_t *__ss);
+```
+
+​	
+
+##### EPOLL事件结构
+
+​		`epoll`通过`epoll_event`结构传递发生变化的文件描述符信息
+
+```c++
+typedef union epoll_data
+{
+  void *ptr;
+  int fd;
+  uint32_t u32;
+  uint64_t u64;
+} epoll_data_t;
+
+struct epoll_event
+{
+  uint32_t events;	/* Epoll events */
+  epoll_data_t data;	/* User data variable */
+} __EPOLL_PACKED;
+```
+
+##### epoll 事件类型
+
+```c++
+enum EPOLL_EVENTS
+  {
+    EPOLLIN = 0x001, // 可读事件，需要从接收缓冲区读取数据
+#define EPOLLIN EPOLLIN 
+    EPOLLPRI = 0x002,
+#define EPOLLPRI EPOLLPRI // 紧急事件，收到OOB数据的情况
+    EPOLLOUT = 0x004,
+#define EPOLLOUT EPOLLOUT // 可写事件，发送缓冲区为空等可以立即发送数据的情况
+    EPOLLRDNORM = 0x040,
+#define EPOLLRDNORM EPOLLRDNORM
+    EPOLLRDBAND = 0x080,
+#define EPOLLRDBAND EPOLLRDBAND
+    EPOLLWRNORM = 0x100,
+#define EPOLLWRNORM EPOLLWRNORM
+    EPOLLWRBAND = 0x200,
+#define EPOLLWRBAND EPOLLWRBAND
+    EPOLLMSG = 0x400,
+#define EPOLLMSG EPOLLMSG
+    EPOLLERR = 0x008, // 发生错误的情况
+#define EPOLLERR EPOLLERR
+    EPOLLHUP = 0x010, // 断开连接或半关闭的情况，边缘触发下非常有用
+#define EPOLLHUP EPOLLHUP
+    EPOLLRDHUP = 0x2000,
+#define EPOLLRDHUP EPOLLRDHUP
+    EPOLLWAKEUP = 1u << 29,
+#define EPOLLWAKEUP EPOLLWAKEUP
+    EPOLLONESHOT = 1u << 30, // 发生一次事件后，响应文件描述符不再收到时间通知，需要使用EPOLL_CTL_MOD再次设置事件的检测
+#define EPOLLONESHOT EPOLLONESHOT
+    EPOLLET = 1u << 31 // 边缘触发模式
+#define EPOLLET EPOLLET
+  };
+```
+
+
+
+##### epoll事件触发模式
+
+​		`epoll`有两种事件通知机制：水平触发和边缘触发。二者的区别在于，在通知用户事件发生的方式上：
+
+- 水平触发，只要缓冲区状态没有改变就持续通知
+- 边缘触发，缓冲区状态改变时通知一次
+
+​		两者在不能一次`read/write`调用处理完缓冲区上所有数据时才体现出差异。
+
+​		关于缓冲区状态和事件
+
+- 接收缓冲区
+
+  - 空缓冲区
+    - LT：没数据，不可读
+    - ET：缓冲区从空到数据时，通知一次可读
+  - 缓冲区不空
+    - LT：有数据，可读
+    - ET：缓冲区不空时，每当有新数据进入缓冲区，通知一次可读
+  - 缓冲区满
+    - LT：有数据且已满，可读
+    - ET：缓冲区满时，不触发可读
+
+- 发送缓冲区
+
+  - 空缓冲区
+
+    - LT：没数据，可写
+    - ET：没数据，通知一次可写
+
+  - 缓冲区不空
+
+    - LT：有数据但还有空间，可写
+    - ET：不通知
+
+  - 缓冲区满
+
+    - LT：没空间了，不可写
+    - ET：不通知
+
+    > 可写中ET的不通知是因为，系统通知用户可以将数据拷贝到发送缓冲区，无法静态的仅从缓冲区判定。
+    >
+    > 而且，写事件往往不会发生写不完的情况，因为用户拷贝数据到发送缓冲区由系统处理。而不是像读事件那样，用户从系统的接收缓冲区拷贝数据，存在读不完的情况。
+
+​		需要注意的是：
+
+- LT 模式下
+
+  - 读事件触发后，可以按需收取想要的字节数，不用把本次接收到的数据收取干净
+
+    ​	即不用循环到 recv 或者 read 函数返回 -1，错误码为 EWOULDBLOCK 或 EAGAIN）
+
+  - 不需要写事件一定要及时移除，避免不必要的触发，浪费 CPU 资源
+
+    - 一般不使用`epoll`来检测写事件，而是直接发送
+
+  - 使用 LT 模式，可以自由决定每次收取多少字节，但是可能会导致多次触发
+
+- ET 模式下
+
+  - 读事件必须把数据收取干净
+
+    ​	循环到 recv 或者 read 函数返回 -1，处理错误码为 EWOULDBLOCK 或 EAGAIN
+
+  - 写事件触发后，如果还需要下一次的写事件触发来驱动任务（例如发上次剩余的数据），你需要继续注册一次检测可写事件
+
+    - 一般不使用`epoll`来检测写事件，而是直接发送
+
+  - 使用 ET 模式，必须每次都要将数据收完，其优点是触发次数少。
 
 
 
@@ -217,7 +503,10 @@ size_t readn(int fd, void *buffer, size_t size) {
 > 这种占用CPU时间，轮询等待的机制，称为忙等待或忙轮询。
 
 ```c
+// 1.
+int flag = fcntl(fd, F_GETFL, 0);
 fcntl(fd, F_SETFL, flag | O_NONBLOCK);
+// 2.
 setsockopt(NONBLOCK)
 ```
 
@@ -248,6 +537,10 @@ while(1) {
         // read
 }
 ```
+
+
+
+
 
 
 
