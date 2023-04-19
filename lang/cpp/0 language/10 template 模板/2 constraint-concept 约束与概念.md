@@ -12,7 +12,7 @@
 
 
 
-## 模板参数类型的约束
+## 概念约束
 
 ​		模板提供了以下功能：
 
@@ -471,3 +471,198 @@ A single-argument concept
 > void sort(Sortable auto&);         // 'auto' required
 > void sort(Sortable&);                 // error: 'auto' required after concept name
 > ```
+
+
+
+## 标准库概念
+
+- 定义类型属性的概念
+- 定义迭代器的概念
+- 定义范围的概念
+
+### 类型概念
+
+​		与类型属性和类型之间关系相关的概念反映了类型的多样性。这些概念有助于简化大多数模板。
+
+| **Core language concepts** **<concepts>****T** and **U** are types |                                               |
+| :----------------------------------------------------------- | --------------------------------------------- |
+| **same_as<T,U>**                                             | **T** is the same as **U**                    |
+| **derived_from<T,U>**                                        | **T** is derived from **U**                   |
+| **convertible_to<T,U>**                                      | A **T** can be converted to a **U**           |
+| **common_reference_with<T,U>**                               | **T** and **U** share a common reference type |
+| **common_with<T,U>**                                         | **T** and **U** share a common type           |
+| **integral<T>**                                              | **T** is an integral type                     |
+| **signed_integral<T>**                                       | **T** is a signed integral type               |
+| **unsigned_integral<T>**                                     | **T** is an unsigned integral type            |
+| **floating_point<T>**                                        | **T** is a floating point type                |
+| **assignable_from<T,U>**                                     | A **U** can be assigned to a **T**            |
+| **swappable_with<T,U>**                                      | A **T** can be swapped with a **U**           |
+| **swappable<T>**                                             | **swappable_with<T,T>**                       |
+
+​		很多算法都应该使用相关类型的组合，例如由整型和双精度浮点数混合构成的表达式。我们使用common_with来判断这种混合在数学上是否合理。如果common_with<X,Y>为true，我们可以使用common_type_t<X,Y>来比较X和Y，首先将两者都转换为common_type_t<X,Y>。
+
+```c++
+common_type<string, const char*> s1 = some_fct()
+common_type<string, const char*> s2 = some_other_fct();
+if (s1<s2) {
+         // ...
+}
+// 要为一对类型指定一个公共类型，我们特化common定义中使用的common_type_t。
+using common_type_t<Bigint,long> = Bigint;      // for a suitable definition of Bigint
+```
+
+​		幸运的是，我们不需要定义common_type_t特化，除非我们想对库(还)没有合适定义的混合类型使用操作。
+
+​		与比较相关的概念受到了[Stepanov,2009]的强烈影响。
+
+| **Comparison concepts** **<concepts>** |                                                              |
+| :------------------------------------- | ------------------------------------------------------------ |
+| **equality_comparable_with<T,U>**      | A **T** and a **U** can be compared for equivalence using **==** |
+| **equality_comparable<T>**             | **equality_comparablewith<T,T>**                             |
+| **totally_ordered_with<T,U>**          | A **T** and a **U** can be compared using **<**, **<=**, **>**, and **>=** |
+|                                        | yielding a total order                                       |
+| **totally_ordered<T>**                 | **strict_totally_ordered_with<T,T>**                         |
+| **three_way_comparable_with<T,U>**     | A **T** and a **U** can be compared using **<=>**            |
+|                                        | yielding a consistent result                                 |
+| **three_way_comparable<T>**            | **three_way_comparable_with<T,T>**                           |
+
+​		equality_comparable_with和equality_comparable的使用表明(到目前为止)错过了重载概念的机会。
+
+​		奇怪的是，没有标准的布尔概念。我经常需要它，所以这里有一个版本:
+
+```c++
+template<typename B>
+concept Boolean =
+        requires(B x, B y) {
+                { x = true };
+                { x = false };
+                { x = (x == y) };
+                { x = (x != y) };
+                { x = !x };
+                { x = (x = y) };
+        };
+```
+
+​		在编写模板时，我们经常需要对类型进行分类
+
+| **Object concepts** **<concepts>** |                                                              |
+| :--------------------------------- | ------------------------------------------------------------ |
+| **destructible<T>**                | A **T** can be destroyed and have its address taken with unary **&** |
+| **constructible_from<T,Args>**     | A **T** can be constructed from an argument list of type **Args** |
+| **default_initializable<T>**       | A **T** can be default constructed                           |
+| **move_constructible<T>**          | A **T** can be move constructed                              |
+| **copy_constructible<T>**          | A **T** can be copy constructed and move constructed         |
+| **movable<T>**                     | **move_constructable<T>**, **assignable<T&,T>**, and **swapable<T>** |
+| **copyable<T>**                    | **copy_constructable<T>**, **moveable<T>**, and **assignable<T, const T&>** |
+| **semiregular<T>**                 | **copyable<T>** and **default_constructable<T>**             |
+| **regular<T>**                     | **semiregular<T>** and **equality_comparable<T>**            |
+
+​		理想的类型是规则的。常规类型的工作原理与int类型大致相同，它简化了我们使用类型的思路(§8.2)。类没有default ==，这意味着大多数类一开始都是半正则的，尽管大多数类可以也应该是正则的。
+
+​		每当我们将操作作为约束模板参数传递时，我们需要指定如何调用它，有时还需要指定我们对其语义做出的假设。
+
+| **Callable concepts** **<concepts>** |                                                              |
+| :----------------------------------- | ------------------------------------------------------------ |
+| **invocable<F,Args>**                | An **F** can be invoked with an argument list of type **Args** |
+| **regular_invocable<F,Args>**        | **invocable<F,Args>** and is equality preserving             |
+| **predicate<F,Args>**                | A **regular_invocable<F,Args>** returning a **bool**         |
+| **relation<F,T,U>**                  | **predicate<F,T,U>**                                         |
+| **equivalence_relation<F,T,U>**      | A **relation<F,T,U>** that provides an equivalence relation  |
+| **strict_weak_order<F,T,U>**         | A **relation<F,T,U>** that provides strict weak ordering     |
+
+如果``x==y``意味着``f(x)==f(y)``，那么函数f()是保等式的。invocable和regular_invocable仅在语义上有所不同。我们(目前)不能在代码中表示这一点，所以名称只是表达了我们的意图。
+
+
+
+类似地，relation和equivalence e_relation仅在语义上有所不同。等价关系具有自反性、对称性和传递性。
+
+
+
+关系和strict_weak_order仅在语义上有所不同。严格弱排序是标准库通常对比较的假设，例如<。
+
+
+
+### 迭代器概念
+
+​		
+
+传统的标准算法通过迭代器访问数据，因此我们需要概念来对迭代器类型的属性进行分类。
+
+| **Iterator concepts** **<iterators>** |                                                              |
+| :------------------------------------ | ------------------------------------------------------------ |
+| **input_or_output_iterator<I>**       | An **I** can be incremented (**++**) and dereferenced (*)    |
+| **sentinel_for<S,I>**                 | An **S** is a sentinel for an **Iterator** type; that is, **S** is a predicate on **I**’s value type |
+| **sized_sentinel_for<S,I>**           | A sentinel **S** where the **-** operator can be applied to **I** |
+| **input_iterator<I>**                 | An **I** is an input iterator; * can be used for reading only |
+| **output_iterator<I>**                | An **I** is an output iterator; * can be used for writing only |
+| **forward_iterator<I>**               | An **I** is a forward iterator, supporting multi-pass and **==** |
+| **bidirectional_iterator<I>**         | A **forward_iterator<I>** supporting **--**                  |
+| **random_access_iterator<I>**         | A **bidirectional_iterator<I>** supporting **+**, **-**, **+=**, **-=**, and **[]** |
+| **contiguous_iterator<I>**            | A **random_access_iterator<I>** for elements in contiguous memory |
+| **permutable<I>**                     | A **forward_iterator<I>** supporting move and swap           |
+| **mergeable<I1,I2,R,O>**              | Can merge sorted sequences defined by **I1** and **I2** into **O**using **relation<R>**? |
+| **sortable<I>**                       | Can sort sequences defined by **I** using **less**?          |
+| **sortable<I,R>**                     | Can sort sequences defined by **I** using **relation<R>**?   |
+
+与c++ 20中的定义相比，mergeable和sortable被简化了。
+
+
+
+不同类型(类别)的迭代器用于为给定的参数集选择最佳算法;见§8.2.2和§16.4.1。input_iterator的例子请参见§13.3.1。
+
+
+
+哨兵的基本思想是，我们可以从迭代器开始迭代一个范围，直到谓词对某个元素变为true。这样，迭代器p和哨兵s就定义了一个范围[p:s(*p))。例如，我们可以为哨兵定义一个谓词，使用指针作为迭代器来遍历c风格的字符串。不幸的是，这需要一些样板代码，因为我们的想法是将谓词表示为不能与普通迭代器混淆的东西，但你可以比较用于遍历范围的迭代器:
+
+```c++
+template<class Iter>
+class Sentinel {
+public:
+         Sentinel(int ee) : end(ee) { }
+         Sentinel() :end(0) {}          // Concept sentinel_for requires a default constructor
+
+         friend bool operator==(const Iter& p, Sentinel s) { return (*p == s.end); }
+         friend bool operator!=(const Iter& p, Sentinel s) { return !(p == s); }
+private:
+         iter_value_t<const char*> end;        // the sentinel value
+};
+```
+
+friend声明器允许我们定义==和!=二元函数，用于在类的作用域中比较迭代器和哨兵。
+
+
+
+我们可以检查Sentinel是否满足const char类型的Sentinel for要求:
+
+```c++
+static_assert(sentinel_for<Sentinel<const char*>, const char*>);   // check the Sentinel for C-style strings
+```
+
+最后，我们可以编写一个相当奇特的“Hello, World!””计划:
+
+```c++
+const char aa[] = "Hello, World!\nBye for now\n";
+ranges::for_each(aa, Sentinel<const char*>('\n'), [](const char x) { cout << x; });
+```
+
+是的，这实际上是在写Hello, World!后面没有换行符。
+
+### range概念
+
+​		范围的概念定义了范围的属性。
+
+| **Range concepts** **<ranges>** |                                                              |
+| :------------------------------ | ------------------------------------------------------------ |
+| **range<R>**                    | An **R** is a range with a begin iterator and a sentinel     |
+| **sized_range<R>**              | An **R** is a range that knows its size in constant time     |
+| **view<R>**                     | An **R** is a range with constant time copy, move, and assignment |
+| **common_range<R>**             | An **R** is a range with identical iterator and sentinel types |
+| **input_range<R>**              | An **R** is a range whose iterator type satisfies input_iterator |
+| **output_range<R>**             | An **R** is a range whose iterator type satisfies output_iterator |
+| **forward_range<R>**            | An **R** is a range whose iterator type satisfies forward_iterator |
+| **bidirectional_range<R>**      | An **R** is a range whose iterator type satisfies bidirectional_iterator |
+| **random_access_range<R>**      | An **R** is a range whose iterator type satisfies random_access_iterator |
+| **contiguous_range<R>**         | An **R** is a range whose iterator type satisfies contiguous_iterator |
+
+`<ranges>`中还有其他一些概念，但这个集合是一个很好的开始。这些概念的主要用途是基于输入的类型属性来实现重载
+

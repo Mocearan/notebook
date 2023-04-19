@@ -109,6 +109,28 @@ void user(forward_range auto& r)
 }
 ```
 
+​		
+
+
+
+## range generator
+
+​		通常，`range`需要动态生成。标准库为此提供了一些简单的生成器，也称为`range`工厂。
+
+| **Range factories**       |                                                              |                                                              |
+| :------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **v=empty_view<T>{}**     | **v** is an empty range of type **T** elements (had it had any) |                                                              |
+| **v=single_view{x}**      | **v** is a range of the one element **x**                    |                                                              |
+| **v=iota_view{x}**        | **v** is a infinite range of elements: **x**, **x+1**, **x+2**, ... |                                                              |
+|                           | incrementing is done using **++**                            |                                                              |
+| **v=iota_view{x,y}**      | **v** is a range of **n** elements: **x**, **x+1**, ..., **y-1** | `for (int x : iota_view(42,52)) // 42 43 44 45 46 47 48 49 50 51` |
+|                           | incrementing is done using **++**                            |                                                              |
+| **v=istream_view<T>{is}** | **v** is the range obtained by calling **>>** for **T** on **is** | `for (auto x : istream_view<complex<double>(cin) )`<br />`for (auto x : transform_view(istream_view<complex<double>>(cin), [](auto z){ return z*z;}))         cout << x << '\n'` |
+
+
+
+## pipeline
+
 ​		许多范围是无限的。此外，我们通常只需要几个值。因此，有一些视图只从一个范围中获取少数值:
 
 ```c++
@@ -123,8 +145,6 @@ void user(forward_range auto& r)
     for (int x : take_view{v, 3})
        cout << x <<' ';
 }
-
-
 ```
 
 ​		上面这段代码还可以写成：
@@ -134,5 +154,36 @@ for (int x : take_view{ filter_view { r, [](int x) { return x % 2; } }, 3 })
         cout << x <<' ';
 ```
 
-​		这种视图嵌套很快就会变得神秘难以理解，于是`range`提供了管道来简化。
+​		这种视图嵌套很快就会变得神秘难以理解，于是`range`提供了管道来简化。`pipeline`风格比嵌套函数调用更具可读性。管道从左向右工作，第一个必须是``range``或``generator``。
+
+​		对于每个标准库视图，标准库都提供了一个生成过滤器的函数。可以用作过滤器运算符``|``的参数的对象。这允许我们将过滤器组合成一个序列，而不是将它们呈现为一组嵌套的函数调用。这些过滤函数位于命名空间``ranges::views``中
+
+```c++
+void user(forward_range auto& r)
+{
+    // 1. 
+    for (int x : r | views::filter([](int x) { return x % 2; } ) | views::take(3) )
+        cout << x <<' ';
+    // 2.
+    using namespace views;
+    auto odd = [](int x) { return x % 2; };
+    for (int x : r | filter(odd) | take(3) )
+         cout << x <<' ';
+}
+```
+
+​		`view`和`pipeline`的实现涉及到复杂模板元编程，关心性能需要确保衡量实现是否满足需求。如果不能，总有一个传统的解决方案：
+
+```c++
+// 这里发生的逻辑是模糊的。
+void user(forward_range auto& r)
+{
+     int count = 0;
+     for (int x : r)
+      	if (x % 2) {
+           cout << x <<' ';
+           if (++count == 3) return;
+     	}
+}
+```
 
