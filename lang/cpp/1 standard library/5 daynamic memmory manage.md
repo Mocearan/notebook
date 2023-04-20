@@ -30,31 +30,31 @@
 
 > On Windows, the default stack size is 1MB. On some unix machines, it can be as large as 8MB. If the program tries to put too much information on the stack, stack overflow will result.
 >
->  **Stack overflow** happens when all the memory in the stack has been allocated -- in that case, further allocations begin overflowing into other sections of memory.
+> **Stack overflow** happens when all the memory in the stack has been allocated -- in that case, further allocations begin overflowing into other sections of memory.
 >
 > Stack overflow is generally the result of allocating too many variables on the stack, and/or making too many nested function calls (where function A calls function B calls function C calls function D etc…) On modern operating systems, overflowing the stack will generally cause your OS to issue an access violation and terminate the program.
 >
 > ```c++
 > int main()
 > {
->     int stack[10000000];
->     std::cout << "hi" << stack[0]; // we'll use stack[0] here so the compiler won't optimize the array away
+>  int stack[10000000];
+>  std::cout << "hi" << stack[0]; // we'll use stack[0] here so the compiler won't optimize the array away
 > 
->     return 0;
+>  return 0;
 > }
 > 
 > 
 > void foo()
 > {
->     foo();
->     std::cout << "hi";
+>  foo();
+>  std::cout << "hi";
 > }
 > 
 > int main()
 > {
->     foo();
+>  foo();
 > 
->     return 0;
+>  return 0;
 > }
 > ```
 >
