@@ -304,7 +304,59 @@ for (int index=0; index < deq.size(); ++index)
 
 ### span 视图
 
+​		传统c/c++程序中严重错误主要来源于范围错误，会导致 错误的结果、崩溃和安全问题。容器、算法和``range-for``的使用极大缓解了这个问题。
 
+​		范围错误的主要原因是认为传递指针，依靠约定确定指向的元素数量。标准库``string_view``提供针对字符只读的字符串视图。``<span>``中的``span``基本上是一个 `(pointer，length)` 对，表示一个元素序列:
+
+```c++
+span<int>:  {begin(), size()}
+			 ↓->
+intergers:   | 1 | 2 | 3 | 4 | 5 |....| 23 |
+```
+
+​		`span` 访问连续的元素序列。
+
+- 元素可以以多种方式存储，包括在向量和内置数组中。
+- 与指针一样，``span``不实际拥有所指向的字符。类似于``string_view``和STL迭代器对。
+
+```c++
+void fpn(int* p, int n) 
+{
+    for (int i = 0; i<n; ++i) // n个整数是假设，只是一种约定，不能用来做range-for，编译器也无法实现廉价而有效的范围检查。
+        p[i] = 0;
+}
+
+int a[100];
+fpn(a,100);               // OK
+fpn(a,1000);             // oops, my finger slipped! (range error in fpn)
+```
+
+​		可以使用`span`来改进：
+
+```c++
+void fs(span<int> p)
+{
+	for (int& x : p)
+    	x = 0;
+}
+
+ int a[100];
+fs(a);                   // implicitly creates a span<int>{a,100}
+fs(a,1000);              // error: span expected
+fs({a+10,100});          // a range error in fs
+fs({a,x});               // obviously suspect
+```
+
+​		直接从数组创建``span`是安全的(编译器会计算元素数量)。在函数间传递`span`比`(pointer,count)`接口简单，不需要额外的检查
+
+```c++
+void f1(span<int> p);
+void f2(span<int> p){f1(p);}
+```
+
+​		对``span``使用下标时不要求进行范围检查，越界访问是未定义的行为。核心指南支持库[CG]中的原始``gsl::span``做范围检查。
+
+​		在底层软件中写入和读取缓冲区时，很难在保持高性能的同时避免缓冲区溢出。
 
 ## 容器接口
 
