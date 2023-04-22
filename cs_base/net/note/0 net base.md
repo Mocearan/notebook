@@ -122,7 +122,7 @@
 
 ​		处于网络分层模型上相应层次的一端，只有在对端对等的层次上才能得到该层次可以正确处理的数据，称为对等通信。
 
-### 封装
+### 封装 encapsulation
 
 ​		网络分层模型上相应的层次，会对由其上层传来的数据打上该层的头部，称为封装。有些层具有尾部
 
@@ -132,7 +132,7 @@
 
 ​		网络分层模型上相应的层次，会对由其下层传来的数据解除该层的头部，分配给对应的协议栈处理，称为分用。
 
-​		![image-20210901232042925](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20210901232042925.png)
+![image-20230422205716008](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230422205716008.png)
 
 ### IP地址
 
