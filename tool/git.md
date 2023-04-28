@@ -1,3 +1,29 @@
+[手写 git hooks 脚本（pre-commit、commit-msg） - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/391221822)
+
+[十分钟理解 Git 原理 | 微信开放社区 (qq.com)](https://developers.weixin.qq.com/community/develop/article/doc/000c8e6e6c01800076481a8f251413)
+
+[图解Git操作，一篇就够 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/263050507)
+
+[Git 原理入门 - 阮一峰的网络日志 (ruanyifeng.com)](https://www.ruanyifeng.com/blog/2018/10/git-internals.html)
+
+[Git 原理入门 - 阮一峰的网络日志 (ruanyifeng.com)](https://www.ruanyifeng.com/blog/2018/10/git-internals.html)
+
+[(256条消息) git基本原理详解_git原理_乜都得的博客-CSDN博客](https://blog.csdn.net/xiaoputao0903/article/details/23912561)
+
+[这才是真正的Git——Git内部原理揭秘！ - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/96631135)
+
+[从基本Git指令到背后原理，带你手把手实现一个简单的Git - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/340369222)
+
+[(256条消息) 编程实现简单的git版本管理系统_git版本管理实现_STcyclone的博客-CSDN博客](https://blog.csdn.net/STcyclone/article/details/112395164)
+
+[从基本Git指令到背后原理，带你手把手实现一个简单的Git_git 实现_linuxguitu的博客-CSDN博客](https://blog.csdn.net/linuxguitu/article/details/111884001#:~:text=从基本Git指令到背后原理，带你手把手实现一个简单的Git 1 1. init 在学习 git 原理之前，我们先忘掉平时用的 commit，branch，tag,4 4.commit object 虽然我们已经可以用一个 tree object 来表示整个项目的版本信息了，但是似乎还是有些不足的地方： )
+
+
+
+https://zhuanlan.zhihu.com/p/182553920
+
+[别乱提交代码了，看下大厂 Git 提交规范是怎么做的！ - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/100773495)
+
 # git
 
 ​		Git 是一个开源的分布式版本控制系统，用于管理项目开发。
@@ -951,9 +977,9 @@ Date:   Tue Nov 2 06:27:42 2021 +0000
 >   ```shell
 >   Author: mass <mazengrong12211@163.com>
 >   Date:   Wed Nov 3 21:25:37 2021 +0800
->               
+>                 
 >       new
->               
+>                 
 >   diff --git a/new.txt b/new.txt
 >   new file mode 100644
 >   index 0000000..c586658

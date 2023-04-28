@@ -70,3 +70,14 @@ Val accumulate(const R& r, Val res = 0)
 
 ​		`accumulate()`的成对迭代器版本和范围版本都很有用:成对迭代器版本用于一般用途，范围版本用于简化常用用途。
 
+
+
+## CRTP
+
+[c++中如何避免重复写大量相似的虚函数_百度搜索 (baidu.com)](https://www.baidu.com/s?ie=UTF-8&wd=c%2B%2B中如何避免重复写大量相似的虚函数)
+
+[(7 封私信 / 81 条消息) C++中如何避免重复写大量相似的虚函数？ - 知乎 (zhihu.com)](https://www.zhihu.com/question/564819820)
+
+[crtp_百度搜索 (baidu.com)](https://www.baidu.com/s?ie=UTF-8&wd=crtp)
+
+[CRTP介绍、使用和原理 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/476001202)

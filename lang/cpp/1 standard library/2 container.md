@@ -358,6 +358,8 @@ void f2(span<int> p){f1(p);}
 
 ​		在底层软件中写入和读取缓冲区时，很难在保持高性能的同时避免缓冲区溢出。
 
+
+
 ## 容器接口
 
 ​		从符号的角度来看，标准容器及其基本操作是相似的。操作的含义对于各种容器是等效的。基本操作适用于每种有意义且可以有效实施的容器：
@@ -429,4 +431,128 @@ int main()
     std::cout << '\n';
 }
 ```
+
+
+
+# facilities container
+
+​		标准提供了一些不完全适合STL框架的容器（如内置数组、``array``和``string``），也称为“拟容器”。
+
+- 保存元素，是容器
+- 但都有不同的限制或特别功能，使它们在STL语境中显得笨拙
+
+| **Containers**      |                                                              |
+| :------------------ | ------------------------------------------------------------ |
+| **T[N]**            | Built-in array: a fixed-size contiguously allocated sequence of **N** |
+|                     | elements of type **T**; implicitly converts to a **T***      |
+| **array<T,N>**      | A fixed-size contiguously allocated sequence of **N** elements |
+|                     | of type **T**; like the built-in array, but with most problems solved |
+| **bitset<N>**       | A fixed-size sequence of **N** bits                          |
+| **vector<bool>**    | A sequence of bits compactly stored in a specialization of **vector** |
+| **pair<T,U>**       | Two elements of types **T** and **U**                        |
+| **tuple<T...>**     | A sequence of an arbitrary number of elements of arbitrary types |
+| **basic_string<C>** | A sequence of characters of type **C**; provides string operations |
+| **valarray<T>**     | An array of numeric values of type **T**; provides numeric operations |
+
+- `std::pair`和`std::tuple`是异构数据结构
+
+  ​	其他容器都是同构的(所有元素都是相同的类型)。
+
+- `std::array`和`std::tuple`的元素是连续的顺序结构，``std::list``和``std::map``是链式结构。
+
+- `std::bitset`和`std::vector<bool>`保存比特位，并通过代理对象访问它们
+
+  ​	其他标准库容器都可以容纳各种类型并直接访问元素
+
+- `std::basic_string`要求其元素是某种形式的字符，并提供字符串操作，例如连接和敏感于地区的操作。
+
+- `std::valarray`要求元素都是数值，并提供数值运算。
+
+
+
+## `std::array<T, N>`
+
+​		``<array>``中定义的`std::array<T,N>`是
+
+- 给定类型`T`的固定长度`N`的元素序列
+
+- 元素数量`N`在编译时指定，因此`std::array`中元素的存储可以分配到栈中、对象中或静态存储中。
+
+- 元素的存储分配在定义`std::array<T,N>`的作用域中
+
+  - 最好将数组理解为与大小紧密相连的内置数组
+
+  - 没有隐式的、可能令人惊讶的指针类型转换，并提供了一些方便的函数
+
+  - 与使用内置数组相比，使用数组没有任何开销(时间或空间)
+
+  - 数组并不遵循STL容器的“处理元素”模型。相反，数组直接包含它的元素
+
+  - 它只不过是内置数组的一个更安全的版本
+
+    - 数据维度与长度维度绑定在一个对象中，不会发生退化
+    - 可以使用`operator=`来拷贝数组
+
+  - 必要时，可以将数组显式传递给需要指针的c风格函数
+
+    ```c++
+     f(a,a.size());                    // error: no conversion
+    f(a.data(),a.size());        	 // C-style use
+    ```
+
+
+
+​		相比于`std::vector`，`std::array`虽然不够灵活，但是更简单。
+
+- 直接访问栈上分配的元素，相对于通过`std::vector`的资源句柄在堆上分配释放元素有更显著的性能优势
+- 栈是一种有限的资源，要注意栈溢出
+- 一些关键的安全软件、实时软件禁止动态内存分配，使用`delete`可能造成内存碎片或内存耗尽
+
+
+
+## `std::bitset<T>`
+
+​		系统的状态，通常表示为一组标志，表示二元条件，如好/坏、真/假和开/关。
+
+- c++通过对整数的位操作有效地支持小标志集的概念。
+- 类`std::bitset<N>`通过提供对N位序列``[0:N)``的操作来推广这种概念
+  - N在编译时已知
+  - ``long long``整型无法容纳的位集合，使用``std::bitset``比直接使用integer方便得多
+  - 对于较小的集合，``std::bitset``通常是优化过的。
+  - 如果想给这些位命名，而不是使用index，可以使用集合或枚举
+
+
+
+### 初始化
+
+```c++
+// bitset可以用整数或字符串初始化:
+bitset<9> bs1 {"110001111"};
+bitset<9> bs2 {0b1'1000'1111};       // binary literal using digit separators (§1.4)
+```
+
+
+
+### 操作
+
+```c++
+// 位操作符和左移和右移操作符可以应用:
+bitset<9> bs3 = ~bs1;               // complement: bs3=="001110000"
+bitset<9> bs4 = bs1&bs3;        // all zeros
+bitset<9> bs5 = bs1<<2;          // shift left: bs5 = "000111100"
+
+// to_ullong()和to_string()操作提供了构造函数的反向操作
+bitset<8*sizeof(int)> b = i;             // assume 8-bit byte (see also §17.7)
+cout << b.to_string() << '\n';          // write out the bits of i
+
+//  bitset output operator
+ bitset<8*sizeof(int)> b = i;      // assume 8-bit byte (see also §17.7)
+cout << b << \'n';                 // write out the bits of i
+
+// bitset提供了许多用于使用和操作位集合的函数，如all()、any()、none()、count()、flip()。
+```
+
+
+
+## `std::pair<K,V>`
 
