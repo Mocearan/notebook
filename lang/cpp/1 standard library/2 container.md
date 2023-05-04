@@ -556,3 +556,314 @@ cout << b << \'n';                 // write out the bits of i
 
 ## `std::pair<K,V>`
 
+​		编程中将两个不同类型的作为一个逻辑整体来使用的场景非常常见，如映射容器中的键值元素、函数参数或返回值的多元逻辑整体（``array{data, length}``)。
+
+​		传统最常用的方式是通过`struct`来将不同类型的类型组织在一起，函数返回值可以借此返回一个错误说明和函数结果。当代码不需要泛型时，使用具有命名成员的简单结构通常会使代码更易于维护。
+
+```c++
+struct My_res {
+ 	Entry* ptr;
+ 	Error_code err;
+};
+
+My_res complex_search(vector<Entry>& v, const string& s)
+{
+     Entry* found = nullptr;
+     Error_code err = Error_code::found;
+     // ... search for s in v ...
+     return {found,err};
+}
+
+ My_res r = complex_search(entry_table,s);      // search entry_table
+ if (r.err != Error_code::good) {
+          // ... handle error ...
+ }
+ //... use r.ptr ....
+```
+
+​		`c++11`通过`std::pair<K,V>`和`std::tuple`提供了组合两个或多个不同类型值作为一个整体的能力。
+
+​		`std::pair`有两个成员``first / second``。实现角度来看，以朴素的序号来标定元素足够通用。在应用时往往希望通过以命名的方式来使用，结构化绑定提供了为结构化数据命名的能力。
+
+```c++
+auto [ptr,success] = complex_search(entry_table,s);      // search entry_table
+if (success != Error_code::good)
+     // ... handle error ...
+}
+// ... use r.ptr ....
+```
+
+​		标准库经常使用`std::pair`来传递函数结果。
+
+```c++
+template<typename Forward_iterator, typename T, typename Compare>
+ pair<Forward_iterator,Forward_iterator>
+ equal_range(Forward_iterator first, Forward_iterator last, const T& val, Compare cmp);
+
+/////////////////////////////////
+auto less = [](const Record& r1, const Record& r2) { return r1.name<r2.name;};// compare names
+auto [first,last] = equal_range(v.begin(),v.end(),Record{"Reg"},less);
+for (auto p = first; p!=last; ++p)  // print all equal records
+         cout << *p;         // assume that << is defined for Record
+```
+
+​		`std::pair`提供了操作符，``= / == / <``等，如果它的元素是这样的话。创建``std::pair``时因类型推导无需显式地说明其类型。
+
+```c++
+vector<string> v{...};
+pair p1 {v.begin(),2};               // one way
+auto p2 = make_pair(v.begin(),2);    // another way
+
+// std::pair<vector<string>::iterator,int>
+```
+
+​		
+
+## `std::tuple`
+
+​		`std::tuple`是一个异构容器，是`std::pair`的泛化形式，可以包含零个或多个元素。
+
+```c++
+tuple t0 {};                                                                      // empty
+tuple<string,int,double> t1 {"Shark",123,3.14};         // the type is explicitly specified
+auto t2 = make_tuple(string{"Herring"},10,1.23);      // the type is deduced to tuple<string,int,double>
+tuple t3 {"Cod"s,20,9.99};                                            // the type is deduced to tuple<string,int,double>
+```
+
+​		`std::tuple`中的元素独立的，他们之间的结构并非不变。如果需要不变式结构，必须将元组封装在一个类中制约其结构。
+
+​		对于单一的、特定的用途，通常理想的是简单的结构体。但`std::tuple`的灵活性在许多通用场景中，不必定义大量结构体结构体，作为灵活性的代价同`std::pair`一样是需要使用序号来标定元素，`std::tuple`通过`std::get<N>`函数模板访问特定序号的元素。
+
+```c++
+2string fish = get<0>(t1);              // get the first element: "Shark"
+int count = get<1>(t1);                // get the second element: 123
+double price = get<2>(t1);         // get the third element: 3.14
+```
+
+- 序号从``0``开始，`std::get()`方法的``index``参数必须是一个常量
+
+- `std::get`模板函数以索引作为模板值参数
+
+- 索引访问`std::tuple`元素常见而丑陋，且易出错
+
+  - `std::tuple`中类型唯一元素可以按其类型命名
+
+    ```c++
+    auto fish = get<string>(t1);                // get the string: "Shark"
+    auto count = get<int>(t1);                  // get the int: 123
+    auto price = get<double>(t1);           	// get the double: 3.14
+    
+    get<string>(t1) = "Tuna";       // write to the string
+    get<int>(t1) = 7;                      // write to the int
+    get<double>(t1) = 312;          // write to the doubl
+    ```
+
+  - `std::tuple`的用法往往结合其他更高层次的结构化数据结构设计，如结构化绑定
+
+    ```c++
+    auto [fish, count, price] = t1;
+    cout << fish << ' ' << count << ' ' << price << '\n';      // read
+    fish = "Sea Bass"; 
+    
+    auto [fish, count, price] = todays_catch();
+    cout << fish << ' ' << count << ' ' << price << '\n';
+    ```
+
+
+
+​		`std::tuple`的优势在于，存储或传递数量未知、类型未知的元素。
+
+​		遍历`std::tuple`的元素有点麻烦，需要递归，并在编译时对函数体求值:
+
+```c++
+template <size_t N = 0, typename... Ts> 
+constexpr void print(tuple<Ts...> tup)
+{					// sizeof…(Ts) 给出了Ts中的元素个数。
+    if constexpr (N<sizeof...(Ts)) {         // not yet at the end?
+       cout << get<N>(tup) << ' ';         	// print the Nth element
+   	print<N+1>(tup);                        // print the next element
+    }
+}
+
+print(t0);           // no output
+print(t2);           // Herring 10 1.23
+print(tuple{ "Norah", 17, "Gavin", 14, "Anya", 9, "Courtney", 9, "Ada", 0 });
+```
+
+​		`std::tuple`也提供了操作符，`= / == / <`等。还有二元组和二元组之间的转换。
+
+
+
+# Alternatives container
+
+​		有一些场景中，逻辑对象在不同的场景下以不同类型的表达方式互相指代。容纳这些在不同场景下，对同一值进行不同类型表达的类型称为替代容器。
+
+​		标准库基于C语言`union`扩展了三种替代容器：
+
+| **union**         | A built-in type that holds one of a set of alternatives (§[2.5](ch02.xhtml#sec2_5)) |
+| ----------------- | ------------------------------------------------------------ |
+| **variant<T...>** | One of a specified set of alternatives (in **<variant>**)    |
+| **optional<T>**   | A value of type **T** or no value (in **<optional>**)        |
+| **any**           | A value one of an unbounded set of alternative types (in **<any>**) |
+
+
+
+## `std::variant`
+
+​		与直接使用``union``相比，`std::variant<A,B,C>`通常更安全、更方便。
+
+```c++
+std::variant<std::string,Error_code> compose_message(istream& s)
+{
+    std::string mess;
+    // ... read from s and compose message ...
+    if (no_problems)
+        return mess;              // return a string
+    else
+        return Error_code{some_problem};        // return an Error_code
+}
+```
+
+​		用一个值赋值或初始化`std::variant`时，可以查询`std::variant`的类型并提取值。
+
+```c++
+auto m = compose_message(cin);
+
+if (holds_alternative<string>(m)) {
+   cout << get<string>(m);
+} else {
+   auto err = get<Error_code>(m);
+   // ... handle error ...
+}
+```
+
+​		这种风格排除了异常，还有其他一些用途：一个简单的编译器可能需要区分具有不同表示的不同类型的节点：
+
+```c++
+using Node = variant<Expression,Statement,Declaration,Type>;
+
+void check(Node* p)
+{
+    if (holds_alternative<Expression>(*p)) {
+        Expression& e = get<Expression>(*p);
+        // ...
+     }
+     else if (holds_alternative<Statement>(*p)) {
+        Statement& s = get<Statement>(*p);
+        // ...
+     }
+     // ... Declaration and Type ...
+}
+```
+
+​		这种通过检查其他选项来决定适当操作的模式非常常见，但效率相对较低，因此值得直接支持:
+
+```c++
+void check(Node* p)
+{
+    visit(overloaded {
+         [](Expression& e) { /* ... */ },
+         [](Statement& s) { /* ... */ },
+         // ... Declaration and Type ...
+    }, *p);
+}
+```
+
+​		这基本上等同于虚函数调用，但可能更快。与所有关于性能的声明一样，在性能至关重要时，这种“可能更快”应该通过测量来验证。在大多数情况下，性能上的差异是微不足道的。
+
+​		重载类是必要的，奇怪的是，它不是标准的。它是一个“魔法”，可以从一组参数(通常是lambda)构建一个重载集:
+
+```c++
+template<class... Ts>
+struct overloaded : Ts... {            // variadic template (§8.4)
+    using Ts::operator()...;
+};
+
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;    // deduction guide
+```
+
+​		然后，“visitor”访问将()应用于重载对象，该对象根据重载规则选择最合适的lambda来调用。
+
+​		deduction guide是一种解决微妙歧义的机制，主要用于基础库中的类模板构造器(§7.2.3)。
+
+​		如果我们试图访问与预期类型不同的变量，则会抛出bad_variant_access。
+
+
+
+## `std::optional`
+
+​		`std::optional<A>`可以看作是一种特殊的变体(比如``std::variant<A,nothing>``)，也可以看作是``A*``指向对象或为``nullptr``这一思想的泛化。
+
+​		对于可能返回或不返回对象的函数，``optional``很有用:
+
+```c++
+optional<string> compose_message(istream& s)
+{
+    string mess;
+
+    // ... read from s and compose message ...
+    if (no_problems)
+            return mess;
+    return {};          // the empty optional
+}
+
+if (auto m = compose_message(cin))
+        cout << *m;               // note the dereference (*)
+else {
+        // ... handle error ...
+}
+```
+
+​		它排除了异常，注意``*``的奇怪用法。``std::optional``对象被视为指向其对象的指针，而不是对象本身。与``nullptr``等价的``std::optional``对象是空对象``{}``。
+
+```c++
+int sum(optional<int> a, optional<int> b)
+{
+    int res = 0;
+    if (a) res+=*a;
+    if (b) res+=*b;
+    return res;
+}
+
+int x = sum(17,19);         // 36
+int y = sum(17,{});          // 17
+int z = sum({},{});            // 0
+```
+
+​		如果我们尝试访问一个没有值的``optional``对象，结果是``undefined``而不抛出异常。因此，``std::optional``不能保证类型安全。不要尝试:
+
+```c++
+nt sum2(optional<int> a, optional<int> b)
+{
+     return *a+*b;     // asking for trouble
+}
+```
+
+
+
+## `std::any`
+
+​		`std::any`对象可以保存任意类型，并且知道它保存的是哪种类型。它基本上是一个无约束版本的``std::variant``
+
+```c++
+std::any compose_message(std::istream& s)
+{
+    std::string mess;
+    // ... read from s and compose message ...
+    if (no_problems)
+        return mess;                        // return a string
+    else
+        return error_number;          // return an int
+}
+```
+
+​		当你用值赋值或初始化any时，它会记住该值的类型。稍后，我们可以通过断言值的预期类型来提取any所持有的值。
+
+```c++
+auto m = compose_message(cin);
+string& s = any_cast<string>(m); 
+cout << s;
+```
+
+​		如果我们试图访问类型与预期不同的any对象，则会抛出bad_any_access。
