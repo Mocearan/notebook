@@ -115,3 +115,113 @@ auto s2 = reduce(par_unseq,large.begin(),large.end());  // calculate the sum usi
 ```
 
 ​		执行策略`par、sec、unsec和par_unsec`隐藏在`<execution>`中的命名空间``std::execution``中。
+
+
+
+## complex number 复数
+
+​		标准库支持``class complex``类似的复数类型。为了支持`float`、`double`等复数，标准库中的``complex``是一个模板:
+
+```c++
+emplate<typename Scalar>
+class complex {
+public:
+     complex(const Scalar& re ={}, const Scalar& im ={});    // default function arguments;
+     // ...
+};
+```
+
+​		支持复数的常用算术运算和最常用的数学函数。``sqrt()``和``pow()``(乘幂)函数是定义在``<complex>``中的常用数学函数
+
+```c++
+complex<float> fl, complex<double> db
+complex<long double> ld {fl+sqrt(db)};
+db += fl*3;
+fl = pow(1/fl,2);
+// ...
+```
+
+
+
+## random numbers 随机数
+
+​		随机数在测试、游戏、模拟和安全等领域具有重要作用，标准库``<random>``提供的随机数生成器用来满足不同应用领域的需求。
+
+​		一个随机数生成器由两部分组成:
+
+- 产生随机或伪随机值序列的引擎
+- 将这些值映射为一定范围内的数学分布的分布
+
+​		分布的例子有``uniform_int_distribution``(生成的所有整数都是等可能的)、``normal_distribution``(“钟形曲线”)和``exponential_distribution``(指数增长);每个都有特定的范围。
+
+```c++
+using my_engine = default_random_engine;                 // type of engine
+using my_distribution = uniform_int_distribution<>;      // type of distribution
+
+my_engine eng {};                        // the default version of the engine
+my_distribution dist {1,6};              // distribution that maps to the ints 1..6
+auto die = [&](){ return dist(eng); };   // make a generator
+
+int x = die();        // roll the die: x becomes a value in [1:6]
+```
+
+​		由于对通用性和性能的不懈关注，一位专家认为标准库中的随机数组件是“每个随机数库发展起来后想要成为的样子”。然而，它很难被认为是“新手友好”。using语句和lambda表达式使所做的事情更明显。
+
+​		对于(任何背景的)新手来说，随机数库的完全通用接口可能是一个严重的障碍。一个简单的均匀随机数生成器通常就足以入门。
+
+```c++
+Rand_int rnd {1,10};        // make a random number generator for [1:10]
+int x = rnd();                     // x is a number in [1:10]
+```
+
+​		那么，我们怎么得到这个呢?我们需要像die()那样，在类Rand_int中结合引擎和分布:
+
+```c++
+class Rand_int {
+public:
+        Rand_int(int low, int high) :dist{low,high} { }
+        int operator()() { return dist(re); }             // draw an int
+        void seed(int s) { re.seed(s); }                  // choose new random engine seed
+private
+        default_random_engine re;
+        uniform_int_distribution<> dist;
+};
+```
+
+​		这个定义仍然是“专家级别”的，但对于初学者来说，在c++课程的第一周，Rand_int()的使用是可以管理的。
+
+```c++
+int main()
+{
+         constexpr int max = 9;
+         Rand_int rnd {0,max};                                // make a uniform random number generator
+
+         vector<int> histogram(max+1);                 // make a vector of appropriate size
+         for (int i=0; i!=200; ++i)
+                 ++histogram[rnd()];                            // fill histogram with the frequencies of numbers [0:max]
+
+         for (int i = 0; i!=histogram.size(); ++i) {    // write out a bar graph
+                 cout << i << '\t' ;
+                 for (int j=0; j!=histogram[i]; ++j) cout <<'*' ;
+                 cout << '\n' ;
+         }
+}
+```
+
+​		c++没有标准的图形库，所以我使用“ASCII图形”。显然，有很多开源和商业的c++图形和GUI库，但在本书中，我只介绍ISO标准的工具。
+
+​		为了得到重复或不同的值序列，我们对引擎进行``seed``操作;也就是说，我们给它的内部状态一个新值.
+
+```c++
+Rand_int rnd {10,20};
+for (int i = 0; i<10; ++i) cout << rnd() << ' ';     // 16 13 20 19 14 17 10 16 15 14
+cout << '\n';
+rnd.seed(999);
+for (int i = 0; i<10; ++i) cout << rnd() << ' ';     // 11 17 14 19 20 13 20 14 16 19
+cout << '\n';
+rnd.seed(999);
+for (int i = 0; i<10; ++i) cout << rnd() << ' ';     // 11 17 14 19 20 13 20 14 16 19
+cout << '\n';
+```
+
+​		重复序列对于确定性调试非常重要。当我们不想重复时，使用不同的值是很重要的。如果你需要真正的随机数，而不是生成的伪随机序列，请查看``random_device``在你的计算机上的实现。
