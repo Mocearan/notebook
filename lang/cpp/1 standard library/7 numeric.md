@@ -225,3 +225,101 @@ cout << '\n';
 ```
 
 ​		重复序列对于确定性调试非常重要。当我们不想重复时，使用不同的值是很重要的。如果你需要真正的随机数，而不是生成的伪随机序列，请查看``random_device``在你的计算机上的实现。
+
+
+
+## valarray
+
+​		`std::vector`是一种通用的值保存机制，具有灵活性，适合于容器、迭代器和算法的架构。
+
+​		但`std::vector`不支持数学向量操作。``std::vector``添加这些操作很容易，但通用性和灵活性降低，且没有数值优化。数值优化是数值工作的必要行为。标准库在``<valarray>``中提供了一个类似向量的模板，称为``valarray``，它不太通用，更适合用于数值计算的优化:
+
+```c++
+template<typename T>
+class valarray {
+         // ...
+};
+```
+
+​		`valarray`支持常见的算术操作和最常用的数学函数。
+
+```c++
+valarray<double>& a1, valarray<double>& a2);
+valarray<double> a = a1*3.14+a2/a1; // numeric array operators *, +, /, and =
+a2 += a1*3.14;
+a = abs(a);
+double d = a2[7];
+```
+
+​		这些操作是向量操作;也就是说，它们作用于所涉及向量的每个元素。
+
+​		除了算术运算之外，``valarray``还提供步幅访问来帮助实现多维计算。
+
+
+
+## 数字限制
+
+​		在``<limits>``中，标准库提供了描述内置类型属性的类——例如float的最大指数或int的字节数。例如，我们可以断言一个char类型是有符号的:
+
+```c++
+static_assert(numeric_limits<char>::is_signed,"unsigned characters!");
+static_assert(100000<numeric_limits<int>::max(),"small ints!");
+```
+
+​		第二个断言(仅)起作用是因为``numeric_limits<int>::max()``是一个``constexpr``函数(§1.6)。
+
+​		可以为自己的用户定义类型定义``numeric_limits``。
+
+
+
+## 类型别名
+
+​		基本类型的大小在不同的c++实现上可能是不同的。如果需要指定整数的大小，可以使用``<stdint>``中定义的别名，例如``int32_t``和``uint_least64_t``。后者表示至少有64位的无符号整数。
+
+​		奇怪的``_t``后缀是C语言时代遗留下来的，当时有一个名字反映出它是一个别名是很重要的。
+
+​		其他常见的别名，如`size_t` (`sizeof`操作符返回的类型)和`ptrdiff_t`(一个指针减去另一个指针的结果类型)可以在``<stddef>``中找到。
+
+
+
+## Mathematical Constants 数学常数
+
+​		在进行数学计算时，我们需要常见的数学常数，如``e``、``pi``和``log2e``。标准库提供了这些功能，甚至更多。它们有两种形式:一种是模板，允许指定精确类型(例如``pi_v<T>``)，另一种是最常用的简称(例如``pi``表示``pi_v<double>``)。例如:
+
+```c++
+void area(float r)
+{
+    using namespace std::numbers;  // this is where the mathematical constants are kept
+
+    double d = pi*r*r;
+    float f = pi_v<float>*r*r;
+}
+```
+
+​		在这种情况下，差异很小(我们必须打印精度为16左右才能看到它)，但在实际物理计算中，这种差异很快就会变得显著。在图形和人工智能领域，常量的精度很重要，在这些领域，更小的值表示变得越来越重要。
+
+​		在``<numbers>``中:
+
+- ``e(欧拉数)``
+- ``log2e (log2 of e)``
+- ``log10e (log10 of e)``
+- ``pi``
+- ``inv_pi (1/pi)``
+- ``inv_sqrtpi (1/sqrt(pi))``
+- ``ln2``
+- ``ln10``
+- ``sqrt2 (sqrt(2))``
+- ``sqrt3 (sqrt(3))``
+- ``inv_sqrt3 (1/sqrt3)``
+- ``gamma(欧拉-马切罗尼常数)``
+- ``phi(黄金比例)``
+
+​		当然，我们想要更多的数学常数和不同领域的常数。这很容易做到，因为这样的常量是对double(或对域最有用的任何类型)进行特化的变量模板:
+
+```c++
+template<typename T>
+constexpr T tau_v = 2*pi_v<T>;
+
+constexpr double tau = tau_v<double>;
+```
+
