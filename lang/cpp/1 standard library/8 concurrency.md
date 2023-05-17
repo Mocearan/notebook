@@ -28,9 +28,7 @@
 
 ​		任务(task)是可能与其他计算并发执行的执行单元。
 
-​		线程是任务的系统级表示。`<thread>`中的`std::thread`以任务为参数启动一个与其他任务并发执行的线程。
-
-​		任务是一个函数或函数对象:
+​		线程是任务的系统级表示。`<thread>`中的`std::thread`以任务为参数启动一个与其他任务并发执行的线程。任务是一个函数或函数对象。
 
 ```c++
 void f();                             // function
@@ -41,19 +39,72 @@ struct F {                           // function object
 
 void user()
 {
- thread t1 {f};             // f() executes in separate thread
- thread t2 {F{}};         	// F{}() executes in separate thread
+     thread t1 {f};             // f() executes in separate thread
+     thread t2 {F{}};         	// F{}() executes in separate thread
 
- t1.join();                   // wait for t1
- t2.join();                   // wait for t2
+     t1.join();                   // wait for t1
+     t2.join();                   // wait for t2
 }
 ```
 
+​		任务的定义，目标是保持任务完全独立，或以简单而明显的方式通信。可以将并发任务理解为恰巧与调用者并发运行的函数。通过传递参数，获取结果，确保之间没有数据竞争。
 
 
 
+## thread
+
+​		线程共享一个地址空间，这与进程不同，进程之间通常不直接共享数据。
+
+​		线程共享一个地址空间，因此可以通过共享对象进行通信。这种通信通常由锁或其他机制控制，以防止数据竞争。
+
+```c++
+void f();                             // function
+
+struct F {                           // function object
+     void operator()();     // F's call operator (§7.3.2)
+};
+
+void user()
+{
+     thread t1 {f};             // f() executes in separate thread
+     thread t2 {F{}};         	// F{}() executes in separate thread
+
+     t1.join();                   // wait for t1
+     t2.join();                   // wait for t2
+}
+```
+
+​		`join()`确保在线程完成之前不会退出``user()``。`join`意味着“等待线程终止”。
+
+​		忘记``join()``可能使得线程任务未结束而程序退出，因此标准库提供了``jthread``，它是一个“关联线程”，复合``RAII``在析构函数中进行``join()``:
+
+```c++
+void user()
+{
+    jthread t1 {f};          // f() executes in separate thread
+	jthread t2 {F{}};       // F{}() executes in separate thread
+}
+```
+
+​		因为依赖于析构函数来进行`join`，析构函数的顺序与对象的构造顺序相反，所以先等待`t2`再等待`t1`。
 
 
+
+### thread
+
+### mutex
+
+### condition_variable
+
+### semaphore
+
+### barrier
+
+## thread pool
+
+
+
+## future / promise
 
 ​		task模型基于`future/promise`模型，将线程执行的对象抽象为颗粒化的任务。
 
@@ -72,24 +123,6 @@ void user()
 ### future
 
 ​		future异步的获取结果，可以多线程，也可以用协程等其他计算子。
-
-## thread
-
-### thread
-
-### mutex
-
-### condition_variable
-
-### semaphore
-
-### barrier
-
-## thread pool
-
-
-
-
 
 ## fiber
 
