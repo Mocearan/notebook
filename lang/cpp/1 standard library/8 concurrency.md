@@ -181,6 +181,72 @@ void user()
 
 ## future / promise
 
+​		标准库提供了一些工具，允许程序员在任务(可能并发完成的工作)的概念级别上操作，而不是直接在线程和锁的较低级别上操作:
+
+- `future`和``promise``用于从独立线程上生成的任务返回值
+- `packaged_task`帮助启动任务并连接返回结果的机制
+- `async()`用于启动任务，其方式与调用函数非常相似
+
+​		这些设施可以在``<future>``中找到。
+
+​		``future``和``promise``允许在两个任务之间传输值，无需显式使用锁。“系统”有效地实现了转移。基本思想很简单:当一个任务想要传递一个值给另一个任务时，它将该值放入一个``promise``中。以某种方式，实现使该值在相应的将来出现，可以从中读取(通常由任务的启动器)。我们可以用图形表示:
+
+![image-20230522072720467](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230522072720467.png)
+
+```c++
+X v = fx.get();   // if necessary, wait for the value to get computed
+
+// 如果值还没有准备好，执行get()的线程被阻塞，直到值准备好。
+// 如果无法计算该值，get()可能会抛出异常(从系统或从promise传输)。
+
+```
+
+​		`promise`的主要目的是提供简单的``put``操作(称为``set_value()``和``set_exception()``)来匹配``future``的``get()``。`promise`需要将类型X的结果发送给``future``，有两宗情况:传递一个值或者传递一个异常。例如:
+
+```c++
+void f(promise<X>& px)   // a task: place the result in px
+{
+    // ...
+    try {
+        X res;
+        // ... compute a value for res ...
+        px.set_value(res);
+    }
+    catch (...) {                 // oops: couldn't compute res
+        px.set_exception(current_exception());         // pass the exception to the future's thread
+        		// Current_exception()引用捕获的异常
+    }
+}
+```
+
+​		要处理通过``future``传递的异常，``get()``的调用者必须准备好在某处捕获它。
+
+```c++
+void g(future<X>& fx)            // a task: get the result from fx
+{
+    // ...
+    try {
+        X v = fx.get();   // if necessary, wait for the value to get computed
+        // ... use v ...
+    }
+    catch (...) {                // oops: someone couldn't compute v
+        // ... handle error ...
+    }
+}
+
+// 如果错误不需要由g()本身处理，则代码将减少到最小:
+void g(future<X>& fx)               // a task: get the result from fx
+{
+    // ...
+    X v = fx.get();   // if necessary, wait for the value to be computed
+    // ... use v ...
+} // 现在，从fx的函数(f())抛出的异常被隐式地传播给g()的调用者，就像g()直接调用f()一样。
+```
+
+
+
+
+
 ​		task模型基于`future/promise`模型，将线程执行的对象抽象为颗粒化的任务。
 
 ​		使用并发的方式实现并行，并行调度的核心是根据task graph，使得多核的任务始终是互相独立无依赖的。
@@ -198,6 +264,50 @@ void user()
 ### future
 
 ​		future异步的获取结果，可以多线程，也可以用协程等其他计算子。
+
+
+
+### packaged_task
+
+​		`packaged_task`类型简化线程上运行的`future`和`promise`连接的任务的设置。
+
+​		`packaged_task`提供包装器代码，用于将任务的返回值或异常放入`promise`中。通过调用``get_future``来请求它，``packaged_task``会得到一个与`promise`相对应的`future`。
+
+```c++
+double accum(vector<double>::iterator beg, vector<double>::iterator end, double init)
+        // compute the sum of [beg:end) starting with the initial value init
+{
+    return accumulate(&*beg,&*end,init);
+}
+
+double comp2(vector<double>& v)
+{
+    packaged_task pt0 {accum};                                                  // package the task (i.e., accum)
+    packaged_task pt1 {accum};
+
+    future<double> f0 {pt0.get_future()};                                    // get hold of pt0's future
+    future<double> f1 {pt1.get_future()};                                    // get hold of pt1's future
+
+    double* first = &v[0];
+    thread t1 {move(pt0),first,first+v.size()/2,0};                          // start a thread for pt0
+    thread t2 {move(pt1),first+v.size()/2,first+v.size(),0};           // start a thread for pt1
+    // ...
+
+    return f0.get()+f1.get();                                                            // get the results
+}
+```
+
+​		`packaged_task`模板将任务类型作为模板参数(这里是``double(double*，double*，double)``)，并将任务作为其构造函数参数(这里是``accum``)。``move()``操作是必需的，因为``packaged_task``不能被复制。``packaged_task``不能被复制的原因是它是一个资源句柄:它拥有自己的``promise``，并且(间接地)对其任务可能拥有的任何资源负责。
+
+​		这段代码中没有显式使用锁，专注于要完成的任务，而不是将精力放在管理任务通信的机制上。这两个任务将在单独的线程上运行，因此可能是并行的。
+
+
+
+### async
+
+
+
+
 
 ## fiber
 
@@ -296,6 +406,94 @@ void writer()
 
 
 ## atomic
+
+​		互斥锁是一种涉及操作系统的重量级机制。它允许在没有数据竞争的情况下完成任意数量的工作。然而，有一种更简单、更便宜的机制可以完成少量的工作:原子变量。例如，下面是经典的双重检查锁定的一个简单变体:
+
+```c++
+mutex mut;
+atomic<bool> init_x;        // initially false.
+X x;                        // variable that requires nontrivial initialization
+
+if (!init_x) {
+    lock_guard lck {mut}; // lock_guard而不是scoped_lock，因为只需要一个互斥锁，所以最简单的锁(lock_guard)就足够了。
+    if (!init_x) {
+        // ... do nontrivial initialization of x ...
+        init_x = true;
+    }
+}
+
+// ... use x ...
+```
+
+​		在存在竞争的数据类型上使用原子类型可以避免使用更为昂贵的互斥锁。如果init_x不是原子的，那么初始化将小概率的失败，从而导致难以发现的神秘错误，因为init_x上存在数据竞争。
+
+### condition variable
+
+​		Waiting for Events。
+
+​		有时，线程需要等待如另一个线程完成任务或经过一定的时间的某种外部事件。
+
+​		最简单的“事件”就是时间的流逝。使用``<chrono>``中的时间工具，我可以这样写:
+
+```c++
+auto t0 = high_resolution_clock::now();
+this_thread::sleep_for(milliseconds{20}); // 默认情况下，this_thread可以引用唯一的线程。
+auto t1 = high_resolution_clock::now();
+
+cout << duration_cast<nanoseconds>(t1-t0).count() << " nanoseconds passed\n";
+```
+
+​		使用外部事件进行通信的基本支持由``<condition_variable>``中的``condition_variables``提供。
+
+​		``condition_variable``是允许线程等待另一个线程的机制。它允许线程等待某些条件(事件)作为其他线程完成工作的结果。
+
+​		``condition_variables``支持多种形式的优雅而高效的共享，但可能相当棘手。如两个线程通过队列传递消息进行通信的经典示例：
+
+```c++
+class Message {        // object to be communicated
+        // ...
+};
+
+queue<Message> mqueue;              // the queue of messages
+condition_variable mcond;              // the variable communicating events
+mutex mmutex;                                 // for synchronizing access to mcond
+
+// consumer()读取和处理消息:
+void consumer()
+{
+    while(true) {
+        unique_lock lck {mmutex};                           // acquire mmutex
+        mcond.wait(lck,[] { return !mqueue.empty(); });     // release mmutex and wait;
+        // re-acquire mmutex upon wakeup
+        // don't wake up unless mqueue is non-empty
+        auto m = mqueue.front();                            // get the message
+        mqueue.pop();
+        lck.unlock();                                       // release mmutex
+        // ... process m ...
+    }
+}
+
+// 对应的生产者如下所示:
+void producer()
+{
+    while(true) {
+        Message m;
+        // ... fill the message ...
+        scoped_lock lck {mmutex};               // protect operations
+        mqueue.push(m);
+        mcond.notify_one();                     // notify
+    }                                           // release mmutex (at end of scope)
+}
+```
+
+​		显式地使用``unique_lock``来保护对``queue``和``condition_variable``的操作。等待一个``condition_variable``会释放``lock``，直到等待结束(队列非空)，然后重新获取它。``mqueue.empty()``是对条件的显式检查，防止在唤醒时发现其他任务“先到达那里”，从而使条件不再成立。
+
+​		使用``unique_lock``而不是``scoped_lock``有两个原因:
+
+- 需要将锁传递给``condition_variable``的``wait()``方法。
+  - ``scoped_lock``不能移动，但``unique_lock``可以移动。
+- 在处理消息之前，要解锁保护条件变量的互斥锁。
+  - `unique_lock`提供了诸如``lock()``和``unlock()``之类的操作，用于低级控制同步。
 
 ## semaphore
 
