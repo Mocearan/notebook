@@ -30,6 +30,8 @@
 
 ​		线程是任务的系统级表示。`<thread>`中的`std::thread`以任务为参数启动一个与其他任务并发执行的线程。任务是一个函数或函数对象。
 
+​		关于线程最简洁的思维模型是：将任务视为恰巧可以和其他任务并发的函数。这不是c++标准库支持的唯一模型，但它可以很好地满足广泛的需求。可以根据需要使用更微妙和棘手的模型(例如，依赖于共享内存的编程风格)。
+
 ```c++
 void f();                             // function
 
@@ -173,6 +175,57 @@ void user()
 
 
 
+### stopping thread
+
+​		有时，我们想要停止一个线程，因为我们不再对它的结果感兴趣。仅仅“终止”它通常是不可接受的，因为线程可以拥有必须释放的资源(例如，锁、子线程和数据库连接)。相反，标准库提供了一种礼貌地请求线程清理并离开的机制:``stop_token``。可以对线程进行编程，使其在具有``stop_token`并被请求停止时终止。
+
+```c++
+// 并行算法find_any()，产生多个寻找结果的线程。
+// 当一个线程返回一个结果时，停止剩余的线程。
+// find_any()生成的每个线程都调用find()来完成实际的工作。find()是一个非常简单的任务类型的例程，通过一个主循环测试是否继续
+
+atomic<int> result = -1;    // put a resulting index here
+
+template<class T> struct Range { T* first; T* last; };        // a way of passing a range of Ts
+
+void find(stop_token tok, const string* base, const Range<string> r, const string target)
+{
+    for (string* p = r.first; p!=r.last && !tok.stop_requested(); ++p)
+        if (match(*p, target)) {     // match() applies some matching criteria to the two strings
+            result = p - base;            // the index of the found element
+            return;
+        }
+}
+
+// 一个简单的find_any()，它只生成两个线程运行find():
+void find_all(vector<string>& vs, const string& key)
+{
+    int mid = vs.size()/2;
+    string* pvs = &vs[0];
+
+    stop_source ss1{};
+    jthread t1(find, ss1.get_token(), pvs, Range{pvs,pvs+mid}, key);                     // first half of vs
+
+    stop_source ss2{};
+    jthread t2(find, ss2.get_token(), pvs, Range{pvs+mid,pvs+vs.size()} , key);     // second half of vs
+
+    while (result == -1)
+        this_thread::sleep_for(10ms);
+
+    ss1.request_stop(); // we have a result: stop all threads
+    ss2.request_stop();
+
+    // ... use result ...
+}
+```
+
+​		这里，``tok.stop_requested()``测试是否有其他线程请求终止此线程。``stop_token``是安全(无数据竞争)通信这类跨线程请求的机制。
+
+​		`stop_sources`生成``stop_token``，通过``stop_token``将停止请求传递给线程。
+
+- 同步和返回结果是我能想到的最简单的方法：将结果放入原子变量中，并在其上进行自旋循环。
+- 当然，可以将这个简单的示例细化为使用多个搜索线程，使返回的结果更通用，并使用不同的元素类型。
+
 
 
 ### thread pool
@@ -305,13 +358,193 @@ double comp2(vector<double>& v)
 
 ### async
 
+​		使用``async()``启动异步任务，可能隐式的使用线程。
 
+```c++
+double comp4(vector<double>& v)
+         // spawn many tasks if v is large enough
+{
+    if (v.size()<10' 000)                 // is it worth using concurrency?
+        return accum(v.begin(),v.end(),0.0);
+
+    auto v0 = &v[0];
+    auto sz = v.size();
+
+    auto f0 = async(accum,v0,v0+sz/4,0.0);                    // first quarter
+    auto f1 = async(accum,v0+sz/4,v0+sz/2,0.0);           // second quarter
+    auto f2 = async(accum,v0+sz/2,v0+sz*3/4,0.0);       // third quarter
+    auto f3 = async(accum,v0+sz*3/4,v0+sz,0.0);          // fourth quarter
+
+    return f0.get()+f1.get()+f2.get()+f3.get();  // collect and combine the results
+}
+```
+
+​		``std::async()``将解耦了可调用部分和结果的获取，并将两者与任务的实际执行解耦。
+
+​		使用``async()``不显式的使用线程和锁，但有一个明显的限制：不能在需要`lock`共享资源的任务上使用`async()`，即应该在并行任务上而不是并发任务上使用`async()`。
+
+​		使用``async()``时，具体使用多少个线程取决于``async()``根据它对调用时可用系统资源的分配策略来决定。例如，``async()``可能在决定使用多少线程之前检查空闲的CPU核心数。
+
+​		c++标准库提供了一系列并行算法，所以通常无须手动的进行标准库算法的并行化。
+
+​		`async()`不仅仅是一种专门用于提高性能的并行计算的机制。还可以让一个单工作流的执行单元变成多工作流，比如用来生成一个获取用户输入的任务，而不阻塞其他的执行流。
+
+
+
+## coroutine
+
+​		协程是在调用之间保持其状态的函数。
+
+​		在这一点上，它有点像函数对象，但是在调用之间保存和恢复其状态是隐式的和完整的。考虑一个经典的例子:
+
+```c++
+generator<long long> fib()         // generate Fibonacci numbers
+{
+    long long a = 0;
+    long long b = 1;
+    while (a<b) {
+        auto next = a+b;
+        co_yield next;           // save state, return value, and wait
+        a = b;
+        b = next;
+    }
+    co_return 0;                      // a fib too far
+}
+
+void user(int max)
+{
+    for (int i=0; i++<max;)
+        cout << fib() <<' ';
+}
+
+// The Fibonacci example was obviously synchronous. This allows some nice optimizations. 
+// 例如，一个好的优化器可以内联fib()调用并展开循环，只留下一系列<<的调用，这些调用本身可以被优化到 cout << "1 2 3 5 7 12";
+```
+
+​		生成器返回值是协程在调用之间存储其状态的地方。当然，我们可以用同样的方式创建一个函数对象Fib，但是我们必须自己维护它的状态。对于更大的状态和更复杂的计算，保存和恢复状态变得乏味、难以优化，而且容易出错。
+
+​		实际上，协程是一个在调用之间保存其堆栈帧的函数。``co_yield``返回一个值并等待下一次调用。``co_return``返回一个值并终止协程。
+
+​		协程可以是同步的(调用者等待结果)或异步的(调用者在从协程寻找到结果之前做一些其他工作)。
+
+​		协程被实现为一个非常灵活的框架，能够服务于非常广泛的潜在用途。只是在c++ 20中仍然缺少简化使用的库功能。不过，还是有一些建议的，而且通过网络搜索可以找到很好的实现[Cppcoro]就是一个例子。
+
+> [lewissbaker/cppcoro: A library of C++ coroutine abstractions for the coroutines TS (github.com)](https://github.com/lewissbaker/cppcoro)
+
+
+
+### Cooperative Multitasking
+
+​		在《计算机程序设计艺术》的第一卷中，Donald Knuth赞扬了协同程序的有用性，但也哀叹很难给出简短的例子，因为协同程序在简化复杂系统方面最有用。
+
+​		一个简单的示例是演示事件驱动模拟所需的原语。其关键思想是将系统表示为协作完成复杂任务的简单任务(协同程序)网络。基本上，每个任务都是执行大工作的一小部分的参与者。有些是生成请求流的生成器(可能使用随机数生成器，可能提供真实世界的数据)，有些是网络计算结果的一部分，有些生成输出。
+
+> BS：	我个人更喜欢任务(协程)通过消息队列进行通信。组织这种系统的一种方法是将每个任务置于事件队列中，在产生结果后等待更多的工作。然后调度程序在需要时从事件队列中选择要运行的下一个任务。这是合作多任务的一种形式。我借用了Simula [Dahl,1970]的关键思想，形成了第一个c++库的基础。
+
+​		这种设计的关键是
+
+- 许多不同的协程在调用之间保持它们的状态。
+- 一种多态形式，允许保留包含不同类型协程的事件列表，并独立于其类型调用它们。
+- 从列表中选择要运行的下一个协程的调度器。
+
+​		在这里，我将展示几个协程，并交替执行它们。对于这样的系统来说，不使用太多的空间是至关重要的。这就是为什么我们不为这样的应用程序使用进程或线程的原因。一个线程需要一到两个兆字节(主要用于它的堆栈)，一个协程通常只需要几十个字节。如果你需要成千上万的任务，那就会有很大的不同。协程之间的上下文切换也比线程或进程之间快得多。
+
+- 首先，我们需要一些运行时多态性，以允许我们统一调用数十或数百种不同类型的协程:
+
+  ```c++
+  struct Event_base {
+         virtual void operator()() = 0;
+         virtual ~Event_base() {}
+  };  
+  // Event简单地存储一个动作并允许调用它;
+  // 这个动作通常是一个协程。添加一个名称只是为了说明一个事件通常携带比协程句柄更多的信息。
+  template<class Act>
+  struct Event : Event_base {
+         Event(const string n, Act a) : name{ n }, act{ move(a) } {}
+         string name;
+         Act act;
+          void operator()() override { act(); }
+  };
+  
+  void test()
+  {
+      vector<Event_base*> events = {             // create a couple of Events holding coroutines
+          new Event{ "integers ", sequencer(10) },
+          new Event{ "chars ", char_seq('a') }
+      };
+  
+      vector order {0, 1, 1, 0, 1, 0, 1, 0, 0};    // choose some order
+  
+      for (int x : order)                          // invoke coroutines in order
+          (*events[x])();
+  
+      for (auto p : events)                     // clean up
+          delete p;
+  }
+  ```
+
+- 上述程序只是一个传统的面向对象框架，用于在一组可能不同类型的对象上执行操作
+
+- ``sequence``和``char_seq``是协程。它们在调用之间保持状态，对于这些框架的实际使用是必不可少的:
+
+  ```c++
+  task sequencer(int start, int strp =1)
+  {
+      auto value = start;
+      while (true) {
+          cout << "value: " << value << '\n';     // communicate a result
+          co_yield 0;                // sleep until someone resumes this coroutine
+          value += step;                   // update state
+      }
+  } // sequencer是一个协程，因为它在调用之间使用co_yield挂起自己。这意味着任务必须是协程句柄。
+  // 这是一个琐碎的协程。它所做的就是生成一系列值并输出它们。在严肃的模拟中，该输出将直接或间接地成为其他协同程序的输入。
+  
+  task char_seq(char start)
+  {
+      auto value = start;
+      while (true) {
+          cout << "value: " << value << '\n';    // communicate result
+          co_yield 0;
+          ++value;
+      }
+  } // char_seq非常相似，但使用不同的类型来执行运行时多态性:
+  ```
+
+  ​		“魔力”在于返回类型任务;它保存调用之间协程(实际上是函数的堆栈帧)的状态，并确定``co_yield``的含义。从用户的角度来看，``task``是微不足道的，它只是提供了一个操作符来调用协程:
+
+  ```c++
+  struct task {
+      void operator()();
+      // ... implementation details ...
+  }
+  ```
+
+  ​		如果``task``已经在一个库中，最好是标准库中，那么我们需要知道的就只有这些了，但事实并非如此，所以这里有一个如何实现这种协程句柄类型的提示。不过，还是有一些建议的，而且通过网络搜索可以找到很好的实现;[Cppcoro]库就是一个例子。
+
+  ```c++
+  struct task {
+      void operator()() { coro.resume(); }
+  
+      struct promise_type {                                                              // mapping to the language features
+          suspend_always initial_suspend() { return {}; }
+          suspend_always final_suspend() noexcept { return {}; }            // co_return
+          suspend_always yield_value(int) { return {}; }                           // co_yield
+          auto get_return_object() { return task{ handle_type::from_promise(*this) }; }
+          void return_void() {}
+          void unhandled_exception() { exit(1); }
+      };
+  
+      using handle_type = coroutine_handle<promise_type>;
+      task(handle_type h) : coro(h) { }         // called by get_return_object()
+      handle_type coro;                               // here is the coroutine handle
+  };
+  ```
+
+  ​		强烈建议不要自己编写这样的代码，除非用来实现一个库，试图为他人省去麻烦。如果对原理和实现有所期求，网上有很多解释以供查看。
 
 
 
 ## fiber
-
-## coroutine
 
 ## executors
 

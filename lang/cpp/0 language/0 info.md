@@ -4,62 +4,20 @@
 
 
 
-## 值语义、对象语义
+The C++ language can be summarized as a set of mutually supportive facilities:
 
-​		值语义可以拷贝与赋值
+- A static type system with equal support for built-in types and user-defined types ([Chapter 1](ch01.xhtml#ch01), [Chapter 5](ch05.xhtml#ch05), [Chapter 6](ch06.xhtml#ch06))
+- Value and reference semantics (§[1.7](ch01.xhtml#sec1_7), §[5.2](ch05.xhtml#sec5_2), §[6.2](ch06.xhtml#sec6_2), [Chapter 12](ch12.xhtml#ch12), §[15.2](ch15.xhtml#sec15_2))
+- Systematic and general resource management (RAII) (§[6.3](ch06.xhtml#sec6_3))
+- Support for efficient object-oriented programming (§[5.3](ch05.xhtml#sec5_3), class.virtual, §[5.5](ch05.xhtml#sec5_5))
+- Support for flexible and efficient generic programming ([Chapter 7](ch07.xhtml#ch07), [Chapter 18](ch18.xhtml#ch18))
+- Support for compile-time programming (§[1.6](ch01.xhtml#sec1_6), [Chapter 7](ch07.xhtml#ch07), [Chapter 8](ch08.xhtml#ch08))
+- Direct use of machine and operating system resources (§[1.4](ch01.xhtml#sec1_4), [Chapter 18](ch18.xhtml#ch18))
+- Concurrency support through libraries (often implemented using intrinsics) ([Chapter 18](ch18.xhtml#ch18))
 
-​		对象语义不能进行拷贝和赋值。
+The standard-library components add further essential support for these high-level aims.
 
->   通常，常见的具象的事物都是不可拷贝的，具有特性。
->
->   而抽象的数据结构通常可以进行拷贝。
 
-## 编程范式
-
-​		C++支持的编程范式：
-
--   过程式（procedual)
-
-    ​	流程控制
-
-    -   顺序
-    -   条件
-    -   循环
-
--   数据抽象(data abstraction)
-
-    ​	ADT 封装， 强调对象的值语义
-
-    -   数据 + 操作
-
--   基于对象（object-based）
-
-    ​	封装
-
--   面向对象式（object-oriented）
-
-    ​	封装、继承、多态
-
-    -   对象
-    -   对象间的消息传递
-
--   函数式（functional)
-
-    ​	一切皆函数，闭包，无循环用递归
-
--   泛型
-
-    -   对象
-    -   对象的通用抽象行为
-
--   模板元编程
-
-    基于泛型的对象行为抽象，给出产生代码的规则，由编译器产生新代码
-
-    -   运行时工作提前到编译期
-    -   类型运算
-
-[(124条消息) function/bind的救赎（上）_孟岩-CSDN博客_function/bind的救赎](https://blog.csdn.net/myan/article/details/5928531)
 
 
 
