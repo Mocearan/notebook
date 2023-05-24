@@ -19,7 +19,7 @@ The standard-library components add further essential support for these high-lev
 
 
 
-
+​		使用const(第1.6节)、constexpr(第1.6节)、enum或enum类(第2.4节)来定义manifest常量，使用constexpr(第1.6节)、consteval(第1.6节)和inline(第5.2.1节)来避免函数调用开销，使用模板(第7章)来指定函数族和类型，使用命名空间(第3.3节)来避免名称冲突。
 
 
 
