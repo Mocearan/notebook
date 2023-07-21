@@ -1,0 +1,367 @@
+# js-bom
+
+​		浏览器对象模型（**B**rowser **O**bject **M**odel (BOM)）
+
+---
+
+
+
+## window
+
+所有浏览器都支持 window 对象。它表示浏览器窗口。
+
+所有 JavaScript 全局对象、函数以及变量均自动成为 window 对象的成员。
+
+全局变量是 window 对象的属性。
+
+全局函数是 window 对象的方法。
+
+甚至 HTML DOM 的 document 也是 window 对象的属性之一：
+
+
+
+### Window 尺寸
+
+有三种方法能够确定浏览器窗口的尺寸。
+
+对于Internet Explorer、Chrome、Firefox、Opera 以及 Safari：
+
+- window.innerHeight - 浏览器窗口的内部高度(包括滚动条)
+- window.innerWidth - 浏览器窗口的内部宽度(包括滚动条)
+
+对于 Internet Explorer 8、7、6、5：
+
+- document.documentElement.clientHeight
+- document.documentElement.clientWidth
+
+或者
+
+- document.body.clientHeight
+- document.body.clientWidth
+
+```js
+实用的 JavaScript 方案（涵盖所有浏览器，包含 IE8 及以下版本的浏览器）：
+
+实例
+var w=window.innerWidth
+|| document.documentElement.clientWidth
+|| document.body.clientWidth;
+ 
+var h=window.innerHeight
+|| document.documentElement.clientHeight
+|| document.body.clientHeight;
+```
+
+### Window 方法
+
+一些其他方法：
+
+- window.open() - 打开新窗口
+- window.close() - 关闭当前窗口
+- window.moveTo() - 移动当前窗口
+- window.resizeTo() - 调整当前窗口的尺寸
+
+### 弹窗
+
+​		可以在 JavaScript 中创建三种消息框：警告框、确认框、提示框。
+
+#### 警告框
+
+​		警告框经常用于确保用户可以得到某些信息。用户需要点击确定按钮才能继续进行操作。
+
+```html
+window.alert("sometext");
+
+<!DOCTYPE html><html>
+<head>
+<script>
+function myFunction()
+{
+    alert("你好，我是一个警告框！");
+}
+</script>
+</head>
+<body>
+<input type="button" onclick="myFunction()" value="显示警告框">
+</body>
+</html>
+```
+
+​		弹窗使用 反斜杠 + "n"(\n) 来设置换行。
+
+```js
+alert("Hello\nHow are you?");
+```
+
+
+
+#### 确认框
+
+确认框通常用于验证是否接受用户操作。
+
+当确认框弹出时，用户可以点击 "确认" 或者 "取消" 来确定用户操作。
+
+当你点击 "确认", 确认框返回 true， 如果点击 "取消", 确认框返回 false。
+
+```JS
+window.confirm("sometext");
+
+var r=confirm("按下按钮");
+if (r==true)
+{
+    x="你按下了\"确定\"按钮!";
+}
+else
+{
+    x="你按下了\"取消\"按钮!";
+}
+```
+
+##提示框
+
+提示框经常用于提示用户在进入页面前输入某个值。
+
+当提示框出现后，用户需要输入某个值，然后点击确认或取消按钮才能继续操纵。
+
+如果用户点击确认，那么返回值为输入的值。如果用户点击取消，那么返回值为 null。
+
+```js
+window.prompt("sometext","defaultvalue");
+
+var person=prompt("请输入你的名字","Harry Potter");
+if (person!=null && person!="")
+{
+    x="你好 " + person + "! 今天感觉如何?";
+    document.getElementById("demo").innerHTML=x;
+}
+```
+
+
+
+## window screen
+
+​		window.screen 对象包含有关用户屏幕的信息。**window.screen**对象在编写时可以不使用 window 这个前缀。
+
+- screen.availWidth - 可用的屏幕宽度
+
+  ​	以像素计，减去界面特性，比如窗口任务栏。
+
+- screen.availHeight - 可用的屏幕高度
+
+  ​	以像素计，减去界面特性，比如窗口任务栏。
+
+```html
+<script>
+document.write("可用宽度: " + screen.availWidth);
+document.write("可用高度: " + screen.availHeight);
+</script>
+```
+
+
+
+## window Location
+
+​		用于获得当前页面的地址 (URL)，并把浏览器重定向到新的页面。**window.location** 对象在编写时可不使用 window 这个前缀。
+
+- location.hostname 返回 web 主机的域名
+
+- `location.pathname `返回当前页面的路径和文件名
+
+  ```html
+  <script>
+  document.write(location.pathname); // /js/js-window-location.html
+  </script>
+  ```
+
+- location.port 返回 web 主机的端口 （80 或 443）
+
+- location.protocol 返回所使用的 web 协议（http: 或 https:）
+
+- `location.href` 属性返回当前页面的 `URL`
+
+  ```html
+  <script>
+  document.write(location.href); // https://www.runoob.com/js/js-window-location.html
+  </script>
+  ```
+
+- ``location.assign()`` 方法加载新的文档。
+
+  ```html
+  <script>
+  function newDoc(){
+      window.location.assign("https://www.runoob.com")
+  }
+  </script>
+  ```
+
+  
+
+## window history
+
+​		对象包含浏览器的历史。**window.history**对象在编写时可不使用 window 这个前缀。
+
+为了保护用户隐私，对 JavaScript 访问该对象的方法做出了限制。
+
+一些方法：
+
+- `history.back()` - 与在浏览器点击后退按钮相同
+
+  ​	方法加载历史列表中的前一个 URL。
+
+  ```html
+  <script>
+  function goBack()
+  {
+      window.history.back()
+  }
+  </script>
+  
+  <body>
+  <input type="button" value="Back" onclick="goBack()">
+  </body>
+  ```
+
+  
+
+- history.forward() - 与在浏览器中点击向前按钮相同
+
+  ​	加载历史列表中的下一个 URL。
+
+  ```html
+  <script>
+  function goForward()
+  {
+      window.history.forward()
+  }
+  </script>
+  <body>
+  <input type="button" value="Forward" onclick="goForward()">
+  </body>
+  ```
+
+  
+
+### window navigator
+
+​		包含有关访问者浏览器的信息。**window.navigator** 对象在编写时可不使用 window 这个前缀。
+
+```html
+<script>
+txt = "<p>浏览器代号: " + navigator.appCodeName + "</p>";
+txt+= "<p>浏览器名称: " + navigator.appName + "</p>";
+txt+= "<p>浏览器版本: " + navigator.appVersion + "</p>";
+txt+= "<p>启用Cookies: " + navigator.cookieEnabled + "</p>";
+txt+= "<p>硬件平台: " + navigator.platform + "</p>";
+txt+= "<p>用户代理: " + navigator.userAgent + "</p>";
+txt+= "<p>用户代理语言: " + navigator.language + "</p>";
+document.getElementById("example").innerHTML=txt;
+</script>
+```
+
+来自 navigator 对象的信息具有误导性，不应该被用于检测浏览器版本，这是因为：
+
+- navigator 数据可被浏览器使用者更改
+- 一些浏览器对测试站点会识别错误
+- 浏览器无法报告晚于浏览器发布的新操作系统
+
+由于 navigator 可误导浏览器检测，使用对象检测可用来嗅探不同的浏览器。
+
+由于不同的浏览器支持不同的对象，您可以使用对象来检测浏览器。例如，由于只有 Opera 支持属性 "window.opera"，您可以据此识别出 Opera。
+
+例子：if (window.opera) {...some action...}
+
+
+
+## window timer
+
+在 JavaScript 中使用计时事件是很容易的，两个关键方法是:
+
+- `setInterval() `- 间隔指定的毫秒数不停地执行指定的代码。
+- `setTimeout() `- 在指定的毫秒数后执行指定代码。
+
+` setInterval() `和 `setTimeout() `是 HTML DOM Window对象的两个方法。
+
+### setInterval
+
+​		**window.setInterval()** 方法可以不使用 window 前缀，直接使用函数 **setInterval()**。
+
+```js
+window.setInterval("javascript function",milliseconds);
+```
+
+```js
+var myVar=setInterval(function(){myTimer()},1000);
+ 
+function myTimer()
+{
+    var d=new Date();
+    var t=d.toLocaleTimeString();
+    document.getElementById("demo").innerHTML=t;
+}
+```
+
+
+
+### clearInterval
+
+​		用于停止 setInterval() 方法执行的函数代码。
+
+​		**window.clearInterval()** 方法可以不使用window前缀，直接使用函数**clearInterval()**。
+
+```js
+myVar=setInterval("javascript function",milliseconds);
+```
+
+```html
+<p id="demo"></p>
+<button onclick="myStopFunction()">停止</button>
+<script>
+var myVar=setInterval(function(){myTimer()},1000);
+function myTimer(){
+    var d=new Date();
+    var t=d.toLocaleTimeString();
+    document.getElementById("demo").innerHTML=t;
+}
+function myStopFunction(){
+    clearInterval(myVar);
+}
+</script>
+```
+
+
+
+### setTimeout
+
+```js
+myVar= window.setTimeout("javascript function", milliseconds);
+```
+
+```js
+setTimeout(function(){alert("Hello")},3000);
+```
+
+### clearTimeout
+
+​		用于停止执行setTimeout()方法的函数代码。
+
+​		**window.clearTimeout()** 方法可以不使用window 前缀。
+
+```js
+myVar=setTimeout("javascript function",milliseconds);
+```
+
+```js
+var myVar;
+ 
+function myFunction()
+{
+    myVar=setTimeout(function(){alert("Hello")},3000);
+}
+ 
+function myStopFunction()
+{
+    clearTimeout(myVar);
+}
+```
+
