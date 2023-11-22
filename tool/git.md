@@ -251,11 +251,31 @@ $ sudo make prefix=/usr/local install
 
 ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/git-command.jpg)
 
-​		仓库目录下会生成一个``.git``目录，即本地仓库。包含了所有工作内容的元数据，和文件索引。
+​		仓库目录下会生成一个``.git``目录，即本地仓库。包含了所有工作内容的元数据，和文件索引。当前文件夹的文件都将置于git管理工具的管理与跟踪当中。
 
 ​		本地仓库包括一个缓存（暂存区）和一个提交记录存储。
 
+- `hooks`：存放一些shell脚本
+- `info`：包含git仓库的一些信息
+- `logs`：保存所有更新的引用记录。logs文件夹有refs文件夹和HEAD文件
+  - `HEAD`文件保存的是所有的操作记录，使用`git reflog`查询的结果就是从这个文件来的
+  - `refs`文件夹中一般会有两个文件夹：
+    - **heads：** 存储所有本地分支的对象，每个本地分支名对应一个文件名称。这些分支文件中存储的是对应本地分支下的操作记录。使用git branch查看本地所有分支时，查询出的分支就是heads文件夹下所有文件的名称。
+    - **remotes：**存储所有远程分支的对象，每个远程分支对应一个文件名称。这些分支文件中存储的是对应远程分支下的操作记录。
+- `objects`：存放所有 `git `对象，哈希值一共40位，前 2 位作为文件夹名称，后 38 位作为对象文件名
+- `refs`：引用，一般有三个文件夹：
+  - `heads`：存储所有本地分支的对象，每个本地分支名对应一个文件名称，文件中存储了分支最近一次提交commit对应的id（是一个哈希值）。
+  - `remotes`：远程仓库信息，其中\refs\remotes\origin\HEAD记录了当前分支指向的远程分支，即当前分支提交到的远程分支
+  - `tags`： 发布重要版本时，用于标记此里程碑。
+- `COMMIT_EDITMSG`：存储着最近一次的提交信息,`Git`系统不会用到这个文件，只是给用户一个参考
+- `config`：存储当前仓库的配置信息
+- `description`：描述信息
+- `HEAD`：**HEAD**指针，它指向了当前分支，这个文件记录了当前分支是哪个分支。
+- `index`：暂存区（stage），是一个二进制文件
+
 ### 创建仓库 init
+
+​		执行了`git init`初始化后，会在当前目录下生成`.git`文件夹
 
 - 将当前目录初始化为本地Git仓库
 
@@ -301,6 +321,25 @@ $ sudo make prefix=/usr/local install
 
     `git remote rename [oldname] [newname]`
 
+```ruby
+  # 下载远程仓库的所有变动
+  $ git fetch [remote]
+  # 显示所有远程仓库
+  $ git remote -v
+  # 显示某个远程仓库的信息
+  $ git remote show [remote]
+  # 增加一个新的远程仓库，并命名
+  $ git remote add [shortname] [url]
+  # 取回远程仓库的变化，并与本地分支合并
+  $ git pull [remote] [branch]
+  # 上传本地指定分支到远程仓库
+  $ git push [remote] [branch]
+  # 强行推送当前分支到远程仓库，即使有冲突
+  $ git push [remote] --force
+  # 推送所有分支到远程仓库
+  $ git push [remote] --all
+```
+
 ### 克隆仓库 clone
 
 - 克隆一个仓库到当前目录
@@ -321,7 +360,7 @@ $ sudo make prefix=/usr/local install
 
 
 
-## 工作流
+## 体系
 
 ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/git-process.png)
 
@@ -431,6 +470,8 @@ Changes not staged for commit:
 > **规则：**
 >
 > ​		[Git - gitignore Documentation (git-scm.com)](https://git-scm.com/docs/gitignore)
+
+​		有时候`git`推送时，`.gitignore`文件中指明忽略的文件在`push`之后还是会显示。是因为文件在早先已经被`git`追踪，再添加到`.gitignore`中是无效的，添加之后，需要清楚一下对应的`git`缓存。`git -rm -r --cached file_name`，然后再`commit/push`
 
 ## 暂存区
 
@@ -575,13 +616,11 @@ git status
 
 ### 状态 status
 
-​		查看工作目录当前状态。
+​		`git status `，查看工作目录当前状态
 
-​		`git status `
+> ​		需要注意的是，`git status`基于当前正在做的修改来展示状态，因此是当前工作区工作目录的状态。
 
-> 通常我们使用 **-s** 参数来获得简短的输出结果：
->
-> ` git status -s`
+- `git status -s`, 获得简短的输出结果
 
 
 
@@ -960,7 +999,27 @@ Date:   Tue Nov 2 06:27:42 2021 +0000
 
 #### blame
 
-`git blame [fname]`， 查看指定文件历史修改记录
+​		`git blame [fname]`， 查看指定文件历史修改记录。查出某个文件的每一行内容到底是由哪位大神所写。
+
+```shell
+git blame 文件名
+```
+
+如果只查文件中某一部分由谁所写：
+	`git blame 文件名 | grep "查找词"`
+或者：
+	`git blame 文件名 -L a,b`
+
+- -L 参数表示后面接的是行号(Line)， a,b代表查询文件的第a行到第b行之间的文件内容情况。
+- a, 则代表从第a行到文件结尾
+- ,b则代表从文件开头到第b行。
+
+```shell
+git blame webpack.mix.js | grep "Mix Asset"
+git blame webpack.mix.js -L 5,5
+```
+
+​		https://git-scm.com/docs/git-blame
 
 #### diff
 
@@ -977,9 +1036,9 @@ Date:   Tue Nov 2 06:27:42 2021 +0000
 >   ```shell
 >   Author: mass <mazengrong12211@163.com>
 >   Date:   Wed Nov 3 21:25:37 2021 +0800
->                 
+>                       
 >       new
->                 
+>                       
 >   diff --git a/new.txt b/new.txt
 >   new file mode 100644
 >   index 0000000..c586658
@@ -1011,7 +1070,9 @@ Date:   Tue Nov 2 06:27:42 2021 +0000
 
 #### reflog
 
-​		`reflog` 是 "reference log" 的缩写，使用它可以查看 Git 仓库中的引用的移动记录。
+​		`reflog` 是 "reference log" 的缩写，使用它可以查看 `Git `仓库中的引用的移动记录。
+
+> ​		`reflog`是一个本地结构，它记录了HEAD和分支引用在过去指向的位置。`reflog`信息没法与其他任何人共享，每个人都是自己特有的reflog。重要的一点是，它不是永久保存的，有一个可配置的过期时间，reflog中过期的信息会被自动删除。
 
 `git reflog [HEAD/bname]`
 
@@ -1172,6 +1233,19 @@ Your branch is ahead of 'origin/master' by 2 commits.
     >
     > ​		`bname`引用串上的`commit`会按照时间排序，插入到`HEAD`所引用分支上的`commit`串里。形成一个按时间排序的新`commit`串。
     
+    合并冲突解决过程：
+    
+    > 1 ）编辑有冲突的文件，删除特殊符号，决定要使用的内容
+    > 特殊符号：<<<<<<< HEAD 当前分支的代码 ======= 合并过来的代码 >>>>>>> hot-fix
+    >
+    > 2）添加到暂存区
+    >
+    > git add hello.txt
+    >
+    > 3）执行提交（注意：此时使用git commit 命令时不能带文件名）
+    >
+    > git commit -m “merge hot-fix”
+    
 - 合并多个分支
 
     `git merge origin/master hotfix-2275 hotfix-2276 hotfix-2290`
@@ -1189,6 +1263,8 @@ Your branch is ahead of 'origin/master' by 2 commits.
 > ​		也可以使用更方便的merge工具。可以在网上搜索。
 
 ​		如果发生冲突时，想放弃合并。则需要将添加到`HEAD`工作区上的其他`branch`上的内容放弃。此时：`git merge --abort`即可。
+
+
 
 #### 同支合并
 
@@ -1223,6 +1299,22 @@ Your branch is ahead of 'origin/master' by 2 commits.
   > > ​		所以这里其实是：`git merge origin/HEAD`.
   > >
   > > ​		`HEAD` 会带着 `master` 指向最新 `commit`
+
+
+
+### 精选 cherry-pick
+
+​		 `cherry-pick` cherry-pick 是一种将某个分支上的一个或多个提交应用到另一个分支的操作，而无需将整个分支合并过来。
+
+> 创建一个新的提交，这个新的提交与原提交的 SHA 值不同，但是提交的内容是相同的。
+
+```shell
+git cherry-pick <commit-id>
+```
+
+​		使用 cherry-pick 操作，我们可以复制指定的提交，然后将其应用到当前分支上，这个提交就成为了当前分支上的一个新的提交。cherry-pick 操作可以方便地将某个分支上的某个功能或修复应用到另一个分支上，而无需将整个分支合并过来。
+
+​		使用 cherry-pick 操作时，可能会出现冲突，这时候需要手动解决冲突，并提交一个新的提交来解决冲突。因此，在使用 cherry-pick 操作之前，我们需要仔细考虑哪些提交需要复制，以及是否会产生冲突等问题。
 
 ### 拉取 pull
 
@@ -1346,6 +1438,21 @@ Your branch is ahead of 'origin/master' by 2 commits.
 -   查看所有标签
 
     `git tag`
+    
+    ```ruby
+    # 新建一个tag在当前commit
+    $ git tag [tag]
+    # 新建一个tag在指定commit
+    $ git tag [tag] [commit]
+    # 查看tag信息
+    $ git show [tag]
+    # 提交指定tag
+    $ git push [remote] [tag]
+    # 提交所有tag
+    $ git push [remote] --tags
+    # 新建一个分支，指向某个tag
+    $ git checkout -b [branch] [tag]
+    ```
 
 ### 重置 reset
 
@@ -1361,7 +1468,7 @@ Your branch is ahead of 'origin/master' by 2 commits.
 >
 >       重置暂存区，工作区内容保持不变。
 >
->       >   ​		暂存区的目录树会被重写，被 master 分支指向的目录树所替换，但是工作区不受影响。
+>       >   暂存区的目录树会被重写，被 master 分支指向的目录树所替换，但是工作区不受影响。
 >
 >   -   `soft`
 >
@@ -1401,11 +1508,17 @@ Your branch is ahead of 'origin/master' by 2 commits.
 
     -   回退到指定版本
 
+        ​	先使用`git log`查看历史记录，找到要回滚的某个commit id。
+        
         `git reset --hard commit_id/bname~N/HEAD~N`
 
 -   回退到关联仓库版本
 
     `git reset --hard origin/[bname] `
+    
+-   重置当前HEAD为指定commit，但保持暂存区和工作区不变
+
+    `git reset --keep [commit]`
 
 ### 变基 rebase
 
@@ -1593,6 +1706,60 @@ Your branch is ahead of 'origin/master' by 2 commits.
   > ​		我们知道在当前分支创建新的分支会克隆当前分支已提交的内容，但是不会包含未提交的内容。
   >
   > ​		这条命令可以从指定储藏记录创建分支，使得从未提交的内容中创建分支。
+
+
+
+### 定位 bisect
+
+​		使用二分搜索算法来查找提交历史中的哪一次提交首次引入了错误。
+
+​		整个定位过程几乎是机械的操作，只需要无脑地：验证、标记、验证，即可定位到bug所在的提交
+
+> ​		你只需要告诉这个命令一个包含该bug的坏`commit ID`和一个引入该bug之前的好`commit ID`，这个命令会用二分法在这两个提交之间选择一个中间的`commit ID`，切换到那个`commit ID`的代码，然后询问你这是好的`commit ID`还是坏的`commit ID`，你告诉它是好还是坏，然后它会不断缩小范围，直到找到那次引入bug的凶手`commit ID`。
+>
+> ​		这样我们就只需要分析那一次提交的代码，就能快速定位和解决这个bug（具体定位的时间取决于该次提交的代码量和你的经验），所以我们**提交代码时一定要养成小批量提交的习惯，每次只提交一个小的独立功能**，这样出问题了，定位起来会非常快。
+
+使用git bisect二分法定位问题的基本步骤：
+
+1. `git bisect start `[最近的出错的commitid] [较远的正确的commitid]
+
+   ```shell
+   git bisect start 5d14c34b d577ce4
+   or
+   git bisect start HEAD d577ce4
+   ```
+
+   执行完启动`bisect`之后，马上就切到中间的一次提交啦，以下是打印结果：
+
+   ```shell
+   $ git bisect start 5d14c34b d577ce4
+   Bisecting: 11 revisions left to test after this (roughly 4 steps)
+   [1cfafaaa58e03850e0c9ddc4246ae40d18b03d71] fix: read-tip icon样式泄露 (#54)
+   ```
+
+2. 测试相应的功能
+
+   - `git bisect good `标记正确
+     - 标记万`good`，马上又通过二分法，切到了一次新的提交
+   - 出现问题则 标记错误 `git bisect bad`
+     - 标记下`bad`，再一次切到中间的提交
+
+3. 不断地验证、标记、验证、标记…最终会提示我们那一次提交导致了这次的bug
+
+   ```shell
+   c0c4cc1a is the first bad commit
+   ```
+
+   
+
+### 发布 archive
+
+```ruby
+# 生成一个可供发布的压缩包
+  $ git archive
+```
+
+
 
 ## github
 
