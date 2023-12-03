@@ -1,20 +1,25 @@
 # Variable
 
-variables are names for a piece of memory that can be used to store information. 
+​		variables are names for a piece of memory that can be used to store information. 
 
 ---
 
-从c++声明语义上说，已经声明的，除静态数据成员之外的，对象或引用是变量。
+​		从c++声明语义上说，已经声明的，除静态数据成员之外的，对象或引用是变量。
 
+​		变量提供一个具名的、可供程序操作的存储空间。C++中的每个变量都有数据类型，数据类型决定
 
+- 变量所占内存空间的大小
+- 布局方式
+- 该空间能存储的值的范围
+- 以及变量能参与的运算
 
 ## local variables
 
-variables that are defined inside a function (including function parameters).
+​		variables that are defined inside a function (including function parameters).
 
 > Although function parameters are not defined inside the function body, for typical functions they can be considered to be part of the scope of the function body block.
 
-local variables have several different properties that differentiate how local variables behave from other kinds of (non-local) variables. 
+​		local variables have several different properties that differentiate how local variables behave from other kinds of (non-local) variables. 
 
 - Local variables have **block scope**.
 

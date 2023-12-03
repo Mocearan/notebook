@@ -77,11 +77,11 @@ int main()
 
 ## 对齐
 
-You might assume that types that use less memory would be faster than types that use more memory. This is not always true. CPUs are often optimized to process data of a certain size (e.g. 32 bits), and types that match that size may be processed quicker. On such a machine, a 32-bit *int* could be faster than a 16-bit *short* or an 8-bit *char*.
+​		You might assume that types that use less memory would be faster than types that use more memory. This is not always true. CPUs are often optimized to process data of a certain size (e.g. 32 bits), and types that match that size may be processed quicker. On such a machine, a 32-bit *int* could be faster than a 16-bit *short* or an 8-bit *char*.
 
-每个对象类型都有对齐要求（alignment requirement），是一个`std::size_t`类型，2的n次幂的整数。
+​		每个对象类型都有对齐要求（alignment requirement），是一个`std::size_t`类型，2的n次幂的整数。
 
-表示这个类型对象所占连续内存的大小。为了满足对齐要求的整数性质，某些成员后面会被插入填充空间。
+​		表示这个类型对象所占连续内存的大小。为了满足对齐要求的整数性质，某些成员后面会被插入填充空间。
 
 >   在对齐的地址上能够更快的访问数据。
 >
@@ -117,7 +117,7 @@ int main()
 }
 ```
 
--   最弱的对齐（最小的对齐要求）是 char、signed char 和 unsigned char 的对齐，等于 1 ；
+-   最弱的对齐（最小的对齐要求）是`char、signed char`和`unsigned char`的对齐，等于1 ；
 
 -   所有类型中最大的基础对齐（fundamental alignment）是实现定义的，并等于 `std::max_align_t` 的对齐。
 
