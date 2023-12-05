@@ -18,6 +18,8 @@
 
 ​		不要滥用含义不明显的字符常量，最好只在给`const / constexpr / enum`赋初值时使用。
 
+​		每个字面值常量都对应一种数据类型。
+
 ### letaral type
 
 ​		The type of a literal is assumed from the value and format of the literal itself.
@@ -27,6 +29,9 @@
 ​		If the default type of a literal is not as desired, you can change the type of a literal by adding a suffix:
 
 ![image-20230312150528601](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230312150528601.png)
+
+- ```整型```：十进制10，八进制012， 十六进制0xA
+- ```无符号整型```：U、u后缀。
 
 ```c++
 std::cout << 5; // 5 (no suffix) is type int (by default)
@@ -87,6 +92,8 @@ std::cout << 5.0f; // 5.0f is type float
 
 ​		C风格字符串是以``‘\0’``作为空终止符的`char`数组，字符串字面量是静态分配的以`‘\0’`为空终止符的`char`常量数组。
 
+> 字符串字面值实质上是一个const char []类型，编译器在每个字符串的结尾处加上一个'\0’来标识结束。
+>
 > 两个完全一样的字符串字面值是否同一存储依赖于实现。
 
 `operator""`
@@ -102,8 +109,17 @@ std::cout << 5.0f; // 5.0f is type float
   ```
 
 > C++ also has literals for std::string and std::string_view. In most cases these won’t be needed, but they may occasionally come in handy when using type deduction, either via the `auto` keyword, or class template argument deduction.
+>
+> ​	如果两个字符串字面值位置紧邻，仅有空格、缩进或者换行符分隔，实质上是同一个字符串的自由书写格式。
 
 ​		字符串字面值中的空白符会截断字符串。
+
+#### 转义序列
+
+​		有两类字符程序员不能直接使用：
+
+- 一类是不可打印的字符，如推个或其他控制字符，因为没有可视的图符。
+- 另一类是在c++语言中有特殊含义的字符（单引号、双引号、问号、反斜线）。
 
 #### raw strings
 
@@ -336,7 +352,7 @@ int main()
 
 ### floating point literals
 
-There are two different ways to declare floating-point literals:
+​		There are two different ways to declare floating-point literals:
 
 - standard notation
 - scientific notation
@@ -345,19 +361,19 @@ There are two different ways to declare floating-point literals:
 
 #### 科学计数法
 
-Numbers in scientific notation take the following form: 
+​		Numbers in scientific notation take the following form: 
 
 ![](https://gitee.com/masstsing/picgo-picserver/raw/master/image-20220417120356817.png)
 
-Because it can be hard to type or display exponents in C++, we use the letter ‘e’ (or sometimes ‘E’) to represent the “times 10 to the power of” part of the equation. 
+​		Because it can be hard to type or display exponents in C++, we use the letter ‘e’ (or sometimes ‘E’) to represent the “times 10 to the power of” part of the equation. 
 
-For example, `1.2 x 10⁴` would be written as `1.2e4`
+​		For example, `1.2 x 10⁴` would be written as `1.2e4`
 
-Here’s the most important thing to understand: The digits in the significand (the part before the ‘e’) are called the **significant digits**. The number of significant digits defines a number’s **precision**. The more digits in the significand, the more precise a number is.
+​		Here’s the most important thing to understand: The digits in the significand (the part before the ‘e’) are called the **significant digits**. The number of significant digits defines a number’s **precision**. The more digits in the significand, the more precise a number is.
 
 ##### How to convert numbers to scientific notation
 
-Use the following procedure:
+​		Use the following procedure:
 
 - Your exponent starts at zero.
 - Slide the decimal so there is only one non-zero digit to the left of the decimal.
@@ -367,6 +383,8 @@ Use the following procedure:
 - Trim off any trailing zeros (on the right end of the significand) only if the original number had no decimal point. We’re assuming they’re not significant unless otherwise specified.
 
 ![image-20230318154929611](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230318154929611.png)
+
+​		```浮点型```：浮点型3.124 F/f ，双精度浮点型 3.144/ 3.144E0， 长双精度 2.134LD
 
 
 
