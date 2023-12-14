@@ -44,7 +44,7 @@ std::cout << 5.0f; // 5.0f is type float
 
 
 
-#### charactor literals
+### charactor literals
 
 ​		字符字面量是指单引号内的一个字符，数据类型是`char`，可以隐式的转换当前机器所用字符集中对应的整型值。
 
@@ -386,7 +386,9 @@ int main()
 
 ​		```浮点型```：浮点型3.124 F/f ，双精度浮点型 3.144/ 3.144E0， 长双精度 2.134LD
 
+#### pointer/reference
 
+​		`std::nullptr_t`
 
 ### user-defined lieraral type
 
@@ -412,14 +414,27 @@ constexpr Point a[] = {
 
 ## symbolic constant
 
-​		c++提供了两种符号常量：
+​		c++中有四种符号，它们又归属两类符号常量：
 
-- 编译时常量：表达式在编译时求值
+- compile-time constants 编译时常量：表达式在编译时求值
+
+  ​	**Runtime constants** are constants whose initialization values can only be resolved at runtime (when your program is running). 
+
+  ​	here are a few odd cases where C++ requires a compile-time constant instead of a run-time constant .
+
   - constexpr / enum / macro
-- 运行时常变量
+
+- Runtime constants
+
+  ​	**Compile-time constants** are constants whose initialization values can be determined at compile-time (when your program is compiling).
+
+  ​	Compile-time constants enable the compiler to perform optimizations that aren’t available with runtime constants.
+
   - const variables
 
-​		对于`constexpr`和`const`的区别，`constexpr`表征一个编译期计算为常量的表达式，而`const`约束对一个变量的访问接口是常量性（只读）的。
+​		
+
+​		对于`constexpr`和`const`的区别，`constexpr`表征一个编译期计算为常量的表达式，而`const`声明常变量。
 
 ​		人们更倾向于使用命名的符号常量而非字面量，因为：
 
@@ -431,28 +446,13 @@ constexpr Point a[] = {
 
 
 
-### symbolic type
-
-- const variables
-- constexpr variables
-- enum
-- macro
-
-C++ actually has two different kinds of constants:
-
-- compile-time constants
-
-  ​	**Runtime constants** are constants whose initialization values can only be resolved at runtime (when your program is running). 
-
-  ​		there are a few odd cases where C++ requires a compile-time constant instead of a run-time constant .
-
-- Runtime constants
-
-  ​	**Compile-time constants** are constants whose initialization values can be determined at compile-time (when your program is compiling).
-
-  ​	Compile-time constants enable the compiler to perform optimizations that aren’t available with runtime constants.
-
 ### compile-time constants
+
+#### 常量表达式
+
+​		是指值不会改变并且在编译过程就能得到计算结果的表达式。
+
+​		字面值术语常量表达式，常量表达式初始化的const对象也是常量表达式。
 
 #### constexpr
 
@@ -539,6 +539,8 @@ std::cout << x + y; // x + y evaluated at compile-time
 - macros can have naming conflicts with normal code
 - macros don’t follow normal scoping rules
 
+
+
 ### const variables
 
 ​		任何语义上一经初始化就不应该再改变，并且初始化器在编译期不能确定的变量都应当声明为常变量。
@@ -556,6 +558,10 @@ std::cout << x + y; // x + y evaluated at compile-time
 ​		声明常变量就不必担心变量会在操作内部被改变，编译器负责确认并执行`const`的承诺。
 
 #### 常变量的性质
+
+> CV限定实际上是从类型的可写角度，来限定对象从外部可写的权限。
+
+>   而对象内部限定的可写性，是对象自身性质的一部分，依赖类的访问控制机制（常函数接口，常成员等，公有私有等）
 
 - 常变量只能初始化，不能被赋值
   - 常变量可以被常量表达式初始化，这种常变量可以用在常量表达式中
