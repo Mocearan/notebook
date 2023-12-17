@@ -346,7 +346,7 @@ Global variable and functions identifiers can have either `internal linkage` or 
 
 
 
-#### 内部链接
+## 内部链接
 
 名字在当前翻译单元中生效。
 
@@ -397,7 +397,7 @@ An identifier with **internal linkage** can be seen and used within a single fil
 
 - 匿名联合体的数据成员具有内部
 
-#### 外部链接
+## 外部链接
 
 可以从其他翻译单元中的作用域引用该名称。
 
@@ -444,7 +444,7 @@ An identifier with **external linkage** can be seen and used both from the file 
 >
 > 
 
-#### 无链接
+## 无链接
 
 名字只在声明它的作用域内有效。
 
@@ -460,7 +460,7 @@ An identifier with **external linkage** can be seen and used both from the file 
 
 任何作用域下，没有指定为外部链接、模块链接或内部链接的名字都是无链接的。
 
-#### 模块链接
+## 模块链接
 
 名字只能从同一模块单元或其他翻译单元中同名模块引用。
 
@@ -468,7 +468,7 @@ An identifier with **external linkage** can be seen and used both from the file 
 
 命名空间作用域中声明的，附加在一个具名模块上且不导出的具有内部链接的名字，具有模块链接。
 
-#### Linkage summary
+## Linkage summary
 
 An identifier’s *linkage* determines whether multiple declarations of an identifier refer to the same identifier or not.
 
