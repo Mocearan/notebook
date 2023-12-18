@@ -14,16 +14,18 @@
 
 ​		几乎任何类型都有资格成为元素类型:内置数字类型(如``char、int和double``)、用户定义类型(如``string、Entry、list<int>和Matrix<double,2>``)和指针(如``const char*、Shape*和double*``)。
 
+​		引用不是对象，不能作为容器的对象。
+
 - 元素不是一个指向对象的引用或指针。
 
   ​	这使得容器美观、紧凑、访问速度快。对于关心内存大小和运行时性能的人来说，这是至关重要的。
 
-- 如果你有一个依赖虚函数来获得多态行为的类层次结构，不要直接将对象存储在容器中。
+- 如果依赖虚函数来获得多态行为的类层次结构，则使用指针，不要直接将对象存储在容器中。
 
 ```c++
-vector<Shape> vs;                                  // No, don't - there is no room for a Circle or a Smiley (§5.5)
-vector<Shape*> vps;                              // better, but see §5.5.3 (don't leak)
-vector<unique_ptr<Shape>> vups;      // OK
+vector<Shape> vs;                 // No, don't - there is no room for a Circle or a Smiley (§5.5)
+vector<Shape*> vps;               // better, but see §5.5.3 (don't leak)
+vector<unique_ptr<Shape>> vups;   // OK
 ```
 
 

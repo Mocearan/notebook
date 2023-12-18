@@ -138,6 +138,8 @@ for(element_declaration : container)
 
 ​		支持`range-for`需要为被迭代的类中实现`begin() / end()`函数，或者允许通过`begin(x) / end(x)`得到相应的迭代器。
 
+​		范围for语句体内不应改变其所遍历序列的大小。
+
 - 编译器首先查找可用的成员`begin / end`
   - 找到但不可用则`range-for`错误
 - 否则，则外层作用域继续寻找`begin / end`

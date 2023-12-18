@@ -1190,7 +1190,9 @@ std::cout << "The array has: " << std::size(array) << " elements\n";
 
 > c++标准库提供了`std::array`，来提供非退化的`fixed array`抽象，但不具备动态扩容的抽象。
 
-#### multidimensional array
+#### multidimensional array 多维数组
+
+​		C++语言中没有多维数组，通常所说的多维数组其实是数组的数组。
 
 ​		An array of arrays is called a **multidimensional array**.
 
@@ -1227,13 +1229,15 @@ int array[3][5]
 >
 > ```c++
 > int (arra*)[5] {
->  [,,,,],
->  [,,,,],
->  ...
+> [,,,,],
+> [,,,,],
+> ...
 > }
 > ```
 >
 > ​		声明时只可见当前最外层的说明，所以推导式的声明必须通过非退化类型来提供完整的类型信息。因此，即便三维以上的高维数组，也只能省略第一维来推导。
+
+​		当程序使用多维数组的名字时，也会自动将其转换成指向数组首元素的指针。
 
 ​		多维数组可以通过指针的使用，灵活的建立堆上内存。
 
@@ -1246,9 +1250,31 @@ int (*array)[5] {new int[x][5]}; // int (*array)[5], pointer to array[5], auto a
 
 ​		在实际应用中，通常也将多维数组线性化，如3x5的二维数组，线性化为15个元素的一维数组。
 
+​		通过使用auto或者decltype就能尽可能地避免在数组前面加上一个指针类型了、当然，使用标准库函数begin和end也能实现同样的功能，而且看起来更简洁一些
+
+```c++
+for(auto p = ia; p != ia + 3; ++p)
+    for(auto q = *p; q != *p + 4; ++q)
+        cout << *q << ' ';
+
+for(auto p = begin(ia); p != end(ia); ++p)
+    for(auto q = begin(*p); q != end(*p); ++q)
+        cout << *q << ' ';
+```
+
+​		读、写和理解一个指向多维数组的指针是一个让人不胜其烦的工作，使用类型别名（参见2.5.1节，第60页）能让这项工作变得简单一点儿
+
+```c++
+using int_array = int[4];
+typedef int int_array[4];
+
+for(int_array *p = ia; p != ia + 3; ++p) {
+    for(int *q = *p; q != *p + 4; ++q)
+        cout << *q << ' ';
+}
+```
 
 
-​		
 
 ### 数组退化 array decay
 

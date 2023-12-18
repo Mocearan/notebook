@@ -36,6 +36,10 @@ namespace std
 - `size_type`
 
   ​	`size_t`，实际的`size_t`大小依赖于环境。
+  
+- `difference_type`
+
+  ​	只要两个迭代器指向的是同一个容器中的元素或者尾元素的下一位置，就能将其相减，所得结果是两个迭代器的距离。所谓距离指的是右侧的迭代器向前移动多少位置就能追上左侧的迭代器，其类型是名为difference_type的带符号整型数。string和vector都定义了difference_type，因为这个距离可正可负，所以difference_type是带符号类型的。
 
 
 
