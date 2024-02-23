@@ -18,11 +18,21 @@
 
 [从基本Git指令到背后原理，带你手把手实现一个简单的Git_git 实现_linuxguitu的博客-CSDN博客](https://blog.csdn.net/linuxguitu/article/details/111884001#:~:text=从基本Git指令到背后原理，带你手把手实现一个简单的Git 1 1. init 在学习 git 原理之前，我们先忘掉平时用的 commit，branch，tag,4 4.commit object 虽然我们已经可以用一个 tree object 来表示整个项目的版本信息了，但是似乎还是有些不足的地方： )
 
-
+[万字长文肝Git----从私有Git仓库的搭建到命令的使用再到分支管理，全流程全套服务包您满意【建议收藏】-云社区-华为云 (huaweicloud.com)](https://bbs.huaweicloud.com/blogs/281902)
 
 https://zhuanlan.zhihu.com/p/182553920
 
 [别乱提交代码了，看下大厂 Git 提交规范是怎么做的！ - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/100773495)
+
+
+
+[Git全套详细知识讲解（安装、常用指令、分支管理、远程仓库）-云社区-华为云 (huaweicloud.com)](https://bbs.huaweicloud.com/blogs/395581)
+
+[Git分支开发工作流原来这么简单的【云驻计划】-云社区-华为云 (huaweicloud.com)](https://bbs.huaweicloud.com/blogs/335534)
+
+[一文彻底搞懂Git分支原理【云驻计划】-云社区-华为云 (huaweicloud.com)](https://bbs.huaweicloud.com/blogs/335530)
+
+[带你彻底搞懂Git上的远程分支与变基【云驻计划】-云社区-华为云 (huaweicloud.com)](https://bbs.huaweicloud.com/blogs/335536)
 
 # git
 
@@ -1036,9 +1046,9 @@ git blame webpack.mix.js -L 5,5
 >   ```shell
 >   Author: mass <mazengrong12211@163.com>
 >   Date:   Wed Nov 3 21:25:37 2021 +0800
->                       
+>                         
 >       new
->                       
+>                         
 >   diff --git a/new.txt b/new.txt
 >   new file mode 100644
 >   index 0000000..c586658
