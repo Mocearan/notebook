@@ -55,9 +55,7 @@
 - 完成声波信号到电信号的转换
 - 再经过放大电路处理，可以进行采样量化处理
 
-
-
-#### 数字音频
+##### 数字音频
 
 - 采样：在时间轴上对信号进行数字化。
 
@@ -67,19 +65,82 @@
 
 - 量化：在幅度轴上对信号进行数字化
 
-  - 采样大小：一个采样数据占用的bit数，常用16bit。
+  - 采样大小（位深）：一个采样数据占用的bit数，常用16bit。
   - 采样率：采样频率（一秒钟内采样次数），8k, 16k, 32k, 44.1k, 48k
   - 声道数：单声道、双声道、多声道。每个声道单独采样。
 
   > ​		比如用16比特的二进制信号来表示声音的一个采样，而16比特（一个short）所表示的范围是[-32768,32767]，共有65536个可能取值，因此最终模拟的音频信号在幅度上也分为了65536层
-
-  ​	PCM数据比特率 = 采样大小 x 采样率 x 声道数
 
 - 编码：按照一定的格式记录采样和量化后的数字数据，比如顺序存储或压缩存储
 
   > ​		通常所说的音频的裸数据格式就是脉冲编码调制（Pulse Code Modulation, PCM）数据。
 
   ​		编码后的二进制数据即表示将模拟信号转为数字信号。
+
+##### 采样频率
+
+​		每秒钟采样次数。
+
+​		根据尼奎斯特定律，要从采样中完全恢复原始信号波形，采样频率至少是信号中最高频率的两倍。
+
+​		人耳能听到的最高频率为20kHz，因此，采样频率一般为44.1kHz，以保证覆盖人耳听到的最大频率，数字化后的声音质量不会被降低。
+
+- 22000 (22k) Hz      无线广播
+- 44100 (44.1k)Hz     CD音质
+- 48000 (48k) Hz       数字电视，DVD
+- 96000 (96k) Hz       蓝光，高清DVD
+- 192000(192k) Hz    蓝光，高清DVD
+
+
+
+##### 位深
+
+​		用以描述每个采样的值的范围。
+
+​		采样值的精确度取决于用多少位的数据来描述，3位8个值，8位256个值，16位65536个值。
+
+
+
+##### 通道数
+
+​		单声道，双声道，四声道，5.1声道，多声道
+
+- 交错模式：左右声道的数据间隔存储
+- 非交错模式：左右声道的数据分别连续存储
+
+
+
+##### 比特率、码率
+
+- 比特率：裸数字音频，每秒传输的bit数，bps(Bit Per Second)
+
+  ​	PCM数据比特率 = 采样大小 x 采样率 x 声道数
+
+- 码率：压缩后的音频数据，的比特率。
+
+  ​	码率越大，压缩效率越低，音质越好，压缩后的数据越大。
+
+  ​	码率 = 音频文件大小 / 时长
+
+  - 96 kbps， FM质量
+  - 128-160 kbps， 一般质量音频
+  - 192 kbps， CD质量
+  - 256-320 kbps， 高质量音频
+
+##### 编码帧
+
+​		一次编码会将若干个采样打包在一起，作为一个编码单元。
+
+- MP3，1152采样点作为一个编码单元
+- AAC，通常1024个采样点作为一个编码单元，也有2048
+
+​		帧长，指每帧播放持续的时间。 也可以指压缩后每帧的数据长度。
+
+​		帧长 = 每帧采样数 / 采样频率 （ 48K，1152个采样点，帧长 = 1152 / 48000 = 0.024s）
+
+​		
+
+
 
 
 
@@ -544,7 +605,7 @@ uint32* GetWave(void)
 
 
 
-![image-20240221174016297](E:\notebook\media\wav_sample.png)
+![image-20240224233212579](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240224233212579.png)
 
 
 
@@ -589,7 +650,9 @@ uint32* GetWave(void)
 
 ​		将实际量化后的数字音频数据进行压缩存储，称为编码。
 
+![image-20240225192246401](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240225192246401.png)
 
+![image-20240225192432266](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240225192432266.png)
 
 ##### MP3
 
@@ -605,29 +668,93 @@ uint32* GetWave(void)
 
 ##### AAC编码
 
-​		AAC是新一代的音频有损压缩技术，通过一些附加的编码技术（PS，SBR等），衍生出了
+​		AAC是新一代的音频有损压缩技术。
 
-- LC-AAC
+- 开始基于MPEG-2音频编码技术
+- MPEG-4标准出现后，AAC重新集成特性，加入了SBR（Spectral Band Replication， 频段重现）和PS（Parametric Stereo，参数化）技术。
 
-  ​	比较传统的AAC，主要应用于中高码率场景的编码（>80Kbit/s)
+​		通过你附加的编码技术（PS，SBR等），衍生出了
+
+- LC-AAC （Low Complexity）
+
+  ​	低复杂度规则，码流128K，音质好。主要应用于中高码率场景的编码（>80Kbit/s)
 
 - HE-AAC
 
-  ​	AAC + SBR， 主要应用于中低码率场景下的编码（<=80Kbit/s)
+  ​	按频谱分别保存，扶贫编码保存主要部分，高频单独放大编码保存音质，码流64K左右。
+
+  ​	AAC + SBR， 主要应用于中低码率场景下的编码（<=80Kbit/s) 
 
 - HE-AAC v2
 
+  ​	双声道中的生意你存在某种相似性，只需存储一个声道的全部信息，然后，花很少的字节用参数描述另一个声道和它的差异。
+
   ​	AAC + SBR + PS，主要应用于低码率场景的编码(<=48Kbit/s)
 
-  
 
-  大部分编码器都设置为<=48Kbit/s自动启用PS技术，而>48Kbit/s则不加PS。
+![image-20240225193009769](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240225193009769.png)
+
+​		大部分编码器都设置为<=48Kbit/s自动启用PS技术，而>48Kbit/s则不加PS。
 
 - 小于128Kbit/s的码率下表现优异，并且多用于视频中的音频编码
 
 - 适用于128Kbit/s以下的音频编码，多用于视频总的音频轨的编码
 
 
+
+###### ADIF格式
+
+​		Audio DataInterchange Format，这种格式的特征是可以确定的找到这个音频数据的开始，只能从头开始理解吗，不能在音频数据流中间开始。这种格式常用在磁盘文件中。
+
+###### ADTS格式
+
+​		Audio Data Transport Stream，特征是每一帧都有一个同步字，所以可以再音频流的任何位置开始解码，类似于数据流格式。
+
+> http://www.p23.nl/projects/aac-header/
+
+- 结构
+
+  ​	由7或9个字节组成，其中按位赋予不同的含义。 
+
+![image-20240225194835753](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240225194835753.png)
+
+- 12bit，同步字， 所有位必须是1，`0xFFF`
+
+  ​	通过识别`0xFFF`来识别一个ADTS头。
+
+-  1bit，MPEG编码规范，`0 MPEG-4 / 1 MPEG-2`
+
+- 2bit，layer，总是`0`
+
+- 1bit，CRC保护标识，`0 CRC / 1 no CRC`
+
+  ​	有CRC保护则在7字节基础上增加2个字节的CRC校验码，成为9个字节
+
+- 2bit，profile，`MPEG-4`音频对象类型，即不同的AAC版本。
+
+  - 1, AAC Main
+  - 2, AAC LC
+  - 5, SBR
+  - 29, PS
+
+- 4bit，MPEG-4采样率
+
+  - 0, 96000HZ
+  - 1, 88200HZ
+  - 2, 64000HZ
+  - 3, 48000HZ
+  - 4, 44100HZ
+  - 5, 32000HZ
+  - 6, 24000HZ
+  - 7, 22050HZ
+  - 8, 16000HZ
+  - 9, 12000HZ
+  - 10, 11025HZ
+  - 11, 8000HZ
+  - 12, 7350HZ
+  - 13, Reserved
+  - 14, Reserved
+  - 15: frequency is wirtten explictly
 
 ##### Ogg编码
 
@@ -640,7 +767,27 @@ uint32* GetWave(void)
 
 
 
+#### 音频重采样
 
+​		将音频三元组：位深、采样率和通道数，当前的值转换成另外一组值。
+
+- 设备采集的音频数据与编码器要求的输入数据不一致。
+- 样神奇要求的音频数据与要播放的音频数据不一致。
+- 更方便运算
+  - 回音消除中，将多声道变为单声道进行计算
+
+
+​		是否需要重采样：
+
+- 了解音频设备的参数
+- 查看ffmpeg源码中对各平台不同编码器的实现
+
+​		重采样的步骤：
+
+- 创建采样上下文
+- 设置参数
+- 初始化重采样
+- 进行重采样
 
 
 
@@ -976,6 +1123,48 @@ uint32* GetWave(void)
 ![image-20220908222150926](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908222150926.png)
 
 ![image-20220908222203828](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220908222203828.png)
+
+
+
+## 音视频封装
+
+​		封装格式（容器），将已经编码压缩好的图片流、音频流、字幕信息按照一定的方案组织在一个文件中，便于软件播放。
+
+​		一般来说，视频文件的后缀就是它的封装格式：
+
+```
+AVI / MKV / MPE / MPG / MPEG 
+MP4 / WMV / MOV / 3GP
+M2V / M1V / M4V / OGM
+RM / RMS / RMM / RMVB / IFO
+SWF / FLV / F4V
+ASF / PMF / XMB / DIVX / PART
+DAT / VOB / M2TS / TS / PS
+```
+
+​		H264 + AAC封装为FLV或MP4是最为流行的封装模式。
+
+
+
+## 音视频同步
+
+### 时间戳
+
+- DTS（Decoding Time Stamp） 解码时间戳
+
+  ​	播放器根据DTS解码一帧数据
+
+- PTS（Presentation Time Stamp）显示时间戳
+
+  ​	播放器根据PTS展示一帧数据
+
+### 同步方式
+
+- Audio Master：同步到音频
+- Video Master： 同步音频到视频
+- External Clock Master：同步音频和视频到外部时钟
+
+​		一般情况下 Audio Master > External  Clock Master > Video Master
 
 ## 流媒体基本原理
 
