@@ -1046,9 +1046,9 @@ git blame webpack.mix.js -L 5,5
 >   ```shell
 >   Author: mass <mazengrong12211@163.com>
 >   Date:   Wed Nov 3 21:25:37 2021 +0800
->                             
+>                               
 >       new
->                             
+>                               
 >   diff --git a/new.txt b/new.txt
 >   new file mode 100644
 >   index 0000000..c586658
@@ -2050,6 +2050,7 @@ git checkout -b new_feature origin/master
     - **docs**: 仅仅修改了文档，比如 README, CHANGELOG, CONTRIBUTE等等
     - **style**: 仅仅修改了空格、格式缩进、逗号等等，不改变代码逻辑
     - **feat**: A new feature
+    - **DEPRECATED**
     - **fix**: A bug fix
     - **perf**: 优化相关，比如提升性能、体验
     - **refactor**:代码重构，没有加新功能或者修复 bug

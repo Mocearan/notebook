@@ -538,7 +538,7 @@ form.feedback={tagName="input",attrs.type="url",attrs.placeholder="https://"}
 
 ​		
 
-```
+```toml
 Array=[]
 Array_of_Booleans=[true,false]
 Array_of_Integers=[1,0xFEFF,0o755,0b1010]
