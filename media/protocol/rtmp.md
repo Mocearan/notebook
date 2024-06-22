@@ -25,3 +25,17 @@
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/3b77b88dda296624e0ab21432a5d3d80.png)
 
 创建流，开始播放
+
+
+
+## 前景
+
+​		在过去的10多年时间里（从2004年到2018年），网页视频播放一直是Flash技术的天下，我们所熟悉的众多视频网站和新闻门户网站一直都在使用Flash技术来播放网页视频。这里的主要原因是IE浏览器的高比例占有量和Flash插件在客户端的普及，还有就是主要[流媒体服务器](https://so.csdn.net/so/search?q=流媒体服务器&spm=1001.2101.3001.7020)产品对rtmp协议和flv视频格式的广泛支持，这是这一个时期的视频生态系统。
+​    随着IE浏览器的衰落和新型浏览器（Chrome,Firefox,Safari等）的崛起，Flash视频播放进入了被淘汰的进程，HTML5 Video正在成为视频播放的主流技术。Youtube从2010年就开始尝试使用没有Flash的视频播放技术，到2018年前后完全实现了去Flash播放，国内的视频网站也在积极地进行这去flash的技术改进，相信也很快不再使用Flash播放器。Chrome浏览器在2020年彻底抛弃Flash技术，几大科技巨头包括Flash的母公司Adobe联合宣布将放弃Flash。这无疑会大大促进众多整个互联网行业的去Flash进程。
+
+​    HTML5 Video与MSE（Media Source Extensions ）一起能够提供更加强大的视频播放和扩展应用（如双向视频）等。
+
+​    要实现去Flash应当在播出时摒弃rtmp协议，采用HLS、HTTP-FLV、WebRTC、WebSocket来传输直播视频流，客户端使用MSE扩展实现数据接收和视频播放
+
+​    HTML5的Video控件标签支持HLS协议播放，经测试确实支持m3u8的播放。
+HTML5视频解码器没有指定，由浏览器开发者决定。当前各主流浏览器video元素主要支持三种视频格式ogg, mp4, webm。MPEG4 = 带有 H.264 视频编码和 AAC 音频编码的 MPEG 4 文件
