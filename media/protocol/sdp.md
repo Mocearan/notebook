@@ -1,33 +1,117 @@
 # SDP
 
-​	Session Description Protocol， 会话描述协议
+​		Session Description Protocol， 会话描述协议
 
 ---
 
-​		SDP用于描述媒体详情和媒体协商的协议。SDP是互联网建议标准[RFC 2327,4566–2006] 。
+​		SDP用于描述媒体详情和媒体协商的协议。它为会话通知、会话初始和其它形式的多媒体会话初始等操作提供服务。
+
+​		SDP 的设计宗旨是通用性协议，所有它可以应用于很大范围的网络环境和应用程序，但 SDP 不支持会话内容或媒体编码的协商操作。
+
+​		SDP 信息包括：
+
+- 会话名称和目标；
+- 会话活动时间；
+- 构成会话的媒体；
+- 有关接收媒体的信息、地址等。
+
+​		
 
 ​		SIP终端之间通过SDP交换媒体信息，WebRTC中也使用了SDP。
 
+## 标准
+
+​		SDP是互联网建议标准[RFC 2327,4566–2006] 。
+
+
+
+## 协议格式
+
+​		sdp 格式由多行的`type=value`组成，SDP 信息是文本信息，UTF-8 编码采用 ISO 10646 字符设置。
+
+​		sdp 会话描述由**一个会话级描述**和**多个媒体级描述**组成。会话级描述的作用域是整个会话，媒体级描述描述的是一个视频流或者音频流.
+
+- 会话级描述由`v=`开始到第一个媒体级描述结束
+- 媒体级描述由`m=`开始到下一个媒体级描述开始之前
+
 ```
 ==Session description:==
+v= (protocol version， 协议版本)
+o= (owner/creator and session identifier， 会话参数)
+s= (session name， 会话名称)
+i=* （会话信息）
+u= * (URI of description， URI描述)
+e=* （Email 地址）
+p=* （电话号码）
+b=* （带宽信息）
+c= * (connection information-not required if included in all media， 连接信息 ― 如果包含在所有媒体中，则不需要该字段)
+```
 
-v= (protocol version)
-o= (owner/creator and session identifier)
-s= (session name)
-u= * (URI of description)
-c= * (connection information-not required if included in all media)
+```
 ==Time description:==
-t= (time the session is active)
+t= (time the session is active，会话活动时间)
+z=* （时间区域调整）
+k=* （加密密钥）
+r=* （0 或多次重复次数）
+```
+
+```
 ==Media description:==
 m= (media name and transport address)
-c= * (connection information-optional if included at session-level)
-b= * (bandwidth information)
-a= * (zero or more media attribute lines)
+i=* （媒体标题）
+c= * (connection information-optional if included at session-level， 连接信息 — 如果包含在会话层则该字段可选)
+b= * (bandwidth information，带宽信息)
+k=* （加密密钥）
+a= * (zero or more media attribute lines，0 个或多个会话属性行)
 y= * (SSRC)
 f= * (媒体描述)
 ```
 
+### sample
 
+```
+v=0
+o=mhandley 2890844526 2890842807 IN IP4 126.16.64.4
+s=SDP Seminar
+i=A Seminar on the session description protocol
+u=http://www.cs.ucl.ac.uk/staff/M.Handley/sdp.03.ps
+e=mjh@isi.edu (Mark Handley)
+b=AS:5050
+c=IN IP4 224.2.17.12/127
+t=2873397496 2873404696
+a=recvonly
+m=audio 49170 RTP/AVP 0
+m=video 51372 RTP/AVP 31
+m=application 32416 udp wb
+a=orient:portrait
+a=rtpmap:96 H264/90000
+a=control:rtsp://10.86.77.14:554/h264/ch1/sub/av_stream/trackID=1
+
+
+//字段解释
+V=0     ;Version 给定了SDP协议的版本
+ o=<用户名> <会话id> <会话版本> <网络类型><地址类型> <地址>
+<address>； Origin ,给定了会话的发起者信息
+s=<sessionname> ;给定了Session Name
+i=<sessiondescription> ; Information 关于Session的一些信息
+u=<URI> ; URI
+b=<modifier>:<value>; AS:5050：带宽5050 kb/s
+e=<emailaddress>    ;Email
+c=<networktype> <address type> <connection address> ;Connect Data包含连接数据
+t=<会话起始时间> <结束时间>
+a=<属性>:<值>
+m=<媒体类型> <端口号> <传输协议> <媒体格式
+a=rtpmap:96 H264/90000
+格式为a=rtpmap:<媒体格式><编码格式>/<时钟频率>
+a=framerate:25
+表示帧率
+a=control:rtsp://10.86.77.14:554/h264/ch1/sub/av_stream/trackID=1
+表示这路视频流在这个会话中的编号
+```
+
+
+
+## 字段
 
 部分字段用法说明：
 ► a 字段:
@@ -77,3 +161,6 @@ a表音频，编码格式：1. G.711 2. G.723.1 3.G.729 4. G.722.1
 - \2. ReSIProcate。是支持新一代的rfc3261的独立SIP协议栈, 体现出高稳定性、兼容性强的特性
 - \3. osip2。在对原有协议栈进行封装处理的前提下, 由C语言编写而成的SIP开发源码的协议栈, 具有较大的开发难度和工作量, 且必须与其他协议栈相整合使用
 - \4. PJSIP。由C语言编写而成的一种开源协议栈, 适用于嵌入式SIP功能的开发和应用, 也是智能家居网关设计开发的首选
+
+
+
