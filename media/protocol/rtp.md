@@ -18,6 +18,16 @@
 
 ​		RTP的T是transport，不同于RTSP/RTMP的T是Time。这意味着RTP是某种意义上基于UDP/TCP，加上适合实时流媒体传输的控制功能的传输协议。
 
+
+
+## 标准
+
+[RFC 6184 - RTP Payload Format for H.264 Video (ietf.org)](https://datatracker.ietf.org/doc/html/rfc6184)
+
+[Real-Time Transport Protocol (RTP) Parameters (iana.org)](https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml)
+
+
+
 ## 应用场景
 
 ### 视频会议
@@ -157,11 +167,26 @@ RTP协议可以用于游戏实时语音中，保证游戏玩家之间的语音�
   - 版本号
   - 填充位
   - 扩展位
+    -  RTP 固定头中的扩展标志位 X 置 1，则一个长度可变的扩展头部分被加到 RTP 固定头之后
   - CSRC计数器
   - 负载类型
 - 可选头部（Optional Header， 0~32 byte）
-  - 扩展头部
-  - CSRC列表信息
+  - 4字节扩展头部
+
+    - 2byte， profile定义
+
+      - profile 定义了一系列负载类型和对应的负载格式，也定义了特定于具体应用的 RTP 扩展和修改。
+
+        - **RFC3551**(RTP/AVP)在 RFC3550 的基础上针对 RTP 档次进行补充形成 RTP/APVP 档次，被用在具有最小会话控制的音视频会议中，是其它扩展档次的基础。该档次在没有参数协商和成员控制的会话中非常有用。该档次也为音视频定义一系列编码和负载格式。对于具体的流媒体负载格式，IETF 也定义一系列协议详细描述，如 VP8 视频负载格式[6]和 H264 视频负载格式[7]，等等。
+        - RFC3711(SRTP，也即 RTP/SAVP)是 RTP/AVP 在安全方面进行扩展形成的档次，为 RTP/RTCP 提供数据加密、消息认证、重放保护等功能。SRTP 具有高吞吐量和低数据膨胀等特点，是异构环境下对 RTP/RTCP 数据的有效保护。
+        - RFC4585(RTP/AVPF)是 RTP/AVP 在及时反馈方面进行扩展形成的档次，使得接收端能够向发送端提供及时反馈，实现短时调整和基于反馈的修复机制。该协议定义早期 RTCP 报文以实现及时反馈，并定义一系列通用 RTCP 反馈报文和特定于应用的反馈报文，如 NACK、PLI、SLI、RPSI 等。
+        - RFC5124(RTP/SAVPF)则是 RTP/SAVP 和 RTP/AVPF 的综合。SAVP 和 AVPF 在使用时，需要参与者借助于 SDP 协议[8]就档次和参数信息达成一致。但是对一个 RTP 会话来说，这两种档次不能同时被协商。而实际应用中，我们有同时使用这两种档次的需要。因此，RTP/SAVPF 档次应运而生，它能够使得 RTP 会话同时具有安全和及时反馈两方面的特性。
+
+        
+    - 2byte，扩展头部长度，0~32 byte之间，不包括扩展头的4字节
+  - 0~32字节可选头
+- CSRC列表信息
+
 - 负载数据（Payload Data，0~65535）
   - 实际的传递数据
 
@@ -173,7 +198,11 @@ RTP协议可以用于游戏实时语音中，保证游戏玩家之间的语音�
 // |		ts						   |
 //-----------------------------------------
 // |		ssrc					    |
-//-----------------------------------------
+//------------------------------------------------|
+// |  defined by profile |	 length		  |		 |
+//-----------------------------------------|	optional header 
+// |  0~32 byte optional header			  |      |
+//------------------------------------------------|
 // |		csrc						|
 //------------------------------------------
 //|          ....						 |
@@ -218,19 +247,34 @@ RTP协议可以用于游戏实时语音中，保证游戏玩家之间的语音�
     }
 */
 
+// 按小端定义
 struct rtp_hdr {
 	unsigned char cc:4; // CSRC count
 	unsigned char x:1; // header extension flag
 	unsigned char p:1; // padding flag
 	unsigned char version:2;
+    
 	unsigned char pt:7; // payload type
 	unsigned char m:1; // marker bit
+    
 	uint16_t seq; // sequence number
 	uint32_t ts; // timestamp
 	uint32_t ssrc; // synchronization source
     uint32_t csrc[]; // contribution source list
-};
+};  // sizeof(rtp_hdr) 返回的结构大小不包括柔性数组的内存。
 ```
+
+
+
+### RTP over TCP
+
+​		RTP 默认是采用 UDP 发送的，格式为 RTP 头+RTP 载荷，**如果是使用 TCP，那么需要在 RTP 头之前再加上四个字节**
+
+- 第一个字节：Magic(0x24)–辨识符
+- 第二个字节：Channel–通道，在 SETUP 的过程中获取
+- 第三第四个字节：Length–RTP 包(头部+载荷）的大小，最多只能 12 位，第三个字节保存高 4 位，第四个字节保存低 8 位
+
+![rtpExample](https://raw.githubusercontent.com/Mocearan/picgo-server/main/d06dcc585a0c0353d91be3d0f277ab6e.png)
 
 
 
