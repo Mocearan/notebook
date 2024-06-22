@@ -14,7 +14,9 @@
 
 > RTP会话使用合法的偶数端口（2n），对应的RTCP包使用下一个奇数端口（2n+1）。
 
-​		一般基于UDP，也可使用TCP
+​		一般基于UDP，也可使用TCP。
+
+​		RTP的T是transport，不同于RTSP/RTMP的T是Time。这意味着RTP是某种意义上基于UDP/TCP，加上适合实时流媒体传输的控制功能的传输协议。
 
 ## 应用场景
 
