@@ -26,35 +26,9 @@
 
 [RFC 6184 - RTP Payload Format for H.264 Video (ietf.org)](https://datatracker.ietf.org/doc/html/rfc6184)
 
+[ RTP Payload Format for High Efficiency Video Coding (HEVC)](https://mirrors.nju.edu.cn/rfc/rfc7798.html)
+
 [Real-Time Transport Protocol (RTP) Parameters (iana.org)](https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml)
-
-
-
-## 应用场景
-
-### 视频会议
-
-RTP协议可以用于实现视频会议系统中的音视频传输，确保音视频数据的实时性和同步性。
-
-###  流媒体
-
-RTP协议可以用于流媒体服务中，如直播、点播、[视频监控](https://cloud.tencent.com/developer/techpedia/2303)等，保证音视频数据的实时传输和播放。
-
-###  IP电话
-
-RTP协议可以用于实现IP电话中的语音传输，确保语音数据的实时传输和质量。
-
-###  语音对讲
-
-RTP协议可以用于实现语音对讲系统中的音频传输，确保音频数据的实时传输和质量。
-
-###  游戏实时语音
-
-RTP协议可以用于游戏实时语音中，保证游戏玩家之间的语音交流的实时性和质量。
-
-​		音频和视频会议中，音频和视频数据通常分别在不同的RTP会话中传输，每个会话使用不同的传输地址和端口。如果在会议中同时使用了音频和视频，通常会使用不同的RTP会话来传输这两种媒体。会议参与者可以根据RTCP包中的规范化名称（CNAME，Canonical Name）来检索关联的音频和视频数据，并根据RTCP包中的时间戳信息来实现音频和视频的同步。
-
-
 
 
 
@@ -166,26 +140,107 @@ RTP协议可以用于游戏实时语音中，保证游戏玩家之间的语音�
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/8452c33f5e794d6a8eeebc5b4b140a6e.png)
 
 - 固定头部（Fixed Header，12 byte）
-  - 版本号
-  - 填充位
-  - 扩展位
+  - v 版本号
+  - P 填充标识
+    - 如果该位为 1，说明该 RTP 包末尾包含了一个或多个填充字节，最后一个字节的值表示填充的字节数（包含最后一个字节本身），一般在一些需要固定块大小的加密算法中才需要填充
+  - X 扩展标识
+    -  如果该位为 1，说明有扩展头部信息（Extension header）
     -  RTP 固定头中的扩展标志位 X 置 1，则一个长度可变的扩展头部分被加到 RTP 固定头之后
-  - CSRC计数器
-  - 负载类型
+  - CC: CSRC计数器
+    - 共享媒体源个数，一般用于混音和混屏中，例如某个音频流是混合了其它音频后的数据，那么其它音频源就是该音频源的 CSRC
+  - M：Mark 标记位
+    - 对于不同的负载类型有不同含义，例如使用 RTP 荷载 H264 码流时，如果某个帧分成多个包进行传输，可以使用该位标记是否为帧的最后一个包
+  - PT：Payload Type 负载类型
+    - 接收端可以根据该信息查找相应的解码器进行解码，Payload Type 值对应的编解码类型参考[该文档](https://www.rfc-editor.org/rfc/rfc3551.html#page-32)
+  - Sequence number：序列号
+    - 每个 RTP 包序号递增加一，接收端根据序列号可以判断传输是否丢包，序列号初始值是随机的
+  - Timestamp：
+    - 相对时间戳信息，反映 RTP 数据包数据采样时间，一个帧的数据可能被分成多个 RTP 包发送
+    - 同一个帧的时间戳是相同的，不同帧的时间戳是不相同的，该值初始值是随机的，单位的含义与数据采样频率有关
+  - SSRC：媒体源的标识，不同的 SSRC 标识不同的媒体源，例如不同用户的音频就属于不同的媒体源，具有不同的 SSRC
+  - CSRC identifiers：共享媒体源列表，表示对 RTP 包内载荷起作用的媒体源，参见 CC 解释，CSRC 最多 15 个
+  
 - 可选头部（Optional Header， 0~32 byte）
-  - 4字节扩展头部
+  - 4字节扩展头部描述
 
-    - 2byte， profile定义
+    -  profile定义，2byte
 
+      - Profile：RTP 扩展头部有两种类型
+        - one-byte header
+          - 当 Profile = 0xBEDE 时表示使用 one-byte header 
+        -  two-byte header
+          - Profile = 0x1000 时表示使用 two-byte header
+        - 扩展头部个数由 Extension header length 决定
       - profile 定义了一系列负载类型和对应的负载格式，也定义了特定于具体应用的 RTP 扩展和修改。
-
+    
         - **RFC3551**(RTP/AVP)在 RFC3550 的基础上针对 RTP 档次进行补充形成 RTP/APVP 档次，被用在具有最小会话控制的音视频会议中，是其它扩展档次的基础。该档次在没有参数协商和成员控制的会话中非常有用。该档次也为音视频定义一系列编码和负载格式。对于具体的流媒体负载格式，IETF 也定义一系列协议详细描述，如 VP8 视频负载格式[6]和 H264 视频负载格式[7]，等等。
         - RFC3711(SRTP，也即 RTP/SAVP)是 RTP/AVP 在安全方面进行扩展形成的档次，为 RTP/RTCP 提供数据加密、消息认证、重放保护等功能。SRTP 具有高吞吐量和低数据膨胀等特点，是异构环境下对 RTP/RTCP 数据的有效保护。
         - RFC4585(RTP/AVPF)是 RTP/AVP 在及时反馈方面进行扩展形成的档次，使得接收端能够向发送端提供及时反馈，实现短时调整和基于反馈的修复机制。该协议定义早期 RTCP 报文以实现及时反馈，并定义一系列通用 RTCP 反馈报文和特定于应用的反馈报文，如 NACK、PLI、SLI、RPSI 等。
         - RFC5124(RTP/SAVPF)则是 RTP/SAVP 和 RTP/AVPF 的综合。SAVP 和 AVPF 在使用时，需要参与者借助于 SDP 协议[8]就档次和参数信息达成一致。但是对一个 RTP 会话来说，这两种档次不能同时被协商。而实际应用中，我们有同时使用这两种档次的需要。因此，RTP/SAVPF 档次应运而生，它能够使得 RTP 会话同时具有安全和及时反馈两方面的特性。
-
-    - 2byte，扩展头部长度，0~32 byte之间，不包括扩展头的4字节
-  - 0~32字节可选头
+    
+    - Extension header length， 2byte
+    
+      - 表示后面的 Extension header 共有几个字节，长度以 4 字节为单位
+    
+        > 例如 length = 3 表示 Extension header 一共占 3*4=12 个字节
+    
+      - 0~32 byte之间，不包括扩展头的4字节
+    
+  - Extension header：0~32字节可选头部
+  
+    - 由 ID，L，data 组成，可以是 one-byte header 或者 two-byte header 组织方式
+  
+    -    one-byte header  格式如下
+  
+      - 它由 ID，L，data 三部分组成。
+  
+      - ID 和 L 分别占 4 bit，加起来等于 one-byte，
+  
+      - ID 表示扩展头部 ID 标记，
+  
+      - L 表示 extension data 所占字节数 -1
+  
+        > ​	例如 L = 0 时实际 data 占一个字节，由于头部需要按 4 字节对齐，因此中间补充了 padding 数据，最后一个 extension header data 占 4 字节。
+        >
+        > ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/1793bc0b92ad4b91b70c1b136093ef51.png)
+  
+    - wo-byte header 格式如下，
+  
+      - 它也是由 ID, L, data 三部分组成
+      - ID，L 各占一字节
+      -  L 表示 extension data 所占的字节数（不同于 one-byte header 需要减一）
+      - ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/2bbe4dd31dec41cfb487e212aeedf85d.png)
+  
+    - 常见的 header extension ID 类型如下，关于具体某个扩展头部的含义可以参考 RFC 或者 [webrtc 文档](https://webrtc.googlesource.com/src/+/refs/heads/main/docs/native-code/rtp-hdrext)。
+  
+      > ```c++
+      > enum RTPExtensionType : int {
+      >   kRtpExtensionNone,
+      >   kRtpExtensionTransmissionTimeOffset,
+      >   kRtpExtensionAudioLevel,
+      >   kRtpExtensionInbandComfortNoise,
+      >   kRtpExtensionAbsoluteSendTime,
+      >   kRtpExtensionAbsoluteCaptureTime,
+      >   kRtpExtensionVideoRotation,
+      >   kRtpExtensionTransportSequenceNumber,
+      >   kRtpExtensionTransportSequenceNumber02,
+      >   kRtpExtensionPlayoutDelay,
+      >   kRtpExtensionVideoContentType,
+      >   kRtpExtensionVideoTiming,
+      >   kRtpExtensionFrameMarking,
+      >   kRtpExtensionRtpStreamId,
+      >   kRtpExtensionRepairedRtpStreamId,
+      >   kRtpExtensionMid,
+      >   kRtpExtensionGenericFrameDescriptor00,
+      >   kRtpExtensionGenericFrameDescriptor = kRtpExtensionGenericFrameDescriptor00,
+      >   kRtpExtensionGenericFrameDescriptor02,
+      >   kRtpExtensionColorSpace,
+      >   kRtpExtensionNumberOfExtensions  // Must be the last entity in the enum.
+      > };
+      > ```
+      >
+      > 
+  
 - CSRC列表信息
 
 - 负载数据（Payload Data，0~65535）
@@ -439,379 +494,48 @@ struct rtp_hdr {
 
 
 
-## jrtplib
 
-​		`JRTPLIB`是一个面向对象的RTP库，它完全遵循RFC 1889设计，在很多场合下是一个非常不错的选择，下面就以JRTPLIB为例，讲述如何在Linux平台上运用RTP协议进行实时流媒体编程。
 
-```c++
-// 初始化
-// 在使用JRTPLIB进行实时流媒体数据传输之前，首先应该生成RTPSession类的一个实例来表示此次RTP会话，然后调用Create() 方法来对其进行初始化操作。
-// RTPSession类的Create()方法只有一个参数，用来指明此次RTP会话所采用的端口号。
+## 数据荷载
 
-#include "rtpsession.h"
+​		通常使用RTP协议包来荷载音视频码流数据。、
 
-RTPSession sess; 
-sess.Create(5000);
+- 视频帧数据较大，可能需要多个 RTP 包承载一个视频帧。
+- 音频帧一般较小，一般只用一个 RTP 包也可以承载。
 
-//3.11版jrtplib库的Create方法被修改为Create(sessparams,&transparams)
-RTPUDPv4TransmissionParams transparams;
-RTPSessionParams sessparams;
-sessparams.SetOwnTimestampUnit(1.0/8000.0);/*设置时间戳，1/8000表示1秒钟采样8000次，即录音时的8KHz*/
-sessparams.SetAcceptOwnPackets(true);
-transparams.SetPortbase(portbase);/*本地通讯端口*/
+
+
+### 荷载音频
+
+#### 荷载AAC
+
+​	RTP Payload 前面需要先加 4 个字节的荷载标识
+
+```c
+// 荷载标识
+payload[0] = 0x00;
+payload[1] = 0x10;
+payload[2] = (frameLength & 0x1FE0) >> 5; // frameLength 记录在AAC frame header 中
+payload[3] = (frameLength & 0x1F) << 3;
+```
+```c
+// | RTP Header | 荷载标识（4byte） | ADTS Frame Data（不包括 Frame Header）|
+//              | ------------------RTP Payload--------------------------|
 ```
 
+​		接下来将 ADTS Frame Data 拷贝到 RTP Payload[4] 开始的位置，注意 ADTS Frame Header 无需拷贝。
 
+> 代码示例见 `lib/jrtplib.md`
 
-```c++
-// 数据发送
-// 当RTP 会话成功建立起来之后，接下去就可以开始进行流媒体数据的实时传输了。首先需要设置好数据发送的目标地址， RTP协议允许同一会话存在多个目标地址，这可以通过调用RTPSession类的AddDestination()、 DeleteDestination()和ClearDestinations()方法来完成。
-// 注意：如果是需要发到另一个NAT设备后面终端，则需要通过NAT穿透
-    
-    
-//RTP 协议允许同一会话存在多个目标地址
-unsigned long addr = ntohl(inet_addr("127.0.0.1"));
-sess.AddDestination(addr, 6000);
 
-// 对于同一个RTP会话来讲，负载类型、标识和时戳增量通常来讲都是相同的，JRTPLIB允许将它们设置为会话的默认参数，这是通过调用 RTPSession类的SetDefaultPayloadType()、SetDefaultMark()和 SetDefaultTimeStampIncrement()方法来完成的。为RTP会话设置这些默认参数的好处是可以简化数据的发送
-sess.SetDefaultPayloadType(0);
-sess.SetDefaultMark(false);  
-sess.SetDefaultTimeStampIncrement(10);
-// sess.SendPacket(buffer, 5);
 
-sess.SendPacket((void *)buffer,sizeof(buffer),0,false,8000);
-```
+## 扩展头部的应用
 
-```c++
-int SendPacket(void *data,int len)
-int SendPacket(void *data,int len,unsigned char pt,bool mark,unsigned long timestampinc)
-int SendPacket(void *data,int len,unsigned short hdrextID,void *hdrextdata,int numhdrextwords)
-int SendPacket(void *data,int len,unsigned char pt,bool mark,unsigned long timestampinc,unsigned short hdrextID,void *hdrextdata,int numhdrextwords)
-```
+[RTP扩展头部AudioLevel的应用（mediasoup显示当前通话Speaker）](https://blog.csdn.net/weixin_38102771/article/details/124222681?spm=1001.2014.3001.5502)
 
+[RTP扩展头部AbsoluteSendTime的应用（REMB GCC拥塞控制） ](https://blog.csdn.net/weixin_38102771/article/details/127780907?spm=1001.2014.3001.5502)
 
-
-```c++
-// 数据接收
-// 对于流媒体数据的接收端，首先需要调用RTPSession类的PollData()方法来接收发送过来的RTP或者 RTCP数据报。由于同一个RTP会话中允许有多个参与者（源），你既可以通过调用RTPSession类的GotoFirstSource()和 GotoNextSource()方法来遍历所有的源，也可以通过调用RTPSession类的GotoFirstSourceWithData()和 GotoNextSourceWithData()方法来遍历那些携带有数据的源。在从RTP会话中检测出有效的数据源之后，接下去就可以调用 RTPSession类的GetNextPacket()方法从中抽取RTP数据报，当接收到的RTP数据报处理完之后，一定要记得及时释放。
-JRTPLIB为RTP数据报定义了三种接收模式，其中每种接收模式都具体规定了哪些到达的RTP数据报将会被接受，而哪些到达的RTP数据报将会被拒绝。通过调用RTPSession类的SetReceiveMode()方法可以设置下列这些接收模式：
-
- // RECEIVEMODE_ALL　　
- //		缺省的接收模式，所有到达的RTP数据报都将被接受； 
- //	RECEIVEMODE_IGNORESOME 　　
- //		除了某些特定的发送者之外，所有到达的RTP数据报都将被接受，而被拒绝的发送者列表可以通过调用AddToIgnoreList()、 DeleteFromIgnoreList()和ClearIgnoreList()方法来进行设置； 
-//	RECEIVEMODE_ACCEPTSOME 　　
-//		除了某些特定的发送者之外，所有到达的RTP数据报都将被拒绝，而被接受的发送者列表可以通过调用AddToAcceptList ()、DeleteFromAcceptList和ClearAcceptList ()方法来进行设置。 
-
-sess_client.Poll();   //接收发送过来的 RTP 或者RTCP 数据报
-sess_client.BeginDataAccess();
-
-if (sess.GotoFirstSourceWithData()) {     //遍历那些携带有数据的源
-     do {   
-          sess.AddToAcceptList(remoteIP, allports,portbase);
-           sess.SetReceiveMode(RECEIVEMODE_ACCEPTSOME);
-
-           RTPPacket *pack;         
-          pack = sess.GetNextPacket();            // 处理接收到的数据    
-           delete pack;   }
-     while (sess.GotoNextSourceWithData());
- }
-
-sess_client.EndDataAccess();
-```
-
-
-
-```c++
-// 控制信息
-// RTPLIB 是一个高度封装后的RTP库，程序员在使用它时很多时候并不用关心RTCP数据报是如何被发送和接收的，因为这些都可以由JRTPLIB自己来完成。只要 PollData()或者SendPacket()方法被成功调用，JRTPLIB就能够自动对到达的 RTCP数据报进行处理，并且还会在需要的时候发送RTCP数据报，从而能够确保整个RTP会话过程的正确性。
-
-// 而另一方面，通过调用RTPSession类提供的SetLocalName()、SetLocalEMail()、 SetLocalLocation()、SetLocalPhone()、SetLocalTool()和SetLocalNote()方法， JRTPLIB又允许程序员对RTP会话的控制信息进行设置。所有这些方法在调用时都带有两个参数，其中第一个参数是一个char型的指针，指向将要被设 置的数据；而第二个参数则是一个int型的数值，表明该数据中的前面多少个字符将会被使用。例如下面的语句可以被用来设置控制信息中的电子邮件地址：
-sess.SetLocalEMail("xiaowp@linuxgam.comxiaowp@linuxgam.com",19);
-
-// 在RTP 会话过程中，不是所有的控制信息都需要被发送，通过调用RTPSession类提供的 EnableSendName()、EnableSendEMail()、EnableSendLocation()、EnableSendPhone ()、EnableSendTool()和EnableSendNote()方法，可以为当前RTP会话选择将被发送的控制信息。
-```
-
-### sample
-
-```c++
-#include <stdio.h>
-#include <string.h>
-#include "rtpsession.h"
-
-// 错误处理函数
-void checkerror(int err)
-{
-  if (err < 0) {
-    char* errstr = RTPGetErrorString(err);
-    printf("Error:%s\\n", errstr);
-    exit(-1);
-  }
-}
-
-int main(int argc, char** argv)
-{
-  RTPSession sess;
-  unsigned long destip;
-  int destport;
-  int portbase = 6000;
-  int status, index;
-  char buffer[128];
-
-  if (argc != 3) {
-    printf("Usage: ./sender destip destport\\n");
-    return -1;
-  }
-
-  // 获得接收端的IP地址和端口号
-  destip = inet_addr(argv[1]);
-  if (destip == INADDR_NONE) {
-    printf("Bad IP address specified.\\n");
-    return -1;
-  }
-  destip = ntohl(destip);
-  destport = atoi(argv[2]);
-
-  // 创建RTP会话
-  status = sess.Create(portbase);
-  checkerror(status);
-
-  // 指定RTP数据接收端
-  status = sess.AddDestination(destip, destport);
-  checkerror(status);
-
-  // 设置RTP会话默认参数
-  sess.SetDefaultPayloadType(0);
-  sess.SetDefaultMark(false);
-  sess.SetDefaultTimeStampIncrement(10);
-
-  // 发送流媒体数据
-  index = 1;
-  do {
-    sprintf(buffer, "%d: RTP packet", index ++);
-    sess.SendPacket(buffer, strlen(buffer));
-    printf("Send packet !\\n");
-  } while(1);
-
-  return 0;
-}
-```
-
-```c++
-#include <stdio.h>
-#include "rtpsession.h"
-#include "rtppacket.h"
-
-// 错误处理函数
-void checkerror(int err)
-{
-  if (err < 0) {
-    char* errstr = RTPGetErrorString(err);
-    printf("Error:%s\\n", errstr);
-    exit(-1);
-  }
-}
-
-int main(int argc, char** argv)
-{
-  RTPSession sess;
-  int localport;
-  int status;
-
-  if (argc != 2) {
-    printf("Usage: ./sender localport\\n");
-    return -1;
-  }
-
-   // 获得用户指定的端口号
-  localport = atoi(argv[1]);
-
-  // 创建RTP会话
-  status = sess.Create(localport);
-  checkerror(status);
-
-  do {
-    // 接受RTP数据
-    status = sess.PollData();
- // 检索RTP数据源
-    if (sess.GotoFirstSourceWithData()) {
-      do {
-        RTPPacket* packet;
-        // 获取RTP数据报
-        while ((packet = sess.GetNextPacket()) != NULL) {
-          printf("Got packet !\\n");
-          // 删除RTP数据报
-          delete packet;
-        }
-      } while (sess.GotoNextSourceWithData());
-    }
-  } while(1);
-
-  return 0;
-}
-```
-
-
-
-### nat
-
- rtp/rtcp传输数据的时候，需要两个端口支持。即rtp端口用于传输rtp数据，即传输的多媒体数据；rtcp端口用于传输rtcp控制协议信息。 rtp/rtcp协议默认的端口是rtcp port = rtp port + 1 。详细的说，比如A终端和B终端之间通过rtp/rtcp进行通信，
-
-  ![img](http://1803.img.pp.sohu.com.cn/images/blog/2009/12/14/14/25/1263be13f2eg214.jpg)
-
-  
-
-如上图，
-
-​                             本地IP:PORT                            NAT映射后IP:PORT
-
-UACA RTP的发送和接收IP:PORT ： 192.168.1.100:8000                       61.144.174.230:1597
-
-UACA RTCP的发送和接收IP:PORT：192.168.1.100:8001                       61.144.174.230:1602
-
-UACB RTP的发送和接收IP:PORT ： 192.168.1.10:8000                         61.144.174.12:8357
-
-UACB RTCP的发送和接收IP:PORT：192.168.1.10:8001                        61.144.174.12:8420
-
-  
-
-上图可以得到一下一些信息：
-
-   (一) 本地端口 RTCP PORT = RTP PORT + 1;但是经过NAT映射之后也有可能满足这个等式，但是并不一定有这个关系。
-
-  （二）在NAT设备后面的终端的本地IP:PORT并不被NAT外的设置可知，也就无法通过终端的本地IP:PORT与之通信。而必须通过NAT映射之后的公网IP:PORT作为目的地址进行通信。
-
-  如上图的终端A如果要发送RTP数据到终端B，UACA发送的目的地址只能是：61.144.174.12:8357。同理，UACB发送RTP数据给UACA，目的地址只能是： 61.144.174.230:1597 。
-
-  （三）也许看到这里，如何得到自己的外网IP:PORT呢？如何得到对方的外网IP:PORT呢？这就是NAT IP:PORT转换和穿孔（puncture），下回分解。
-
- 
-
-NAT 地址转换
-
- 如上所述，终端需要知道自己的外网IP：port，可以通过STUN、STUNT、TURN、Full Proxy等方式。这里介绍通过STUN方式实现NAT穿透。
-
- STUN: Simple Traversal of UDP Through NAT。即通过UDP对NAT进行穿透。
-
-STUNT:Simple Traversal of UDP Through NATs and TCP too.可以通过TCP对NAT进行穿透。
-
-STUN是一个标准协议，具体的协议内容网络上很多。在此不累述了。
-
-为 了通过STUN实现NAT穿透，得到自己的公网IP:PORT，必须有一个公网STUN服务器，以及我们的客户端必须支持STUN Client功能。STUN Client 通过UDP发送一个request到STUN服务器，该请求通过NAT设备的时候会把数据报头中的本地IP:PORT换成该本地IP:PORT对应的公网 IP:PORT，STUN服务器接收到该数据包后就可以把该公网IP:PORT 发送给STUN Client。这样我们就得到了自己的公网IP:PORT。这样别的终端就可以把该公网IP:PORT最为发送UDP数据的目的地址发送UDP数据。
-
- 
-
-推荐一款STUN client/server 程序代码，[http://sourceforge.net/projects/stun/files/ ](http://sourceforge.net/projects/stun/files/)
-
-这是一款开源软件。在客户端中的主要函数是下面这个：
-
-```c++
-NatType stunNatType( 
-    StunAddress4& dest, //in 公网STUN服务器地址，如stun.xten.net
-	bool verbose,               //in 调试时是否输出调试信息
-	bool* preservePort=0,        //out if set, is return for if NAT preservers ports or not
-	bool* hairpin=0 ,            //out if set, is the return for if NAT will hairpin packetsNAT设备是否支持回环
-	int port=0,                // in 本地测试端口port to use for the test, 0 to choose random port
-	StunAddress4* sAddr=0    // out NIC to use ，返回STUN返回的本地地址的公网IP:PORT
-  );
-```
-
-
-
-​       输入StunAddress和测试端口port,得到本地IP:PORT对应的公网IP:PORT.
-
-#### 改造
-
-jrtplib中对rtp rtcp端口的处理关系是：rtcp port = rtp port + 1 。这就有问题，本地端口可以按照这个等式来设置端口，但是经过NAT映射之后的公网端口是随机的，有可能并不满足上述等式。
-
-```c++
- int portbase = 6000;            //设置本地rtp端口为6000
-
-  transparams.SetPortbase(portbase);//默认的本地rtcp端口为6001.因为这里是本地设置，所一这样设置OK
-  status = sess.Create(sessparams,&transparams);  
-  checkerror(status);
-  
-  RTPIPv4Address addr(destip,destport); //设置目的地的rtp接收IP:PORT，公网传输的话就要设置为对方的rtp公网IP:PORT
-  // AddDestination（）的内部处理是把addr.ip和addr.port+1赋给rtcp。这样如果对方在公网上，就有问题了。因为对方的rtcp port 可能不等于rtp port +1;这就导致对方收不到rtcp数据包。
-
-  status = sess.AddDestination(addr); 
-```
-
-
-
-  通过跟踪AddDestination（）函数的实现，发现在class RTPIPv4Destination的构造函数中是这样构造一个发送目的地址的：
-
-```c++
-        RTPIPv4Destination(uint32_t ip,uint16_t rtpportbase)                    
-    {
-        memset(&rtpaddr,0,sizeof(struct sockaddr_in));
-        memset(&rtcpaddr,0,sizeof(struct sockaddr_in));
-        
-        rtpaddr.sin_family = AF_INET;
-        rtpaddr.sin_port = htons(rtpportbase);
-        rtpaddr.sin_addr.s_addr = htonl(ip);
-        
-
-            rtcpaddr.sin_family = AF_INET;
-            rtcpaddr.sin_port = htons(rtpportbase+1);//默认把rtp的端口+1赋给目的rtcp端口。
-            rtcpaddr.sin_addr.s_addr = htonl(ip);
-
-        RTPIPv4Destination::ip = ip;
-    }
-```
-
-​    为了实现：可以自定义目的IP地址和目的rtp port和rtcp port。为了实现这么目标，自己动手改造下面几个函数：构造函数RTPIPv4Destination() 、RTPSession::AddDestination()，思路是在目的地址设置相关函数中增加一个rtcp ip 和port参数。
-
-```c++
-    RTPIPv4Destination(uint32_t ip,uint16_t rtpportbase,uint32_t rtcpip,uint16_t rtcpport)          
-  {
-    memset(&rtpaddr,0,sizeof(struct sockaddr_in));
-    memset(&rtcpaddr,0,sizeof(struct sockaddr_in));
-    
-    rtpaddr.sin_family = AF_INET;
-    rtpaddr.sin_port = htons(rtpportbase);
-    rtpaddr.sin_addr.s_addr = htonl(ip);
-    
-    /**If rtcport has not been set separately, use the default rtcpport*/
-    if ( 0 == rtcpport )
-    {
-      rtcpaddr.sin_family = AF_INET;
-      rtcpaddr.sin_port = htons(rtpportbase+1);
-      rtcpaddr.sin_addr.s_addr = htonl(ip);
-    }else
-    {
-      rtcpaddr.sin_family = AF_INET;
-      rtcpaddr.sin_port = htons(rtcpport);
-      rtcpaddr.sin_addr.s_addr = htonl(ip);
-    }
-    
-    RTPIPv4Destination::ip = ip;
-  }
-
-    int RTPSession::AddDestination(const RTPAddress &addr,const RTPIPv4Address &rtcpaddr)
-{
-  if (!created)
-    return ERR_RTP_SESSION_NOTCREATED;
-  return rtptrans->AddDestination(addr,rtcpaddr);
-}
-```
-
-​    在调用RTPSession::AddDestination、定义RTPIPv4Destination的时候实参也相应增加目的rtcp参数。
-
-​    这样改造之后就可以自定义独立的设置目的地址rtp ,rtcp端口了。
-
-
-
-#### 移植
-
- 把jrtplib移植到arm11平台，遇到一些问题，如下。
-5.1 字节序的问题
-   jrtplib中的报头的字节序问题，网上可以搜到一些，但都是只言片语，没有详细的把解决方案说出来。ARM采用的是Big-Endian, 而X86采用的是Little-Endian。目前我所采用的解决方法是让两台互相通信的主机所使用的jrtplib的Endian格式一致，都为 Big-Endian或都为Little-Endian，这只需要修改jrtplib-version/src/rtpconfig_unix.h 文件，默认是采用的Little-Endian方式，里面的注释部分有说若加
-\#define RTP_BIG_ENDIAN
-表示采用Big-Endian的字节方式，否则默认为Little-Endian方式。至于原因还没弄清楚。可以发邮件给作者问一下。
-
-5.2 Can't retrieve login name的错误
-  上述都没有问题了，又遇到另外的问题，在N800的客户端建立RTPSession的过程中，报了Can't retrieve login name的错误，在网上搜索后，找到一篇博客讲到嵌入式系统由于某些原因系统可能没有login name, 而在RTPSession的Create->InternalCreate->CreateCNAME方法，其中的getlogin_r, getlogin和getenv操作会因为logname为空而返回ERR_RTP_SESSION_CANTGETLOGINNAME的错误。我在 N800的机器上做了个实验，使用getlogin和getenv("LOGNAME")确实都不能得到登录名。要解决上述问题，可以对jrtplib的 源代码进行修改， 即修改RTPSession的CreateCNAME，即使getlogin_r, getlogin和getenv三个函数调用都不能得到登录名，也要设置一个登录名。
+[RTP扩展头部TransportSequenceNumber的应用（TFB GCC拥塞控制）](https://blog.csdn.net/weixin_38102771/article/details/128218672?spm=1001.2014.3001.5502)
 
 
 
