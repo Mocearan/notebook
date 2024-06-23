@@ -2,6 +2,8 @@
 
 ​		Real-time Transport Protocol,实时传输协议
 
+[RTP/RTCP协议_5g中的rtcp报文-CSDN博客](https://blog.csdn.net/guoyunfei123/article/details/106261215?ops_request_misc=%7B%22request%5Fid%22%3A%22166149958616782414924248%22%2C%22scm%22%3A%2220140713.130102334.pc%5Fblog.%22%7D&request_id=166149958616782414924248&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~blog~first_rank_ecpm_v1~hot_rank-2-106261215-null-null.article_score_rank_blog&utm_term=RTP%2FRTCP&spm=1018.2226.3001.4450)
+
 ---
 
 ​		IETF提出的一个标准，对应的RFC文档为RFC3550（RFC1889为其过期版本）。RFC3550不仅定义了RTP，而且定义了配套的相关协议RTCP（Real-time Transport Control Protocol，即实时传输控制协议）。RTP通常用于实现多播音频会议和音视频会议等应用。
@@ -182,7 +184,6 @@ RTP协议可以用于游戏实时语音中，保证游戏玩家之间的语音�
         - RFC4585(RTP/AVPF)是 RTP/AVP 在及时反馈方面进行扩展形成的档次，使得接收端能够向发送端提供及时反馈，实现短时调整和基于反馈的修复机制。该协议定义早期 RTCP 报文以实现及时反馈，并定义一系列通用 RTCP 反馈报文和特定于应用的反馈报文，如 NACK、PLI、SLI、RPSI 等。
         - RFC5124(RTP/SAVPF)则是 RTP/SAVP 和 RTP/AVPF 的综合。SAVP 和 AVPF 在使用时，需要参与者借助于 SDP 协议[8]就档次和参数信息达成一致。但是对一个 RTP 会话来说，这两种档次不能同时被协商。而实际应用中，我们有同时使用这两种档次的需要。因此，RTP/SAVPF 档次应运而生，它能够使得 RTP 会话同时具有安全和及时反馈两方面的特性。
 
-        
     - 2byte，扩展头部长度，0~32 byte之间，不包括扩展头的4字节
   - 0~32字节可选头
 - CSRC列表信息
@@ -406,6 +407,20 @@ struct rtp_hdr {
 - 上次SR以来的延时（Delay since last SR,DLSR）：上次从SSRC_n收到SR包到发送本报告的延时。
 */
 ```
+
+
+
+### 组合包
+
+​		不同类型的RTCP信息包可堆叠，不需要插入任何分隔符就可以将多个RTCP包连接起来形成一个RTCP组合包，然后由低层协议用单一包发送出去。由于需要低层协议提供整体长度来决定组合包的结尾，在组合包中没有单个RTCP包的显式计数。
+
+​		组合包中每个RTCP包可独立处理，而不需要按照包组合的先后顺序处理。在组合包中有以下几条强制约束：
+
+1、只要带宽允许，在SR包或RR包中的接收统计应该经常发送，因此每个周期发送的组合RTCP 包中应包含报告包。
+
+2、每个组合包中都应该包含SDES CNAME，因为新接收者需要通过接收CNAME来识别源，并与媒体联系进行同步。
+
+3、组合包前面是包类型数量，其增长应该受到限制。
 
 
 
