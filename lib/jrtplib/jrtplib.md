@@ -4,6 +4,12 @@
 
 ​		`JRTPLIB`是一个面向对象的RTP库，它完全遵循RFC 1889设计，在很多场合下是一个非常不错的选择，下面就以JRTPLIB为例，讲述如何在Linux平台上运用RTP协议进行实时流媒体编程。
 
+
+
+## 基本使用
+
+### 初始化
+
 ```c++
 // 初始化
 // 在使用JRTPLIB进行实时流媒体数据传输之前，首先应该生成RTPSession类的一个实例来表示此次RTP会话，然后调用Create() 方法来对其进行初始化操作。
@@ -22,7 +28,7 @@ sessparams.SetAcceptOwnPackets(true);
 transparams.SetPortbase(portbase);/*本地通讯端口*/
 ```
 
-
+### 数据发送
 
 ```c++
 // 数据发送
@@ -50,7 +56,7 @@ int SendPacket(void *data,int len,unsigned short hdrextID,void *hdrextdata,int n
 int SendPacket(void *data,int len,unsigned char pt,bool mark,unsigned long timestampinc,unsigned short hdrextID,void *hdrextdata,int numhdrextwords)
 ```
 
-
+### 数据接收
 
 ```c++
 // 数据接收
@@ -81,17 +87,18 @@ if (sess.GotoFirstSourceWithData()) {     //遍历那些携带有数据的源
 sess_client.EndDataAccess();
 ```
 
+### 控制信息
 
+​		JRTPLIB 是一个高度封装后的RTP库，程序员在使用它时很多时候并不用关心RTCP数据报是如何被发送和接收的，因为这些都可以由JRTPLIB自己来完成。只要 PollData()或者SendPacket()方法被成功调用，JRTPLIB就能够自动对到达的 RTCP数据报进行处理，并且还会在需要的时候发送RTCP数据报，从而能够确保整个RTP会话过程的正确性。
+
+​		另一方面，通过调用`RTPSession`类提供的`SetLocalName()、SetLocalEMail()、 SetLocalLocation()、SetLocalPhone()、SetLocalTool()和SetLocalNote()`方法， JRTPLIB又允许程序员对RTP会话的控制信息进行设置。所有这些方法在调用时都带有两个参数，其中第一个参数是一个char型的指针，指向将要被设 置的数据；而第二个参数则是一个int型的数值，表明该数据中的前面多少个字符将会被使用。例如下面的语句可以被用来设置控制信息中的电子邮件地址：
 
 ```c++
 // 控制信息
-// RTPLIB 是一个高度封装后的RTP库，程序员在使用它时很多时候并不用关心RTCP数据报是如何被发送和接收的，因为这些都可以由JRTPLIB自己来完成。只要 PollData()或者SendPacket()方法被成功调用，JRTPLIB就能够自动对到达的 RTCP数据报进行处理，并且还会在需要的时候发送RTCP数据报，从而能够确保整个RTP会话过程的正确性。
-
-// 而另一方面，通过调用RTPSession类提供的SetLocalName()、SetLocalEMail()、 SetLocalLocation()、SetLocalPhone()、SetLocalTool()和SetLocalNote()方法， JRTPLIB又允许程序员对RTP会话的控制信息进行设置。所有这些方法在调用时都带有两个参数，其中第一个参数是一个char型的指针，指向将要被设 置的数据；而第二个参数则是一个int型的数值，表明该数据中的前面多少个字符将会被使用。例如下面的语句可以被用来设置控制信息中的电子邮件地址：
 sess.SetLocalEMail("xiaowp@linuxgam.comxiaowp@linuxgam.com",19);
-
-// 在RTP 会话过程中，不是所有的控制信息都需要被发送，通过调用RTPSession类提供的 EnableSendName()、EnableSendEMail()、EnableSendLocation()、EnableSendPhone ()、EnableSendTool()和EnableSendNote()方法，可以为当前RTP会话选择将被发送的控制信息。
 ```
+
+​		在RTP 会话过程中，不是所有的控制信息都需要被发送，通过调用`RTPSession`类提供的` EnableSendName()、EnableSendEMail()、EnableSendLocation()、EnableSendPhone ()、EnableSendTool()和EnableSendNote()`方法，可以为当前RTP会话选择将被发送的控制信息。
 
 ### sample
 
@@ -214,7 +221,529 @@ int main(int argc, char** argv)
 
 
 
-### nat
+
+
+## RTP荷载AAC
+
+```c++
+// aac.h
+#pragma once
+ 
+#include <iostream>
+ 
+struct AdtsFrame {
+    bool crcProtectionAbsent;
+    uint8_t profile;
+    uint8_t frequenceIdx;
+    uint16_t frameLength;
+ 
+    uint8_t* buf;
+    uint32_t maxSize;
+    uint32_t len;
+    uint8_t* header;
+    uint32_t headerLen;
+    uint8_t* body;
+    uint32_t bodyLen;
+};
+ 
+int GetAdtsFrame(FILE* f, AdtsFrame* aframe);
+AdtsFrame* AllocAdtsFrame();
+AdtsFrame* AllocAdtsFrame(uint32_t bufferSize);
+void FreeAdtsFrame(AdtsFrame* aframe);
+int GetFrequenceFromIndex(uint8_t idx);
+```
+
+```c++
+// aac.cpp
+
+```
+
+```c++
+#include <jrtplib3/rtpsession.h>
+#include <jrtplib3/rtplibraryversion.h>
+#include <jrtplib3/rtpudpv4transmitter.h>
+#include <jrtplib3/rtpsessionparams.h>
+#include <jrtplib3/rtppacket.h>
+#include <jrtplib3/rtperrors.h>
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include "aac/aac.h"
+ 
+using namespace std;
+using namespace jrtplib;
+ 
+const string SSRC = "10001";
+const string AAC_FILE_PATH = "movie_file/lantingxv.aac";
+const int MTU_SIZE = 1500;
+const int MAX_RTP_PACKET_LENGTH = 1360;
+const int AAC_PAYLOAD_TYPE = 97;
+const int AAC_SAMPLE_NUM_PER_FRAME = 1024;
+ 
+static void checkerror(int rtperr) {
+    if (rtperr < 0) {
+        std::cout << "ERROR: " << RTPGetErrorString(rtperr) << std::endl;
+        exit(-1);
+    }
+}
+ 
+int main(int argc, char** argv) {
+ 
+    FILE* faac = fopen(AAC_FILE_PATH.c_str(), "rb");
+    if (faac == NULL) {
+        std::cout << "打开aac文件失败" << std::endl;
+        exit(-1);
+    }
+ 
+    AdtsFrame* aframe = AllocAdtsFrame();
+    int size = GetAdtsFrame(faac, aframe);
+    if (size <= 0) {
+        exit(0);
+    }
+    int frequence = GetFrequenceFromIndex(aframe->frequenceIdx);
+    int frameRate = frequence / AAC_SAMPLE_NUM_PER_FRAME;
+    uint32_t timestampInc = frequence / frameRate;
+    fseek(faac, 0, SEEK_SET);
+ 
+    // 获取本地用于发送的端口以及对端的IP和端口
+    uint16_t localport;
+    std::cout << "Enter local port(even): ";
+	std::cin >> localport;
+ 
+    std::string ipstr;
+	std::cout << "Enter the destination IP address: ";
+	std::cin >> ipstr;
+	uint32_t destip = inet_addr(ipstr.c_str());
+	if (destip == INADDR_NONE) {
+		std::cerr << "Bad IP address specified" << std::endl;
+		return -1;
+	}
+    destip = ntohl(destip);
+ 
+    uint16_t destport;
+	std::cout << "Enter the destination port: ";
+	std::cin >> destport;
+ 
+    // 设置RTP属性
+    RTPUDPv4TransmissionParams tranparams;
+    tranparams.SetPortbase(localport);
+ 
+    RTPSessionParams sessparams;
+    sessparams.SetOwnTimestampUnit(1.0/frequence);
+ 
+    RTPSession sess;
+    int status = sess.Create(sessparams, &tranparams);
+    checkerror(status);
+ 
+    RTPIPv4Address destAddr(destip, destport);
+    status = sess.AddDestination(destAddr);
+	checkerror(status);
+ 
+    sess.SetDefaultPayloadType(AAC_PAYLOAD_TYPE);
+    sess.SetDefaultMark(true);
+    sess.SetDefaultTimestampIncrement(timestampInc);
+ 
+    RTPTime sendDelay(0, 1000000/frameRate);
+    uint8_t sendbuf[MTU_SIZE] = { 0 };
+ 
+    while (true) {
+        if (feof(faac)) {
+            fseek(faac, 0, SEEK_SET);
+        }
+        int size = GetAdtsFrame(faac, aframe);
+        if (size == 0) {
+            continue;
+        } else if (size < 0) {
+            exit(0);
+        } else {
+            std::cout << "Adts Frame, profile: " << (int) aframe->profile << ", frequenceIdx: " << (int) aframe->frequenceIdx
+                      << ", frameLength: " << aframe->frameLength << ", headerLen: " << aframe->headerLen << ", bodyLen: " << aframe->bodyLen << std::endl;
+ 
+            if (size <= MAX_RTP_PACKET_LENGTH) {
+                memset(sendbuf, 0, MTU_SIZE);
+                sendbuf[0] = 0x00;
+                sendbuf[1] = 0x10;
+                sendbuf[2] = (aframe->frameLength & 0x1FE0) >> 5;
+                sendbuf[3] = (aframe->frameLength & 0x1F) << 3;
+                memcpy(sendbuf+4, aframe->body, aframe->bodyLen);
+                sess.SendPacket((void*) sendbuf, aframe->bodyLen+4, AAC_PAYLOAD_TYPE, true, timestampInc);
+            } else {
+                std::cout << "frame size too large, just ignore it" << std::endl;
+            }
+            RTPTime::Wait(sendDelay);
+        }
+    }
+    FreeAdtsFrame(aframe);
+    if (faac) {
+        fclose(faac);
+        faac = NULL;
+    }
+    sess.BYEDestroy(RTPTime(3, 0), 0, 0);
+ 
+    return 0;
+}
+```
+
+```shell
+g++ jrtp_aac.cpp aac/aac.cpp -ljrtp -o jrtp_aac
+```
+
+  `jrtp_aac `程序启动后，设置本端使用的发送端口以及对端地址后，进程就开始发包了，我们使用 VLC 设置 sdp 信息开始接收流并播放。
+
+```
+m=audio 10004 RTP/AVP 97
+a=rtpmap:97 mpeg4-generic/44100/2
+a=fmtp:97 streamtype=5; profile-level-id=15; mode=AAC-hbr; sizelength=13; indexlength=3; indexdeltalength=3;
+c=IN IP4 127.0.0.1
+```
+
+
+
+## RTP荷载H264
+
+```c++
+//h264.h
+#pragma once
+ 
+#include <iostream>
+ 
+#define H264_PAYLOAD_TYPE 96
+#define H264_SAMPLE_RATE  90000
+ 
+struct NaluHeader {
+    uint8_t Type : 5;
+    uint8_t NRI  : 2;
+    uint8_t F    : 1;
+};
+ 
+struct FuIndicator {
+    uint8_t Type : 5;
+    uint8_t NRI  : 2;
+    uint8_t F    : 1;
+};
+ 
+struct FuHeader {
+    uint8_t Type : 5;
+    uint8_t R    : 1;
+    uint8_t E    : 1;
+    uint8_t S    : 1;
+};
+ 
+struct Nalu {
+    int startCodePrefixLen;
+    uint8_t forbiddenBit;
+    uint8_t nalReferenceIdc;
+    uint8_t nalUintType;
+    uint32_t maxSize;
+    uint32_t len;
+    uint8_t* buf;
+    uint16_t lostPackets;
+};
+ 
+int GetAnnexbNalu(FILE* f, Nalu* nalu);
+Nalu* AllocNalu();
+Nalu* AllocNalu(uint32_t bufferSize);
+void FreeNalu(Nalu* nalu);
+```
+
+
+
+```c++
+// h264.cpp
+#include "h264.h"
+ 
+static const uint32_t DEFAULT_NALU_BUFFER_SIZE = 80960;
+ 
+// 0x00 0x00 0x01
+bool isStartCode3(const uint8_t* buf) {
+    if (buf[0] == 0 && buf[1] == 0 && buf[2] == 1) {
+        return true;
+    }
+    return false;
+}
+ 
+// 0x00 0x00 0x00 0x01
+bool isStartCode4(const uint8_t* buf) {
+    if (buf[0] == 0 && buf[1] == 0 && buf[2] == 0 && buf[3] == 1) {
+        return true;
+    }
+    return false;
+}
+ 
+// startCode: 0x000001 / 0x00000001
+int GetAnnexbNalu(FILE* f, Nalu* nalu) {
+    if (f == NULL || nalu == NULL || feof(f)) {
+        return -1;
+    }
+    int n = fread(nalu->buf, 1, 3, f);
+    if (n != 3) {
+        return -1;
+    }
+ 
+    int startCodePrefixLen = 0;
+    if (isStartCode3(nalu->buf)) {
+        startCodePrefixLen = 3;
+    } else {
+        n = fread(nalu->buf+3, 1, 1, f);
+        if (n != 1) {
+            return -1;
+        }
+        if (isStartCode4(nalu->buf)) {
+            startCodePrefixLen = 4;
+        } else {
+            return 0;
+        }
+    }
+ 
+    int pos = startCodePrefixLen;
+    bool nextStartCodeFound = false;
+    int nextStartCodePrefixLen = 0; 
+    while (!nextStartCodeFound) {
+        if (feof(f)) {
+            break;
+        }
+        nalu->buf[pos] = fgetc(f);
+        if (nalu->buf[pos] == 0x01 && nalu->buf[pos-1] == 0x00 && nalu->buf[pos-2] == 0x00) {
+            nextStartCodeFound = true;
+            if (nalu->buf[pos-3] == 0x00) {
+                nextStartCodePrefixLen = 4;
+            } else {
+                nextStartCodePrefixLen = 3;
+            }
+        }
+        ++pos;
+    }
+    pos -= nextStartCodePrefixLen;
+    
+    if (nextStartCodeFound) {
+        if (fseek(f, -nextStartCodePrefixLen, SEEK_CUR) != 0) {
+            return -1;
+        }
+    }
+ 
+    nalu->startCodePrefixLen = startCodePrefixLen;
+    nalu->forbiddenBit = nalu->buf[startCodePrefixLen] & 0x80;
+    nalu->nalReferenceIdc = nalu->buf[startCodePrefixLen] & 0x60;
+    nalu->nalUintType = nalu->buf[startCodePrefixLen] & 0x1f;
+    nalu->len = pos - startCodePrefixLen;
+ 
+    return pos;
+}
+ 
+Nalu* AllocNalu(void) {
+    return AllocNalu(DEFAULT_NALU_BUFFER_SIZE);
+}
+ 
+Nalu* AllocNalu(uint32_t bufferSize) {
+    Nalu* n = (Nalu*) calloc(1, sizeof(Nalu));
+    if (!n) {
+        return NULL;
+    }
+    n->maxSize = bufferSize;
+    n->buf = (uint8_t*) calloc(bufferSize, sizeof(uint8_t));
+    if (n->buf == NULL) {
+        free(n);
+        return NULL;
+    }
+    return n;
+}
+ 
+void FreeNalu(Nalu* nalu) {
+    if (nalu) {
+        if (nalu->buf) {
+            free(nalu->buf);
+            nalu->buf = NULL;
+        }
+        free(nalu);
+    }
+}
+```
+
+
+
+```c++
+// jrtp_h264.cpp
+
+#include <jrtplib3/rtpsession.h>
+#include <jrtplib3/rtplibraryversion.h>
+#include <jrtplib3/rtpudpv4transmitter.h>
+#include <jrtplib3/rtpsessionparams.h>
+#include <jrtplib3/rtppacket.h>
+#include <jrtplib3/rtperrors.h>
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include "h264.h"
+ 
+using namespace std;
+using namespace jrtplib;
+ 
+const string SSRC = "10000";
+const string H264_FILE_PATH = "./test_640x480_15_nv12.h264";
+const int FRAME_RATE = 15;
+const int MTU_SIZE = 1500;
+const int MAX_RTP_PACKET_LENGTH = 1360;
+ 
+void checkerror(int rtperr) {
+	if (rtperr < 0) {
+		std::cout << "ERROR: " << RTPGetErrorString(rtperr) << std::endl;
+		exit(-1);
+	}
+}
+ 
+int main() {
+ 
+    // 获取本地用于发送的端口以及对端的IP和端口
+    uint16_t localport;
+    std::cout << "Enter local port(even): ";
+	std::cin >> localport;
+ 
+    std::string ipstr;
+	std::cout << "Enter the destination IP address: ";
+	std::cin >> ipstr;
+	uint32_t destip = inet_addr(ipstr.c_str());
+	if (destip == INADDR_NONE) {
+		std::cerr << "Bad IP address specified" << std::endl;
+		return -1;
+	}
+    destip = ntohl(destip);
+ 
+    uint16_t destport;
+	std::cout << "Enter the destination port: ";
+	std::cin >> destport;
+ 
+    // 设置RTP属性
+    RTPUDPv4TransmissionParams tranparams;
+    tranparams.SetPortbase(localport);
+ 
+    RTPSessionParams sessparams;
+    sessparams.SetOwnTimestampUnit(1.0 / H264_SAMPLE_RATE);
+ 
+    RTPSession sess;
+    int status = sess.Create(sessparams, &tranparams);
+    checkerror(status);
+ 
+    RTPIPv4Address destAddr(destip, destport);
+    status = sess.AddDestination(destAddr);
+	checkerror(status);
+ 
+    sess.SetDefaultPayloadType(H264_PAYLOAD_TYPE);
+    sess.SetDefaultMark(false);
+    sess.SetDefaultTimestampIncrement(H264_SAMPLE_RATE / FRAME_RATE);
+ 
+    FILE* fh264 = fopen(H264_FILE_PATH.c_str(), "rb");
+    if (fh264 == NULL) {
+        std::cout << "打开h264文件失败" << std::endl;
+        exit(-1);
+    }
+ 
+    uint8_t sendbuf[MTU_SIZE] = { 0 };
+    NaluHeader* naluHeader;
+    uint8_t* naluPayload;
+    FuIndicator* fuIndicator;
+    FuHeader* fuHeader;
+ 
+    Nalu* nalu = AllocNalu();
+    RTPTime sendDelay(0.060);
+ 
+    while (true) {
+        if (feof(fh264)) {
+            fseek(fh264, 0, SEEK_SET);
+        }
+        bool wait = true;
+        int size = GetAnnexbNalu(fh264, nalu);
+        if (size == 0) {
+            continue;
+        } else if (size < 0) {
+            exit(0);
+        } else {
+            if (size <= MAX_RTP_PACKET_LENGTH) {
+                memset(sendbuf, 0, MTU_SIZE);
+                naluHeader = (NaluHeader*) &sendbuf[0];
+                naluHeader->F = nalu->forbiddenBit >> 7;
+                naluHeader->NRI = nalu->nalReferenceIdc >> 5;
+                naluHeader->Type = nalu->nalUintType;
+ 
+                naluPayload = &sendbuf[1];
+                memcpy(naluPayload, nalu->buf+nalu->startCodePrefixLen+1, nalu->len-1);
+ 
+                uint32_t timestampInc = 0;
+                if (nalu->nalUintType == 1 || nalu->nalUintType == 5) { // 非IDR图像的片 / IDR图像的片
+                    timestampInc = H264_SAMPLE_RATE / FRAME_RATE;
+                } else {
+                    wait = false;
+                }
+                sess.SendPacket((void *) sendbuf, nalu->len, H264_PAYLOAD_TYPE, true, timestampInc);
+                std::cout << "SendPacket, size: " << size << ", type: " << (int) nalu->nalUintType << std::endl;
+            } else {
+                int nPacket = nalu->len / MAX_RTP_PACKET_LENGTH;
+                int leftLen = nalu->len % MAX_RTP_PACKET_LENGTH;
+                if (leftLen > 0) {
+                    nPacket += 1;
+                }
+                int n = 0;
+                while (n < nPacket) {
+                    memset(sendbuf, 0, MTU_SIZE);
+                    bool isFirst = (n == 0);
+                    bool isLast = (n == nPacket-1);
+                    fuIndicator = (FuIndicator*) &sendbuf[0];
+                    fuIndicator->F = nalu->forbiddenBit >> 7;
+                    fuIndicator->NRI = nalu->nalReferenceIdc >> 5;
+                    fuIndicator->Type = 28;
+ 
+                    fuHeader = (FuHeader*) &sendbuf[1];
+                    fuHeader->S = isFirst ? 1 : 0;
+                    fuHeader->E = isLast ? 1 : 0;
+                    fuHeader->R = 0;
+                    fuHeader->Type = nalu->nalUintType;
+ 
+                    naluPayload = &sendbuf[2];
+                    
+                    int sendLen = 2;    // fu_indicator, fu_header
+                    uint32_t timestampInc = 0;
+                    bool mark = false;
+                    if (isLast) {
+                        sendLen += leftLen;
+                        timestampInc = H264_SAMPLE_RATE / FRAME_RATE;
+                        mark = true;
+                    } else {
+                        sendLen += MAX_RTP_PACKET_LENGTH;
+                    }
+                    memcpy(naluPayload, nalu->buf + nalu->startCodePrefixLen + n * MAX_RTP_PACKET_LENGTH + 1, sendLen);
+ 
+                    sess.SendPacket((void*) sendbuf, sendLen, H264_PAYLOAD_TYPE, mark, timestampInc);
+                    ++n;
+                    std::cout << "SendPacket, size: " << size << ", type: " << (int) nalu->nalUintType << std::endl;
+                }
+            }
+        }
+        if (wait) {
+            RTPTime::Wait(sendDelay);
+        }
+    }
+ 
+    FreeNalu(nalu);
+    sess.BYEDestroy(RTPTime(3, 0), 0, 0);
+ 
+    return 0;
+}
+```
+
+
+
+​		jrtp_h264 启动后，设置本端使用的 UDP 端口以及对端地址后，进程就开始发包了，我们使用 VLC 设置 sdp 信息接收流并播放。
+
+    m=video 12500 RTP/AVP 96
+    a=rtpmap:96 H264
+    a=framerate:15
+    c=IN IP4 127.0.0.1
+
+
+​        12500 需要对应进程设置的对端地址，127.0.0.1 需要对应进程设置的对端 IP。使用 VLC 打开该文件后就可以看到发送的 H264 码流图像了。
+
+
+
+## nat
 
  rtp/rtcp传输数据的时候，需要两个端口支持。即rtp端口用于传输rtp数据，即传输的多媒体数据；rtcp端口用于传输rtcp控制协议信息。 rtp/rtcp协议默认的端口是rtcp port = rtp port + 1 。详细的说，比如A终端和B终端之间通过rtp/rtcp进行通信，
 
@@ -281,9 +810,9 @@ NatType stunNatType(
 
 ​       输入StunAddress和测试端口port,得到本地IP:PORT对应的公网IP:PORT.
 
-#### 改造
+### 改造
 
-jrtplib中对rtp rtcp端口的处理关系是：rtcp port = rtp port + 1 。这就有问题，本地端口可以按照这个等式来设置端口，但是经过NAT映射之后的公网端口是随机的，有可能并不满足上述等式。
+​		jrtplib中对rtp rtcp端口的处理关系是：rtcp port = rtp port + 1 。这就有问题，本地端口可以按照这个等式来设置端口，但是经过NAT映射之后的公网端口是随机的，有可能并不满足上述等式。
 
 ```c++
  int portbase = 6000;            //设置本地rtp端口为6000
@@ -363,9 +892,9 @@ jrtplib中对rtp rtcp端口的处理关系是：rtcp port = rtp port + 1 。这�
 
 
 
-#### 移植
+### 移植
 
- 把jrtplib移植到arm11平台，遇到一些问题，如下。
+​		把jrtplib移植到arm11平台，遇到一些问题，如下。
 5.1 字节序的问题
    jrtplib中的报头的字节序问题，网上可以搜到一些，但都是只言片语，没有详细的把解决方案说出来。ARM采用的是Big-Endian, 而X86采用的是Little-Endian。目前我所采用的解决方法是让两台互相通信的主机所使用的jrtplib的Endian格式一致，都为 Big-Endian或都为Little-Endian，这只需要修改jrtplib-version/src/rtpconfig_unix.h 文件，默认是采用的Little-Endian方式，里面的注释部分有说若加
 \#define RTP_BIG_ENDIAN
