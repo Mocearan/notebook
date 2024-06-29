@@ -78,6 +78,8 @@ continuity_counte=0010               即0x02,表示当前传送的相同类型�
 
 ## PSI
 
+​		[DVB-SI/PSI_Destiny青羽的博客-CSDN博客](https://blog.csdn.net/kkdestiny/category_1553561.html)
+
 ​		Program Specific Information，你可以把 PSI 理解成 节目特定信息。TS 包是对 PES 包的封装，但是不只是 PES，TS 还可以是对 PSI 数据的封装
 
 ​		 PSI 不是一个表，PSI 是一个统称， PAT，PMT，CAT，NIT 这些都是 PSI。
@@ -94,7 +96,7 @@ continuity_counte=0010               即0x02,表示当前传送的相同类型�
 
 ​		定义了当前TS流中所有的节目，其PID为0x0000，它是PSI的根节点，要查寻找节目必须从PAT表开始查找。
 
- 		PAT表主要包含频道号码和每一个频道对应的PMT的PID号码，以流ID唯一标识一个TS流：
+​		PAT表主要包含频道号码和每一个频道对应的PMT的PID号码，以流ID唯一标识一个TS流：
 
 - transport_stream_id，该ID标志唯一的流ID
 - program_number，该号码标志Ｓ流中的一个频道
