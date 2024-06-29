@@ -12,7 +12,7 @@
 
 [PS流及其封装 - shunxiang - 博客园 (cnblogs.com)](https://www.cnblogs.com/shawn-meng/articles/16305596.html)
 
-
+[流媒体基础-RTP封装PS流 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/595923734)
 
 ## 基本结构
 
@@ -37,7 +37,7 @@
 
 
 
-## PSH
+## PS Header
 
 ​		PSH (Program Stream pack Header)是PS包的包头，主要包含系统时间信息。
 
@@ -57,6 +57,36 @@
 | program_mux_rate                                             |  22  | 指示包期间 P-STD 接收节目流的速率，其中该节目流包含在包中。 program_mux_rate 值以 50 字节/秒为度量单位。0 值禁用。 |
 | stuffing_byte                                                |  8   | 此为等于0xFF的固定 8 比特值，可以由编码器插入，例如满足信道的要求。它由解码器丢弃。在每个包头中，应存在不多于 7 个的填充字节。 |
 | system_clock_reference_base system_clock_reference_extension | 33 9 | 系统时钟参考（ SCR）为分成两部分编码的 42 比特字段。第一部分，system_clock_reference_base 为 33 比特字段，其值由公式 5-1中给出的 SCR_base (i)给出。第二部分，system_clock_reference_extension，为 9 比特字段，其值由公式 5-2 中给出的 SCR_ext (i)给出。 SCR 指示在节目目标解码器的输入端包含system_clock_reference_base 最后比特的字节到达的预期时间。 SCR_base(i) = ((system_clock_frequency * t(i))DIV300)%2^33 (5-1) SCR_ext(i) = ((system_clock_frequency * t(i))DIV300)%300 (5-2) 我们精度要求没有这么高，system_clock_reference_extension设置为0即可。 |
+
+```c
+#define PS_HDR_LEN  14
+static int gb28181_make_ps_header(char *pData, unsigned long long s64Scr)
+{
+    unsigned long long lScrExt = (s64Scr) % 100;    
+    s64Scr = s64Scr / 100;
+    bits_buffer_s      bitsBuffer;
+    bitsBuffer.i_size = PS_HDR_LEN;    
+    bitsBuffer.i_data = 0;
+    bitsBuffer.i_mask = 0x80;
+    bitsBuffer.p_data = (unsigned char *)(pData);
+    memset(bitsBuffer.p_data, 0, PS_HDR_LEN);
+    bits_write(&bitsBuffer, 32, 0x000001BA); /*start codes 起始码*/
+    bits_write(&bitsBuffer, 2, 1); /*marker bits '01b'*/
+    bits_write(&bitsBuffer, 3, (s64Scr>>30)&0x07); /*System clock [32..30]*/
+    bits_write(&bitsBuffer, 1, 1); /*marker bit*/
+    bits_write(&bitsBuffer, 15, (s64Scr>>15)&0x7FFF); /*System clock [29..15]*/
+    bits_write(&bitsBuffer, 1, 1); /*marker bit*/
+    bits_write(&bitsBuffer, 15, s64Scr & 0x7fff); /*System clock [14..0]*/
+    bits_write(&bitsBuffer, 1, 1); /*marker bit*/
+    bits_write(&bitsBuffer, 9, 0); /*SCR extension*/
+    bits_write(&bitsBuffer, 1, 1); /*marker bit*/
+    bits_write(&bitsBuffer, 22, (255)&0x3fffff); /*bit rate(n units of 50 bytes per second.)*/
+    bits_write(&bitsBuffer, 2, 3); /*marker bits '11'*/
+    bits_write(&bitsBuffer, 5, 0x1f); /*reserved(reserved for future use)*/
+    bits_write(&bitsBuffer, 3, 0); /*stuffing length*/
+    return 0;
+}
+```
 
 
 
@@ -80,6 +110,45 @@
 | stream_id                    |  8   | 指示以下P-STD_buffer_bound_scale 和 P-STDP-STD_buffer_size_bound 字段所涉及的流的编码与基本流编号。 若 stream_id 等 于 ‘ 1011 1000 ’， 则 跟 随 stream_id 的 P-STD_buffer_bound_scale 和P-STD_buffer_size_bound 字段涉及节目流中的所有音频流。 若 stream_id 等 于 ‘ 1011 1001 ’， 则 跟 随 stream_id 的 P-STD_buffer_bound_scale 和P-STD_buffer_size_bound 字段涉及节目流中的所有视频流。 若 stream_id 取任何其他值，则它将是大于或等于‘ 1011 1100’的字节值并将解释为涉及依照表 2-22的流编码和基本流编号。 节目流中存在的每个基本流应有其 P-STD_buffer_bound_scale 和 P-STD_buffer_size_bound， 在每个系统头中通过此机制确切地一次指定。 |
 | P-STD_buffer_bound_scale     |  1   | 指 示 用 于 解 释 后 续P-STD_buffer_size_bound 字段的标度因子。若前导 stream_id 指示音频流，则 P-STD_buffer_bound_scale 必有‘ 0’值。若前导 stream_id 指示视频流，则 P-STD_buffer_bound_scale 必有‘ 1’值。对所有其他流类型，P-STD_buffer_bound_scale 的值可以为‘ 1’或为‘ 0’ 。 |
 | P-STD_buffer_size_bound      |  13  | P-STD_buffer_size_bound 为 13 比特无符号整数，规定该值大于或等于节目流中流 n 的所有包上的最大 P-STD 输入缓冲器尺寸 BSn。若 P-STD_buffer_bound_scale 有‘0’值，那么 P-STD_buffer_size_bound 以 128 字节为单位度量该缓冲器尺寸限制。 若 P-STD_buffer_bound_scale 有‘ 1’值，那么 P-STD_buffer_size_bound 以 1024 字节为单位度量该缓冲器尺寸限制。 |
+
+```c
+#define SYS_HDR_LEN 18
+static int gb28181_make_sys_header(char *pData)
+{    
+    bits_buffer_s bitsBuffer;
+    bitsBuffer.i_size = SYS_HDR_LEN;
+    bitsBuffer.i_data = 0;
+    bitsBuffer.i_mask = 0x80;
+    bitsBuffer.p_data = (unsigned char *)(pData);
+    memset(bitsBuffer.p_data, 0, SYS_HDR_LEN);
+    /*system header*/
+    bits_write( &bitsBuffer, 32, 0x000001BB); /*start code*/
+    bits_write( &bitsBuffer, 16, SYS_HDR_LEN-6); /* 减6，是因为start code加上length这两位，占了6个字节*/
+    bits_write( &bitsBuffer, 1, 1); /*marker_bit*/
+    bits_write( &bitsBuffer, 22, 50000); /*rate_bound*/
+    bits_write( &bitsBuffer, 1, 1); /*marker_bit*/
+    bits_write( &bitsBuffer, 6, 1); /*audio_bound*/
+    bits_write( &bitsBuffer, 1, 0); /*fixed_flag */
+    bits_write( &bitsBuffer, 1, 1); /*CSPS_flag */
+    bits_write( &bitsBuffer, 1, 1); /*system_audio_lock_flag*/
+    bits_write( &bitsBuffer, 1, 1); /*system_video_lock_flag*/
+    bits_write( &bitsBuffer, 1, 1); /*marker_bit*/
+    bits_write( &bitsBuffer, 5, 1); /*video_bound*/
+    bits_write( &bitsBuffer, 1, 0); /*dif from mpeg1*/
+    bits_write( &bitsBuffer, 7, 0x7F); /*reserver*/
+    /*audio stream bound*/
+    bits_write( &bitsBuffer, 8, 0xC0); /*stream_id 音频的流id*/
+    bits_write( &bitsBuffer, 2, 3); /*marker_bit */
+    bits_write( &bitsBuffer, 1, 0); /*PSTD_buffer_bound_scale*/
+    bits_write( &bitsBuffer, 13, 512); /*PSTD_buffer_size_bound*/
+    /*video stream bound*/
+    bits_write( &bitsBuffer, 8, 0xE0); /*stream_id 视频的流id*/
+    bits_write( &bitsBuffer, 2, 3); /*marker_bit */
+    bits_write( &bitsBuffer, 1, 1); /*PSTD_buffer_bound_scale*/
+    bits_write( &bitsBuffer, 13, 2048); /*PSTD_buffer_size_bound*/
+    return 0;
+}
+```
 
 
 
@@ -141,6 +210,42 @@
 
 注：H265的值定义为 0x24
 
+```c
+static int gb28181_make_psm_header(char *pData)
+{
+    bits_buffer_s bitsBuffer;
+    bitsBuffer.i_size = PSM_HDR_LEN; 
+    bitsBuffer.i_data = 0;
+    bitsBuffer.i_mask = 0x80;
+    bitsBuffer.p_data = (unsigned char *)(pData);
+    memset(bitsBuffer.p_data, 0, PSM_HDR_LEN);//24Bytes
+    bits_write(&bitsBuffer, 24,0x000001); /*start code*/
+    bits_write(&bitsBuffer, 8, 0xBC); /*map stream id*/
+    bits_write(&bitsBuffer, 16,18); /*program stream map length*/ 
+    bits_write(&bitsBuffer, 1, 1); /*current next indicator */
+    bits_write(&bitsBuffer, 2, 3); /*reserved*/
+    bits_write(&bitsBuffer, 5, 0); /*program stream map version*/
+    bits_write(&bitsBuffer, 7, 0x7F); /*reserved */
+    bits_write(&bitsBuffer, 1, 1); /*marker bit */
+    bits_write(&bitsBuffer, 16,0); /*programe stream info length*/
+    bits_write(&bitsBuffer, 16, 8); /*elementary stream map length is*/
+    /*audio*/
+    bits_write(&bitsBuffer, 8, 0x90); /*stream_type 音频编码格式G711*/
+    bits_write(&bitsBuffer, 8, 0xC0); /*elementary_stream_id*/
+    bits_write(&bitsBuffer, 16, 0); /*elementary_stream_info_length is*/
+    /*video*/
+    bits_write(&bitsBuffer, 8, 0x1B); /*stream_type 视频编码格式H.264*/
+    bits_write(&bitsBuffer, 8, 0xE0); /*elementary_stream_id*/
+    bits_write(&bitsBuffer, 16, 0); /*elementary_stream_info_length */
+    /*crc (2e b9 0f 3d)*/
+    bits_write(&bitsBuffer, 8, 0x45); /*crc (24~31) bits*/
+    bits_write(&bitsBuffer, 8, 0xBD); /*crc (16~23) bits*/
+    bits_write(&bitsBuffer, 8, 0xDC); /*crc (8~15) bits*/
+    bits_write(&bitsBuffer, 8, 0xF4); /*crc (0~7) bits*/
+    return 0;
+}
+```
+
 
 
 
@@ -188,6 +293,56 @@
 ​		需要注意的是，当对原始流进行PES分组，尤其是需要将一帧信息断开分成多个PES分组时，从第二个分组开始不需要PTS，PES_header_data_length和它前面的一个字节又都为0x00，很可能与后面断开的数据组合形成0x00 00 01等类似的伪起始码或关键字，令解码端在收到流不完整时产生误判，因此填充字节stuffing_byte至少必须加入1 byte以确保这种误判不会发生。
 
 ​		备注：PES Header长度由于是可变长度，可以简单用以下方法确认：PES Header长度=基本长度（9字节）+扩展长度（uface PS封装带PTS是7字节，不带PTS是3个字节）；基本长度（8字节的长度+1字节的PES扩展头字节数），扩展长度填充规则是，至少2字节，PES Header长度保持4字节对齐，PES分包后，只有首包含PTS。
+
+```c
+#define PES_HDR_LEN 19
+static int gb28181_make_pes_header(char *pData, int stream_id, int payload_len, unsigned long long pts, unsigned long long dts)
+{
+    bits_buffer_s bitsBuffer;
+    bitsBuffer.i_size = PES_HDR_LEN;
+    bitsBuffer.i_data = 0;
+    bitsBuffer.i_mask = 0x80;
+    bitsBuffer.p_data = (unsigned char *)(pData);
+    memset(bitsBuffer.p_data, 0, PES_HDR_LEN);
+    
+    /*System Header*/
+    bits_write( &bitsBuffer, 24,0x000001); /*start code*/
+    bits_write( &bitsBuffer, 8, (stream_id)); /*streamID*/
+    bits_write( &bitsBuffer, 16,(payload_len)+13); /*packet_len pes剩余头部以及后面的es长度之和，比如SPS长度+13*/
+    bits_write( &bitsBuffer, 2, 2 ); /*'10'*/
+    bits_write( &bitsBuffer, 2, 0 ); /*scrambling_control*/
+    bits_write( &bitsBuffer, 1, 1 ); /*priority*/
+    bits_write( &bitsBuffer, 1, 1 ); /*data_alignment_indicator*/
+    bits_write( &bitsBuffer, 1, 0 ); /*copyright*/
+    bits_write( &bitsBuffer, 1, 0 ); /*original_or_copy*/
+    bits_write( &bitsBuffer, 1, 1 ); /*PTS_flag 是否有PTS*/
+    bits_write( &bitsBuffer, 1, 1 ); /*DTS_flag 是否有DTS信息*/
+    bits_write( &bitsBuffer, 1, 0 ); /*ESCR_flag*/
+    bits_write( &bitsBuffer, 1, 0 ); /*ES_rate_flag*/
+    bits_write( &bitsBuffer, 1, 0 ); /*DSM_trick_mode_flag*/
+    bits_write( &bitsBuffer, 1, 0 ); /*additional_copy_info_flag*/
+    bits_write( &bitsBuffer, 1, 0 ); /*PES_CRC_flag*/
+    bits_write( &bitsBuffer, 1, 0 ); /*PES_extension_flag*/
+    bits_write( &bitsBuffer, 8, 10); /*header_data_length*/ 
+    
+    /*PTS,DTS*/    
+    bits_write( &bitsBuffer, 4, 3 ); /*'0011'*/
+    bits_write( &bitsBuffer, 3, ((pts)>>30)&0x07 ); /*PTS[32..30]*/
+    bits_write( &bitsBuffer, 1, 1 );
+    bits_write( &bitsBuffer, 15,((pts)>>15)&0x7FFF); /*PTS[29..15]*/
+    bits_write( &bitsBuffer, 1, 1 );
+    bits_write( &bitsBuffer, 15,(pts)&0x7FFF); /*PTS[14..0]*/
+    bits_write( &bitsBuffer, 1, 1 );
+    bits_write( &bitsBuffer, 4, 1 ); /*'0001'*/
+    bits_write( &bitsBuffer, 3, ((dts)>>30)&0x07 ); /*DTS[32..30]*/
+    bits_write( &bitsBuffer, 1, 1 );
+    bits_write( &bitsBuffer, 15,((dts)>>15)&0x7FFF); /*DTS[29..15]*/
+    bits_write( &bitsBuffer, 1, 1 );
+    bits_write( &bitsBuffer, 15,(dts)&0x7FFF); /*DTS[14..0]*/
+    bits_write( &bitsBuffer, 1, 1 );
+    return 0;
+}
+```
 
 
 
