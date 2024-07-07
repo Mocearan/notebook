@@ -4,21 +4,48 @@
 
 ​		`JRTPLIB`是一个面向对象的RTP库，它完全遵循RFC 1889设计，在很多场合下是一个非常不错的选择，下面就以JRTPLIB为例，讲述如何在Linux平台上运用RTP协议进行实时流媒体编程。
 
+## 参考
 
+[Windows 7（Win7）下Visual Studio 2012（VS2012）编译jrtplib与MinGW编译jrtplib_jrtplib 编译dll-CSDN博客](https://blog.csdn.net/caoshangpa/article/details/51152541)
 
 ## 基本使用
 
 ### 初始化
 
+- 使用RTP协议，你必须创建一个`rtpsession`对象。
+
+- 实际创建会话(session)，你必须调用`Create`成员函数.
+
+  - `RTPSessionParams` 必须明确设置该类的时间戳单位参数，否则将不会成功创建会话。
+
+    > Note that the own timestamp  unit must be set to a valid number, otherwise the session can't be created.
+    >
+    > ```c++
+    > RTPSessionParams sessionparams;
+    > sessionparams.SetOwnTimestampUnit(1.0/8000.0);
+    > ```
+
+  - 其他会话参数取决于实际RTP配置
+
+  - 如果返回值值为负值，则表示出现了一些错误。 说明此错误代码可以通过调用`RTPGetErrorString`检索：
+
+- 默认情况下，在IPv4发射机使用UDP，对于这个特定的发射器`RTPUDPv4TransmissionParams`
+
+  > ```c++
+  > RTPUDPv4TransmissionParams transparams;
+  > transparams.SetPortbase(8000);
+  > ```
+
 ```c++
 // 初始化
 // 在使用JRTPLIB进行实时流媒体数据传输之前，首先应该生成RTPSession类的一个实例来表示此次RTP会话，然后调用Create() 方法来对其进行初始化操作。
-// RTPSession类的Create()方法只有一个参数，用来指明此次RTP会话所采用的端口号。
 
 #include "rtpsession.h"
 
 RTPSession sess; 
-sess.Create(5000);
+
+RTPSessionParams sessionparams;
+sessionparams.SetOwnTimestampUnit(1.0/8000.0);
 
 //3.11版jrtplib库的Create方法被修改为Create(sessparams,&transparams)
 RTPUDPv4TransmissionParams transparams;
@@ -26,7 +53,62 @@ RTPSessionParams sessparams;
 sessparams.SetOwnTimestampUnit(1.0/8000.0);/*设置时间戳，1/8000表示1秒钟采样8000次，即录音时的8KHz*/
 sessparams.SetAcceptOwnPackets(true);
 transparams.SetPortbase(portbase);/*本地通讯端口*/
+
+int status = session.Create(sessionparams, &transparams);
+if (status < 0)
+{
+    std::cerr << RTPGetErrorString(status) << std::endl;
+    exit(-1);
+}
+
+// 如果会话(session)创建成功，这可能是一个很好的点去指定RTP和RTCP数据应该发送的目的地。
+uint8_t localip[]={127,0,0,1};
+RTPIPv4Address addr(localip,9000);
+
+status = session.AddDestination(addr);
+if (status < 0)
+{
+    std::cerr << RTPGetErrorString(status) << std::endl;
+    exit(-1);
+}
+
+// 目标地址 dest 加入到 RTP 会话的接收列表，表示接收从该地址发送的 RTP 数据包。*
+// m_VedioRTPSession.AddToAcceptList(dest);
+
+...
+// 清理RTPSession类。
+// 另外，我们要等待最多10秒，以确保此数据包完成发送，否则次数据包将可能不会被发送。
+delay = RTPTime(10.0);
+session.BYEDestroy(delay,"Time's up",9);
 ```
+
+
+
+### jthread
+
+​		如果JRTPlib以JThread支持的情况下编译，输入的数据在后台处理。 
+
+​		如果jthread支持在编译时没有被启用 或 如果在会话参数中指定了不使用轮询线程的参数 ，将必须调用RTPSession成员函数来处理传入的数据，必要时定期发送RTCP包。
+
+
+
+### rtptime
+
+​		创建包含160个沉默样本缓冲区并创建一个标明20毫秒(或0.020秒)的RTPTime实例。 我们还将存储当前时间，这样我们就知道一分钟过去了。 
+
+```c++
+uint8_t silencebuffer[160];
+
+for (int i = 0 ; i < 160 ; i++)
+    silencebuffer[i] = 128;
+
+RTPTime delay(0.020);
+RTPTime starttime = RTPTime::CurrentTime();
+```
+
+
+
+
 
 ### 数据发送
 
@@ -43,49 +125,120 @@ sess.AddDestination(addr, 6000);
 // 对于同一个RTP会话来讲，负载类型、标识和时戳增量通常来讲都是相同的，JRTPLIB允许将它们设置为会话的默认参数，这是通过调用 RTPSession类的SetDefaultPayloadType()、SetDefaultMark()和 SetDefaultTimeStampIncrement()方法来完成的。为RTP会话设置这些默认参数的好处是可以简化数据的发送
 sess.SetDefaultPayloadType(0);
 sess.SetDefaultMark(false);  
-sess.SetDefaultTimeStampIncrement(10);
+sess.SetDefaultTimeStampIncrement(160); // 我们希望每分钟发送包含20毫秒(或160个样本)的数据包
 // sess.SendPacket(buffer, 5);
 
-sess.SendPacket((void *)buffer,sizeof(buffer),0,false,8000);
+
+// 发送一个包含160字节有效载荷数据的包。
+bool done = false;
+while (!done)
+{
+    status = session.SendPacket(silencebuffer,160);
+    if (status < 0)
+    {
+        std::cerr << RTPGetErrorString(status) << std::endl;
+        exit(-1);
+    }
+
+    //
+    // Inspect incoming data here
+    //
+
+    RTPTime::Wait(delay);
+
+    RTPTime t = RTPTime::CurrentTime();
+    t -= starttime;
+    if (t > RTPTime(60.0))
+        done = true;
+}
+
 ```
 
 ```c++
 int SendPacket(void *data,int len)
 int SendPacket(void *data,int len,unsigned char pt,bool mark,unsigned long timestampinc)
 int SendPacket(void *data,int len,unsigned short hdrextID,void *hdrextdata,int numhdrextwords)
-int SendPacket(void *data,int len,unsigned char pt,bool mark,unsigned long timestampinc,unsigned short hdrextID,void *hdrextdata,int numhdrextwords)
+int SendPacket(void *data,int len,unsigned char pt,bool mark,unsigned long timestampinc,unsigned short hdrextID,void *hdrextdata,int numhdrextwords);
+    
+// sess.SendPacket((void *)buffer,sizeof(buffer),0,false,8000);
 ```
+
+
+
+`SendRawData`和`SendPacket`是JRTP库中用于发送RTP数据包的两种不同方法，它们的区别在于数据的处理方式和发送方式：
+
+1. `SendRawData`：
+
+   方法用于直接发送原始的RTP数据，不对数据进行封包处理。
+
+   这意味着用户必须自行确保传入的数据符合RTP格式，包括正确设置RTP头信息、负载类型、时间戳等。JRTP库不会对数据进行任何修改或封装，而是直接将原始数据发送出去。
+
+   这种方法适用于那些已经对RTP格式非常熟悉且需要精细控制数据内容的开发者。使用SendRawData时，开发者需要负责所有RTP协议相关的细节。
+
+2. `SendPacket`：
+
+   发送经过JRTP库封装的RTP数据包。这意味着JRTP库会自动处理RTP头信息、负载类型、时间戳等，并将数据封装成符合RTP格式的数据包，然后再发送出去。这种方法更适用于那些希望简化RTP数据包发送过程、不需要深入了解RTP协议细节的开发者。
+
+   JRTP库会自动处理RTP数据包的格式，让开发者能够更专注于业务逻辑。
 
 ### 数据接收
 
 ```c++
 // 数据接收
 // 对于流媒体数据的接收端，首先需要调用RTPSession类的PollData()方法来接收发送过来的RTP或者 RTCP数据报。由于同一个RTP会话中允许有多个参与者（源），你既可以通过调用RTPSession类的GotoFirstSource()和 GotoNextSource()方法来遍历所有的源，也可以通过调用RTPSession类的GotoFirstSourceWithData()和 GotoNextSourceWithData()方法来遍历那些携带有数据的源。在从RTP会话中检测出有效的数据源之后，接下去就可以调用 RTPSession类的GetNextPacket()方法从中抽取RTP数据报，当接收到的RTP数据报处理完之后，一定要记得及时释放。
-JRTPLIB为RTP数据报定义了三种接收模式，其中每种接收模式都具体规定了哪些到达的RTP数据报将会被接受，而哪些到达的RTP数据报将会被拒绝。通过调用RTPSession类的SetReceiveMode()方法可以设置下列这些接收模式：
-
- // RECEIVEMODE_ALL　　
- //		缺省的接收模式，所有到达的RTP数据报都将被接受； 
- //	RECEIVEMODE_IGNORESOME 　　
- //		除了某些特定的发送者之外，所有到达的RTP数据报都将被接受，而被拒绝的发送者列表可以通过调用AddToIgnoreList()、 DeleteFromIgnoreList()和ClearIgnoreList()方法来进行设置； 
-//	RECEIVEMODE_ACCEPTSOME 　　
-//		除了某些特定的发送者之外，所有到达的RTP数据报都将被拒绝，而被接受的发送者列表可以通过调用AddToAcceptList ()、DeleteFromAcceptList和ClearAcceptList ()方法来进行设置。 
 
 sess_client.Poll();   //接收发送过来的 RTP 或者RTCP 数据报
-sess_client.BeginDataAccess();
 
-if (sess.GotoFirstSourceWithData()) {     //遍历那些携带有数据的源
-     do {   
-          sess.AddToAcceptList(remoteIP, allports,portbase);
-           sess.SetReceiveMode(RECEIVEMODE_ACCEPTSOME);
-
-           RTPPacket *pack;         
-          pack = sess.GetNextPacket();            // 处理接收到的数据    
-           delete pack;   }
-     while (sess.GotoNextSourceWithData());
- }
-
-sess_client.EndDataAccess();
+session.BeginDataAccess(); // RTPSession::EndDataAccess和RTPSession::BeginDataAccess之间可以确保后台线程不会并发修改正试图访问的数据 
+if (session.GotoFirstSource()) // RTPSession::GotoFirstSource和RTPSession::GotoNextSource 遍历参与者
+{
+    do
+    {
+        RTPPacket *packet;
+        // 遍历那些携带有数据的源 
+        while ((packet = session.GetNextPacket()) != 0) // 使用RTPSession::GetNextPacket成员函数可以取出当前选中的参与者的数据包
+        {
+            std::cout << "Got packet with extended sequence number " 
+                      << packet->GetExtendedSequenceNumber() 
+                      << " from SSRC " << packet->GetSSRC() 
+                      << std::endl;
+            session.DeletePacket(packet);// 当你不再需要这个包时，它必须被删除。
+        }
+    } while (session.GotoNextSource());
+}
+session.EndDataAccess();
 ```
+
+​	JRTPLIB 为 RTP 数据报定义了三种接收模式，其中每种接收模式都具体规定了哪些到达的 RTP 数据报将会被接受，而哪些到达的 RTP 数据报将会被拒绝。通过调用 RTPSession 类的 SetReceiveMode() 方法可以设置下列这些接收模式： 
+
+- `RECEIVEMODE_ALL　　`缺省的接收模式，所有到达的 RTP 数据报都将被接受； 
+- `RECEIVEMODE_IGNORESOME　　`除了某些特定的发送者之外，所有到达的 RTP 数据报都将被接受，而被拒绝的发送者列表可以通过调用 `AddToIgnoreList()、DeleteFromIgnoreList() 和 ClearIgnoreList()` 方法来进行设置； 
+- `RECEIVEMODE_ACCEPTSOME　　`除了某些特定的发送者之外，所有到达的 RTP 数据报都将被拒绝，而被接受的发送者列表可以通过调用 `AddToAcceptList ()、DeleteFromAcceptList 和 ClearAcceptList () `方法来进行设置。
+
+
+
+​		关于当前选择源的信息可以调用RTPSession类成员函数GetCurrentSourceInfo得到， 这个函数返回一个RTPSourceData实例， 此实例包含这个源所有的信息：来自这个源发送者报告，接收报告，SDES信息等。
+
+​		包也可以直接被处理在没有遍历这个源的情况下。 方法是： 通过重写RTPSession::OnValidatedRTPPacket成员函数.
+
+
+
+​		如果想收到自己发出的包（自发自收）需要进行如下设置：
+
+```c++
+// 把本地监听端口和发包的目的端口都设置为相同值
+
+sessionParams.SetAcceptOwnPackets(true);
+
+// 接收要手动收包
+session.poll();
+```
+
+
+
+
+
+
 
 ### 控制信息
 
@@ -99,6 +252,39 @@ sess.SetLocalEMail("xiaowp@linuxgam.comxiaowp@linuxgam.com",19);
 ```
 
 ​		在RTP 会话过程中，不是所有的控制信息都需要被发送，通过调用`RTPSession`类提供的` EnableSendName()、EnableSendEMail()、EnableSendLocation()、EnableSendPhone ()、EnableSendTool()和EnableSendNote()`方法，可以为当前RTP会话选择将被发送的控制信息。
+
+
+
+### 内存管理
+
+​		可以通过继承`RTPMemoryManager`派生一个类来接管内存管理器。
+
+```c++
+class MyMemoryManager : public RTPMemoryManager
+{
+public:
+    MyMemoryManager() { }
+    ~MyMemoryManager() { }
+
+    // 第二个参数表示次内存块的类型是什么，这允许你处理不同类型的数据。
+    void *AllocateBuffer(size_t numbytes, int memtype)
+    {
+        return malloc(numbytes);
+    }
+
+    void FreeBuffer(void *p)
+    {
+        free(p);
+    }
+};
+
+MyMemoryManager mgr;
+RTPSession session(0, &mgr);
+```
+
+​		随着内存管理系统的引入，RTPSession类扩展了RTPSession::DeletePacket 和RTPSession::DeleteTransmissionInfo 成员函数。这些成员函数可以分别用来释放 RTPPacket实例 和 RTPTransmissionInfo实例。
+
+
 
 ### sample
 
@@ -903,3 +1089,8 @@ NatType stunNatType(
 5.2 Can't retrieve login name的错误
   上述都没有问题了，又遇到另外的问题，在N800的客户端建立RTPSession的过程中，报了Can't retrieve login name的错误，在网上搜索后，找到一篇博客讲到嵌入式系统由于某些原因系统可能没有login name, 而在RTPSession的Create->InternalCreate->CreateCNAME方法，其中的getlogin_r, getlogin和getenv操作会因为logname为空而返回ERR_RTP_SESSION_CANTGETLOGINNAME的错误。我在 N800的机器上做了个实验，使用getlogin和getenv("LOGNAME")确实都不能得到登录名。要解决上述问题，可以对jrtplib的 源代码进行修改， 即修改RTPSession的CreateCNAME，即使getlogin_r, getlogin和getenv三个函数调用都不能得到登录名，也要设置一个登录名。
 
+
+
+## 源码解析
+
+[jrtplib V3.11.1 收包流程_windows下jrtp收不到包-CSDN博客](https://blog.csdn.net/heker2010/article/details/74941491)
