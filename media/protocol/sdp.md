@@ -1,6 +1,6 @@
 # SDP
 
-​		Session Description Protocol， 会话描述协议
+​		Session Description Protocol， 会话描述协议，定义了描述会话的统一格式
 
 ---
 
@@ -10,10 +10,17 @@
 
 ​		SDP 信息包括：
 
-- 会话名称和目标；
+- 会话名称和目的；
 - 会话活动时间；
 - 构成会话的媒体；
-- 有关接收媒体的信息、地址等。
+  - 媒体类型：video，audio...
+  - 传输协议：rtp、UDP、IP
+  - 媒体格式：MPEG video...
+  - 多播或单播地址和硘
+
+- 有关接收媒体的信息、地址等
+- 可用的带宽信息
+- 可信赖的接洽信息
 
 ​		其他的传输协议通过sdp来交换必要的信息,常用在实时音视频中用来交换信息;比如GB28181视频交互（SIP-INVITE)、RTSP（DESCRIBE)、WEBRTC等音视频交换协议中，用作描述音视频信息。
 
@@ -27,10 +34,19 @@
 
 ​		sdp 格式由多行的`type=value`组成，SDP 信息是文本信息，UTF-8 编码采用 ISO 10646 字符设置。
 
+- `value`是一个字符串，具体格式视`type`而定
+- `=`两侧不允许有空格
+
 ​		sdp 会话描述由**一个会话级描述**和**多个媒体级描述**组成。会话级描述的作用域是整个会话，媒体级描述描述的是一个视频流或者音频流.
 
 - 会话级描述由`v=`开始到第一个媒体级描述结束
+  - 必需的是v,o,s,t
+
 - 媒体级描述由`m=`开始到下一个媒体级描述开始之前
+  - m
+
+- 媒体级描述实际是会话级描述的重载，媒体级中的缺省默认使用会话级描述中的值
+- 可选的值有`*`标记
 
 ```
 ==Session description:==
@@ -65,11 +81,13 @@ y= * (SSRC)
 f= * (媒体描述)
 ```
 
+
+
 ### sample
 
-```
+```http
 v=0
-o=mhandley 2890844526 2890842807 IN IP4 126.16.64.4
+o=m1handley 2890844526 2890842807 IN IP4 126.16.64.4
 s=SDP Seminar
 i=A Seminar on the session description protocol
 u=http://www.cs.ucl.ac.uk/staff/M.Handley/sdp.03.ps
@@ -85,8 +103,7 @@ a=orient:portrait
 a=rtpmap:96 H264/90000
 a=control:rtsp://10.86.77.14:554/h264/ch1/sub/av_stream/trackID=1
 
-
-//字段解释
+// 字段解释
 V=0     ;Version 给定了SDP协议的版本
  o=<用户名> <会话id> <会话版本> <网络类型><地址类型> <地址>
 <address>； Origin ,给定了会话的发起者信息
@@ -128,19 +145,115 @@ a=control:rtsp://10.86.77.14:554/h264/ch1/sub/av_stream/trackID=1
 
 
 
+### 会话描述
+
+
+
+#### `v (version)`  
+
+​		必选，SDP的版本号，不包括次版本号。
+
+- v=0
+
+#### `o (origin)`
+
+​		必选，对会话的发起者进行了描述
+
+- `o=<username> <sessionid> <version> <network type> <address type> <address>`
+  - `<username>`是用户的登录名。如果主机不支持`<username>`，则为 `-`。`<username>`不能含空格。
+  - `<session id>`是一个数字串。在整个会话中，必须是唯一的。为了确保其唯一，建议使用NTP(Network Time Protocol) timestamp。
+  - `<version>` 该会话公告的版本,供公告代理服务器检测同一会话的若干个公告哪个是最新公告.基本要求是会话数据修改后该版本值递增,建议用NTP时戳。
+  - `<networktype>`网络类型，一般为”IN”,表示”internet”
+  - `<address type>` 地址类型，一般为IP4
+  - `<address>` 地址
+
+#### `s (Session Name)`，
+
+​		必选， 会话名，在整个会话中有且只有一个”s=”
+
+- ` s=<sessionname>`
+
+
+
+#### `c (Connection Data)`  
+
+表示媒体连接信息。
+
+- ` c=<networktype> <address type> <connection address>`
+
+  - `  <network type>`：网络类型，一般为”IN”,表示”internet”
+
+  - ` <address type>`：地址类型，一般为IP4
+
+  - `<connection address>`：应用程序必须处理域名和ip地址两种情形。
+
+    - 单播时，为域名或ip地址，推荐使用域名；
+
+    - 多播，为ip地址，且ip后面必须有TTL（取值范围是0－255），地址和TTL决定了多播包被传播的范围。
+
+    -  分层编码方案是一个数据流被分为多层，接受者能够通过申请不同层的流选择流的质量（包括带宽）如下
+
+      - `<base multicastaddress>/<ttl>/<number of addresses>`
+
+        - `c=IN IP4 224.2.1.1/127`
+
+          - 如果`<number of addresses>`没有给定，则默认为1
+
+        - `c=INIP4 224.2.1.1/127/3`
+
+          > 等价于：
+          >
+          > c=IN IP4 224.2.1.1/127
+          >
+          > c=IN IP4 224.2.1.2/127
+          >
+          > c=IN IP4 224.2.1.3/127
+
+- 一个会话声明中，会话级描述中必须有”c=”项或者在每个媒体级描述中有一个”c=”项。
+
+  - 可能在会话级描述和每个媒体级描述中都有”c=”项。
+
+#### `b (Bandwidth)` 
+
+​		描述了建议的带宽，单位kilobits per second
+
+- ` b=<modifier>:<bandwidth-value>`
+- `<modifier>`：包括两种CT和AS。
+  - CT：ConferenceTotal，总带宽。
+  - AS：Application-SpecificMaximum，单个媒体带宽的最大值
+- 扩展机制：`<modifier>`以`X－`开始。建议`modifier`越短越好。
+  - 例`b=X-YZ:128`
+
+
+
+#### `t (Times)` RepeatTimesand Time Zones
+
+​		描述了会话的开始时间和结束时间。
+
+- `  t=<start time> <stop time>`
+- NTP时间，单位是秒
+- `<stop time>`为零表示过了`<start time>`时间后会话一直持续。
+- 当`<start time> `和`<stoptime>`均为零时表示持久会话。
+
+
+
+
+
 ### 媒体描述
 
 ​		SDP媒体描述及其扩展属性，在不同的协议中有定义有所不同，需要参照不同协议的协议规范来看。这里介绍的是比较通用的定义，以RTSP协议中SDP的媒体描述定义。
 
 ​		媒体描述扩展属性中有关c、b等属性不在做介绍，主要介绍m极其扩展属性`a=control\a=rtpmap\a=fmtp`进行详细介绍。
 
-#### m
+
+
+#### `m (Media Announcements)`
 
 ​	m 字段描述媒体的媒体类型、 端口、 传输层协议、 负载类型等内容。
 
 ​		此属性后直到下一个`m`出现都属于m的属性描述
 
-​	格式：`m=<media> <port> <proto> <fmt> ...`
+​	格式：` m=<media> <port> <transport> <fmt list>`
 
 > `m=video 6000 RTP/AVP 96` 说明媒体类型为视频或视音频, 传输端口为6000, 采用 RTP over UDP 传输方式, 负载类型为96。
 
@@ -148,19 +261,40 @@ a=control:rtsp://10.86.77.14:554/h264/ch1/sub/av_stream/trackID=1
   - `video` 视频
   - `audio` 音频
   - `application` 元数据
-  - 根据不通协议规范，可扩展其他类型
+  - 根据不通协议规范，可扩展其他类型:
+    - "data"（不向用户显示的数据） 
+    - "control"（描述额外的控制通道）
 - `port`：流媒体服务器发送数据的传输端口号
   - 表示服务器从本端口发送流
   - `0`表示随机端口发送
     - 如果是RTSP协议，一般为0
     - 后继协议`SETUP`时确定传输端口
+    
+  - 取决于c=行规定的网络类型和接下来的传送层协议：
+    
+    - 对UDP为1024-65535；
+    - 对于RTP为偶数。奇数端口用来传输RTCP包
+      - `m=video 49170/2 RTP/AVP 31`
+    
+  - 当分层编码流被发送到一个单播地址时，需要列出多个端口
+  
+    - `m=<media><port>/<number of ports> <transport> <fmt list>`
+  
+      > `m=video 49170/2 RTP/AVP 31`
+      >
+      > - 端口49170和49171为第一对RTP/RTCP端口
+      > - 49172和49173为第二对的端口
+      > - 传输协议是RTP/AVP
+      > - 媒体格式为31（媒体格式是rtp头中payload参数对应的）
 - `proto`：传输方式
   - `RTP/AVP`标识传输层协议为 RTP over UDP
   - `TCP/RTP/AVP`标识传输层协议为 RTP over TCP
   - 主流交互协议中，也用RTP/AVP表示既支持UDP又支持TCP
-- `<fmt>`：媒体格式描述
+- `<fmt list>` 媒体格式。
+  
   - RTP中用`payloadtype`来赋值，表示流的类型
   - 这里会和后面"`a=rtpmap:`"、“`a=fmtp:`”相关联
+  - 对于音频和视频就是在RTP Audio/Video Profile定义的负载类型(payload type)。
 
 
 
@@ -241,6 +375,24 @@ rtsp://10.45.12.141/h264/ch1/main/av_stream/track3
 
 
 
+- 对于音频流，<编码参数> 说明了音频的通道数。通道数默认缺省值为1。对于视频流，现阶段没有<编码参数>。
+
+  > ```
+  > m=audio 49230 RTP/AVP 96 97 98          m=audio 8888 RTP/AVP 0     m=video 1234 RTP/AVP 96
+  > a=rtpmap:96 L8/8000                     a=rtpmap:0 pcma/8000/1     a=rtpmap:96 H264
+  > a=rtpmap:97 L16/8000
+  > a=rtpmap:98 L16/11025/2
+  > ```
+
+- 在rtpmap中，实验性的编码方案也可以用。其格式名前一定为”X－”例：一种新的实验性的被称为GSMLPC的音频流，使用的动态负载类型为99。
+
+  > ```
+  > m=video 49232 RTP/AVP 99
+  > a=rtpmap:99 X-GSMLPC/8000
+  > ```
+
+
+
 #### `a=fmtp`
 
 ​		附加属性的格式，H264和[H265](https://so.csdn.net/so/search?q=H265&spm=1001.2101.3001.7020)有一定的区别，这里分开来说明
@@ -301,6 +453,20 @@ h265格式：`a=fmtp:96 sprop-vps=xxx;sprop-sps=xxx; sprop-pps=xxx`
 
 
 
+#### `SuggestedAttributes`
+
+- ` a=<TYPE>或 a=<TYPE>:<VALUES>`
+
+- `a=framerate:<帧速率>`   单位:帧/秒        1s播放几个rtp包  倒数为一个rtp包承载的数据播放的时间单位s
+
+  > 音频的话       a=framerate:50        1byte*8000hz*20ms=160B
+  >
+  > 则每个rtp包的音频数据量为160B  时间戳增值为160
+
+- `a=lang:<语言标记>`  会话描述的缺省语言或媒体描述的语言
+
+
+
 部分字段用法说明：
 ► a 字段:a=downloadspeed: 下载倍速(取值为整型)
 a=downloadspeed: 下载倍速(取值为整型)
@@ -346,4 +512,146 @@ a表音频，编码格式：1. G.711 2. G.723.1 3.G.729 4. G.722.1
 - \4. PJSIP。由C语言编写而成的一种开源协议栈, 适用于嵌入式SIP功能的开发和应用, 也是智能家居网关设计开发的首选
 
 
+
+## 注意
+
+​		如果SDP语法分析器不能识别某一类型(Type),则整个描述丢失。
+
+​    如果”a=”的某属性值不理解,则予以丢失此属性。
+
+​    会话级的描述就是媒体级描述的缺省值（就是说媒体级描述其实也是一个会话级描述，只不过没写出来的会话级描述参数都用的缺省值）。
+
+
+
+## 例子
+
+#### 媒体级会话VLC播放264视频的sdp文件
+```
+m=video 1234 RTP/AVP 96
+a=rtpmap:96 H264
+a=framerate:15
+c=IN IP4 172.18.168.45
+```
+
+​		详细：http://blog.csdn.net/zhangjikuan/article/details/27378237
+
+
+
+### 媒体级会话VLC播放g711音频的sdp文件
+
+```
+m=audio 8888 RTP/AVP 0   
+a=rtpmap:0 pcma/8000/1                          这地方是a率压缩方式；pcmu就是u率型
+a=framerate:25                                 8000/25=320Byte    每个rtp包的音频数据为320byte   时间戳增值为320
+c=IN IP4 192.168.1.230
+```
+
+​		详细：http://blog.csdn.net/zhangjikuan/article/details/27379201
+
+​		如果是同时播放音频和视频流只要把这两个媒体级会话合在一个sdp文件中就好了
+
+
+
+### 点播mp4文件，MS_H返回给终端的sdp信息
+```
+v=0
+o=HWPSS 3427743244 1084119141 IN IP4 127.0.0.1
+s=test1.mp4
+test1.mp4：	# 媒体文件名
+c=IN IP4 0.0.0.0
+t=0 0
+a=control:*
+a=range:npt=0-44.000000
+ 	# 44.000000：mvhd原子：ntohl (movie_header->duration)/ ntohl(movie_header->time_scale) 
+
+m=video 0 RTP/AVP 96
+	# 96：track->payload_type     视频：96音频：97
+a=control:trackID=101
+	# 101：轨道ID。 视频：101，102， 103 音频： 201，202， 203，204， 205
+a=rtpmap:96 MP4V-ES/90000
+	# 90000：track->time_scale
+a=fmtp:96 profile-level-id=2;config=000001b0020;
+	# profile-level-id=2：   	 mp4v的子原子esds中得来
+	# config=000001b0020： 	 mp4v的子原子esds中得来
+
+m=audio 0 RTP/AVP 97
+a=control:trackID=201
+a=rtpmap:97 mpeg4-generic/24000/1
+	# 24000： track->time_scale
+	# 1：mp4a的子原子esds中得来的
+a=fmtp:97 streamtype=5;profile-level-id=15; mode=AAC-hbr; config=1308; SizeLength=13; IndexLength=3;IndexDeltaLength=3; Profile=1;
+	# config=1308：mp4a的子原子esds中得来的
+	# streamtype=5; profile-level-id=15; mode=AAC-hbr：写死
+	# SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1：写死
+```
+
+
+
+  
+
+4.直播
+		编码器生成的sdp文件
+
+```
+v=0
+o=- 2545495921 1885424500 IN IP4 192.168.225.158
+s=111
+c=IN IP4 192.168.225.153
+b=RR:0
+t=0 0
+
+ 
+
+m=video 5088RTP/AVP 96
+b=AS:949
+a=rtpmap:96 H264/90000
+a=fmtp:96 profile-level-id=4D4015;sprop-parameter-sets=Z01AFZZWCwSbCEiAAAH0AAAw1DBgAHP2AOg1cABQ,aO88gA==;packetization-mode=1
+a=cliprect:0,0,576,352
+a=framerate:25.
+a=mpeg4-esid:201
+a=x-envivio-verid:0002229D
+
+ 
+
+m=audio 5090 RTP/AVP 97
+b=AS:50
+a=rtpmap:97 mpeg4-generic/24000/2
+a=fmtp:97 profile-level-id=15; config=1310;streamtype=5; ObjectType=64; mode=AAC-hbr; SizeLength=13; IndexLength=3;IndexDeltaLength=3
+a=mpeg4-esid:101
+a=lang:eng
+a=x-envivio-verid:0002229D
+```
+
+```
+ # 点播上面的sdp文件，MS_H传给终端的sdp信息
+v=0
+	# MS_H全部是写死的
+o=- 1702415089 4281335390 IN IP4 127.0.0.1
+s=live
+c=IN IP4 0.0.0.0
+t=0 0
+a=control:*
+a=range:npt=0-
+
+m=video 5088 RTP/AVP 96
+b=AS:949
+a=rtpmap:96 H264/90000
+a=fmtp:96 profile-level-id=4D4015;sprop-parameter-sets=Z01AFZZWCwSbCEiAAAH0AAAw1DBgAHP2AOg1cABQ,aO88gA==;packetization-mode=1
+a=cliprect:0,0,576,352
+a=framerate:25.
+a=mpeg4-esid:201
+a=x-envivio-verid:0002229D
+a=control:trackID=103
+	# 此媒体描述是与编码器的媒体描述是一样的。
+
+m=audio 5090 RTP/AVP 97
+b=AS:50
+a=rtpmap:97 mpeg4-generic/24000/2
+a=fmtp:97 profile-level-id=15; config=1310;streamtype=5; ObjectType=64; mode=AAC-hbr; SizeLength=13; IndexLength=3;IndexDeltaLength=3
+a=mpeg4-esid:101
+a=lang:eng
+a=x-envivio-verid:0002229D
+a=control:trackID=201
+	# 此媒体描述是与编码器的媒体描述是一样的。
+```
 
