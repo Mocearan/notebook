@@ -374,3 +374,14 @@ static int gb28181_make_pes_header(char *pData, int stream_id, int payload_len, 
 
 典型的音频帧数据包：
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/1343107-20220524163802958-821347166.png)
+
+
+
+## 私有信息封装规则
+1、在 PS 流中传输的海康私有信息一般一帧对应的一种信息视为一个处理单元；；
+
+2、当一个处理单元的长度不大于 PES 包负载或网络传输单元所能承受的最大长度时，建议将其封装成一个单独的 PES 包；
+
+3、每个处理单元的第一个 PES 包包头应当带有 PTS。
+
+![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a2a0fb4217f4466baff9f262ba0d6c59.png)

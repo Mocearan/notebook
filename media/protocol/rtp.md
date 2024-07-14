@@ -645,9 +645,9 @@ payload[3] = (frameLength & 0x1F) << 3;
 
 ​		视频帧大小超过MTU，则RTP封装需要分片封装
 
-##### h264
+##### h264 
 
-​		较常用的分片模式位FU-A，其格式如下：
+​		较常用的分片模式位`FU-A`，其格式如下：
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/62d17fa96daa466c8956bd249cf5e7b0.png)
 
@@ -838,6 +838,43 @@ static void nal_send(AVFormatContext *s1, const uint8_t *buf, int size, int last
     }
 }
 ```
+
+
+
+### 荷载ps 流
+
+​		针对H264 做如下PS 封装：
+
+- 每个IDR NALU 前一般都会包含SPS、PPS 等NALU
+  - 所以一个IDR NALU PS 包由外到内顺序是：
+  - PSheader| PS system header | PS system Map | PES header | h264 raw data。
+- 对于其它非关键帧的PS 包，直接加上PS头和PES 头就可以了。
+  - 顺序为：PS header | PES header | h264raw data。
+- 当有音频数据时，将数据加上PES header 放到视频PES 后就可以了。
+  - 顺序如下：PS 包=PS头|PES(video)|PES(audio)
+- 再用RTP 封装发送就可以了。
+
+> - GB28181 对RTP 传输的数据负载类型有规定（参考GB28181 附录B），负载类型中96-127
+>
+> -   RFC2250 建议96 表示PS 封装，建议97 为MPEG-4，建议98 为H264
+>
+> -  即我们接收到的RTP 包首先需要判断负载类型
+>
+>   - 若负载类型为96，则采用PS 解复用，将音视频分开解码。
+>   - 若负载类型为98，直接按照H264 的解码类型解码。
+>
+>   PS 包中的流类型（stream type）的取值如下：
+>
+> -  MPEG-4 视频流： 0x10；
+> -  H.264 视频流： 0x1B；
+> -   SVAC 视频流： 0x80；
+> -   G.711 音频流： 0x90；
+> -  G.722.1 音频流： 0x92；
+> - G.723.1 音频流： 0x93；
+> -  G.729 音频流： 0x99；
+> - SVAC音频流： 0x9B。
+
+​    注：此方法不一定准确，取决于打包格式是否标准
 
 
 
