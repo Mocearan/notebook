@@ -202,6 +202,18 @@ int pthread_mutexattr_setpshared (pthread_mutexattr_t *attr, int shared);
 
 
 
+## Futex
+
+[Futex系统调用，Futex机制，及具体案例分析[通俗易懂\]-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/2154718?areaSource=102001.17&traceId=lx2X6DVcrkyUqAI64Kxro)
+
+[深入剖析C/C++在Linux内核下涉及到线程锁知识，以开源OceanBase项目实践学习-下篇-Futex详解 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/668391649)
+
+[深入探秘高性能并发：C++如何在Linux巧妙应用Futex实现线程锁同步（ob_latch.cpp篇）大篇幅（3万字） - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/672165465)
+
+[一文搞懂Linux线程同步原理 - 哔哩哔哩 (bilibili.com)](https://www.bilibili.com/read/cv28551350/)
+
+http://www.360doc.com/content/22/0211/17/39821762_1016884736.shtml
+
 ## 条件变量
 
 ​		条件变量(condition variable)是利用线程间共享的全局变量进行同步的一种机制，主要包括两个动作：一个线程等待某个条件为真，而将自己挂起；另一个线程使的条件成立，并通知等待的线程继续。为了防止竞争，条件变量的使用总是和一个互斥锁]结合在一起。
