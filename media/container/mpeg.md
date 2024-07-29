@@ -29,18 +29,24 @@
 
 ​		其实各个组织之间是有合作的，对一些标准文档 做 扩展，衍生，单独提取之类的工作。
 
-​		TS / PS， 早期主要是用在 **数字电视** 领域，我国数字电视标准用的是 DVB，全称是 Digital Video Broadcasting（数字视频广播）。
+### TS / PS
+
+​		 早期主要是用在 **数字电视** 领域，我国数字电视标准用的是 DVB，全称是 Digital Video Broadcasting（数字视频广播）。
+
+​		MPEG-2标准中，有两种不同的码流输出到信道:
+
+- 一种是节目码流（PS: Program Stream），适用于没有传输误差的场景；
+  - 节目流设计用于合理可靠的媒体，如光盘（如DVD），
+- 一种是传输流（TS：Transport Stream)，适用于有信道噪声的传输场景
+  - 而传输流设计用于不太可靠的传输，即地面或卫星广播。此外，传输流可以携带多个节目。
+
+​		
 
 ![image-20240623113447966](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240623113447966.png)
 
-​		这些 频道、节目、音视频码流如何在TS里面进行区分是 TS 封装格式复杂的主要原因。
 
-​		互联网IP网络体系下传输的数字信号，和数字电视基站广播的数字信号没有本质区别：
 
-- 互联网使用TS封装，通常传一路视频和一路音频，TS中很多字段用不到
-  - 单节目的TS 封装 叫做 Single Program Transport Stream (SPTS)。
-- 机顶盒之类的开发，想深入理解数字电视的知识，可以看 《Video Demystified: A Handbook for The Digital Engineer》。
-- 
+
 
 ## 流编码结构
 
@@ -89,13 +95,15 @@
 
 ​		Elementary Stream，基础码流。不分段的音频、视频或其他信息的连续码流。
 
-​		 一个 ES 包理解成 一个**H264编码后**的视频帧，或者一个音频帧，但是 ES 不只是音视频帧。
+​		 直接从编码器出来的数据流，可以是编码过的视频数据流（H.264、MJPEG等），音频数据流（AAC），或其他编码数据流的统称。ES流经过PES打包器之后，被转换成PES包。
 
 ### PES
 
-​		Packetized Elementary Stream， 打包的ES。把基本流ES分割成段，往ES包上面封装一层 加上 PTS 跟 DTS 等头部信息。
+​		Packetized Elementary Stream， ES形成的分组称为PES分组，是用来传递ES的一种数据结构。往ES包上面封装一层 加上 PTS 跟 DTS 等头部信息。
 
-​		
+​		PES流是ES流经过PES打包器处理后形成的数据流，在这个过程中完成了将ES流分组、打包、加入包头信息（主要加入了PTS/DTS信息）等操作（对ES流的第一次打包）。
+
+​		PES流的基本单位是PES包，PES包由包头和payload组成。每个PES包的PID是一致的，一个PES包可能由若干个TS包组成。
 
 ### PS
 
@@ -105,13 +113,15 @@
 
 ### TS
 
-​		Transport Packet，传输包。将具有共同时间基准或独立时间基准的一个或多个PES组合而成的单一数据流。用于数据传输的屙屎。
+​		Transport Stream，传输流，用于数据传输的格式。将具有**共同时间基准或独立时间基准**的一个或多个PES组合而成的单一数据流。
+
+> ​	TS在PES层上加入了数据流识别和传输的必要信息，是对PES的重新封装。TS含有独立的一个或者多个program，一个program又可以包含多个视频，音频和文字信息的ES流。
 
 ​		固定188个字节，一个大的 PES 包 会拆成多个 小的 块，封装进去 TS 包进行传输。
 
+​		
 
-
-### ps/ts
+### ps vs. ts
 
 ​		TS流的包结构是固定长度188字节的，而PS流的包结构是可变长度的。这导致了TS流的***\*抵抗传输误码\****的能力强于PS流。
 
