@@ -1,0 +1,75 @@
+# ffmpeg-ops
+
+---
+
+
+
+## FFmpeg 解码 H.264 视频出现花屏和马赛克
+
+### 发送数据包太大，超过了 FFmpeg 的默认最大值。
+
+- 一种方法是控制播放源的发送数据大小，但这极大浪费了当前的网络带宽，非优选方案。
+
+- 更好的做法是扩大接收端的接收缓冲区
+
+  - 在 FFmpeg 的源码中，找到 udp.c 文件并修改 UDP_MAX_PKT_SIZE 默认值
+
+    ![在这里插入图片描述](https://img-blog.csdnimg.cn/2020061522454561.png#pic_center)
+
+    > 这里将 UDP_MAX_PKT_SIZE × 10，将缓冲区扩大了10倍。
+
+### 网络情况较差时，因网络状况出现的丢包
+
+排查方法：
+
+1. 设全局变量：在丢包时将全局变量置为不同的值，最后在使用的地方根据全局变量的值来判断该帧是否完整，全局变量可在 FFmpeg 任意的头文件中设置（比如 avcodec.h）。
+2. 修改rtpdec.c文件包含 missed %d package 的地方，这里出现丢包，需修改代码，对帧序号作标记。
+
+​		在接收端根据RTP包的SeqNumber来判断是否丢包，如果丢包就标记一下。在mark为1或时间戳改变的时候，说明一帧结束了，此时如果标记为丢包了，就扔掉数据，没有丢包就给解码器。如果丢包的帧为I帧，则不仅丢掉当前I帧，此I帧之后的P帧也要丢掉，也就是说在下一个I帧到来之前，所有过来的包都丢掉，然后开始判断收到的RTP包是不是I帧。
+
+判断函数：
+
+```cpp
+static bool isH264iFrame(byte[] paket)
+{
+	int RTPHeaderBytes = 0;
+
+	int fragment_type = paket[RTPHeaderBytes + 0] & 0x1F;
+	int nal_type = paket[RTPHeaderBytes + 1] & 0x1F;
+	int start_bit = paket[RTPHeaderBytes + 1] & 0x80;
+
+	if (((fragment_type == 28 || fragment_type == 29) && nal_type == 5 && start_bit == 128) ||
+		fragment_type == 5 || fragment_type == 7 || fragment_type == 8)
+	{
+		return true;
+	}
+
+	return false;
+}
+```
+
+### 解码出错。
+
+排查方法：
+
+1. 设全局变量：在解码出错时将全局变量置为不同的值，最后在使用的地方根据全局变量的值来判断该帧是否完整，全局变量可在 FFmpeg 任意的头文件中设置（比如 avcodec.h）。
+2. 修改error_resilience.c文件 包含concealing %d DC, %d AC, %d MV errors in %c frame的地方。这里出现解包错误，需标记。
+3. 修改h264_cavlc.c文件中包含 Invalid level prefix处 这里出错，需标记。
+   修改h264_cavlc.c文件中包含dquant out of range处，出错，需标记。
+   修改h264_cavlc.c文件中包含corrupted macroblock处，出错，需标记。
+   修改h264_cavlc.c文件中包含negative number of zero coeffs at处，出错，需标记。
+   修改h264_cavlc.c文件中包含mb_type %d in %c slice too large at %d %d处，出错，需标记。
+   修改h264_cavlc.c文件中包含cbp too large处，出错，需标记。
+4. 修改error_resilience.c文件中包含Cannot use previous picture in error concealment处，出错，需标记。
+   修改error_resilience.c文件中包含Cannot use next picture in error concealment处，出错，需标记。
+5. 修改h264.c文件中包含out of range intra chroma pred mode at处，出错，需标记。
+   修改h264.c文件中包含top block unavailable for requested intra mode at处，出错，需标记。
+   修改h264.c文件中包含left block unavailable for requested intra mode at处，出错，需标记。
+6. 修改h264_slice.c文件中包含error while decoding MB处，出错，需标记。
+7. 修改svq3.c文件中包含error while decoding MB处，出错，需标记。
+
+当我们从网络中接收到RTP包，去了包头，拿到Payload数据之后一般就会送去解码，但是如果直接送去解码器解码，很可能会出现花屏。这个问题我很早就遇到过，当时查阅过资料，发现送给H264解码器的必须是一个NALU单元，或者是完整的一帧数据（包含H264 StartCode），也就是说我们拿到Payload数据之后，还要将分片的数据组成一个NALU或完整的一帧之后才送给解码器。
+
+### 包乱序。
+
+打印RTP包的SeqNumber看有没有不连续或乱序的问题，如果是用UDP传输，则RTP包容易发生乱序，需要对包按顺序进行重组再解码。
