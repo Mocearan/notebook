@@ -41,6 +41,9 @@
 ​				`Packet`结构是包头+`adaptation field`+`payload`
 
 - `header`固定四字节
+
+  - 提供关于传输方面的信息
+
 - `adaptation`可能不存在，主要作用是给不足188字节的数据包做填充
 - `payload`是`pes`数据，`188 - 4 - adaptation_feild_size`就是`payload`大小
 
@@ -57,12 +60,101 @@
       > - PAT 表：主要的作用就是指明了 PMT 表的 PID 值。
       > - PMT 表：主要的作用就是指明了音视频流的 PID 值。
 
-
   ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a1a7238bf4fe0132fbe9be6dc7d85715.png)
+
+### Header
 
 ​		整个TS流组成形式如下：
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809122755796)
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/70e9597779db9cca5e499a5a6e339ac5.png#pic_center)
+
+| Packet Header 字段序号 |                              |       |                                                              |
+| ---------------------- | ---------------------------- | ----- | ------------------------------------------------------------ |
+| 1                      | sync_byte                    | 8bits | 同步字节                                                     |
+| 2                      | transport_error_indicator    | 1bit  | 错误指示信息                                                 |
+| 3                      | payload_unit_start_indicator | 1bit  | 负载单元开始标志（packet不满188字节时需填充）<br />多个ts包组成一个视频帧时，第一个为1，后续为0 |
+| 4                      | transport_priority           | 1bit  | 传输优先级标志（1：优先级高）                                |
+| 5                      | PID                          | 13bit | Packet ID号码，唯一的号码对应不同的包                        |
+| 6                      | transport_scrambling_control | 2bits | 加密标志（00：未加密；其他表示已加密）                       |
+| 7                      | adaptation_field_control     | 2bits | 附加区域控制                                                 |
+| 8                      | continuity_counter           | 4bits | 包递增计数器                                                 |
+
+- `sync_byte`  
+
+  - 一般以 0x47 开始，方便在某些场景下进行同步操作
+    - 后面包中的数据不会出现 0x47 
+  - 是包中的第一个字节，固定为 0x47，表示后面是一个 TS 分组，用于建立发送端和接收端包的同步<br /
+  
+  ```c
+  MPEG_transport_stream()
+  {
+  	do {
+  		transport_packet()
+      } while(nextbits() == sync_byte) // sync_byte == 0x47
+  }
+  ```
+
+![](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809133716015)
+
+- `tansport_error_indicator（1bit）`：传输错误标志位
+
+  - 为 1 表示在相关的传输包中至少有一个不可纠正的错误位。
+  - 当被置 1 后，在错误被纠正之前不能重置为 0。
+
+- `payload_unit_start_indicator`（1bit）：负载起始标识，针对不同的负载，有不同的含义。
+
+  - PES：置为 1，标识 TS 包的有效载荷以 PES 包的第一个字节开始，即此 TS 包为 PES 包的起始包，且此 TS 分组中有且只有一个 PES 包的起始字段；置为 0，表示 TS 包不是 PES 包的起始包，是后面的数据包。
+
+  - PSI：置为 1，表示 TS 包中带有 PSI 数据分段的第一个字节，即这个 TS 包是 PSI Section 的起始包，则此 TS 包的负载的第一个字节带有 pointer_field，用来指示 PSI 数据在 payload 中的位置；置为 0，表示 TS 包不带有 PSI Section 的第一个字节，即此 TS 包不是 PSI 的起始包，即在有效负载中没有 pointer_filed，有效负载的开始就是 PSI 的数据内容。对于空包，payload_unit_start_indicator 应该置为 0。
+
+    > 比如：
+    >
+    > ​		若 TS 包载荷为 PAT，则当接收到 TS 包的 payload_unit_start_indicator 为 1 时，表明这个 TS 包包含了 PAT 头信息，从这个包里面解析出 section_length 和 continuity_counter，然后继续收集后面的 payload_unit_start_indicator = 0 的 TS 包，并判断 continuity_counter 的连续性，不断读出 TS 包中的净载荷（也就是 PAT 数据），用 section_length 作为收集 TS 包结束条件
+
+- `transport_priority（1bit）`：传输优先标志
+
+  - 为 1 表明当前 TS 包的优先级比其他具有相同 PID，但此位没有被置 1 的 TS 包高。
+
+- `PID（playload ID）`， 表示了Packet的类型，是TS流中唯一识别标志
+
+  > Packet Data是什么内容就是由PID决定的
+  >
+  > 在 TS 码流生成时，每一类业务（视频，音频，数据）的基本码流均被赋予一个不同的识别号 PID，解码器借助于 PID 判断某一个 TS 包属于哪一类业务的基本码流。
+
+  - `0x0000`，PAT表
+    - PMT表的PID在PAT表中给出
+  - `0x0001`，CAT
+  - `0x0002`，TSDT
+    - 传送流描述表（transport stream description table, TSDT）
+  - `0x0003~0x000F`，保留
+  - `0x0010~0x1FFE`，自由分配
+    - `0x0012`，EIT,ST
+    - `0x0013`，RST,ST
+    - `0x0014`，TDT,TOT,ST
+  - ...
+
+- `transport_scrambling_control（2bits）`：有效负载加密模式标志
+
+  - 00 表示未加密。如果传输包包头中包括调整字段，不应被加密。
+  - 其他取值含义是用户自定义的。
+
+- `adaption_field_control（2bits）`：调整字段标志，表示此 ts 首部是否跟随调整字段和负载数据。
+
+  - 00：保留；
+  - 01：表示无调整字段，只有有效负载数据；
+  - 10：表示只有调整字段，无有效负载数据；
+  - 11：表示有调整字段，且其后跟随有效负载数据；
+
+- `continuity_counter（4bits）`：循环计数器，用于对传输误码进行检测。
+
+  - 在发送端对所有的包都做 0~15 的循环计数，起始值不一定是 0。
+  - 在接收终端，如发现循环计数器的值有中断，表明数据在传输中有丢失。
+
+  
+
+  
 
 ```c
 // Packet header
@@ -87,44 +179,25 @@ continuity_counte=0010               即0x02,表示当前传送的相同类型�
 */
 ```
 
-| Packet Header 字段序号 |                              |       |                                                              |
-| ---------------------- | ---------------------------- | ----- | ------------------------------------------------------------ |
-| 1                      | sync_byte                    | 8bits | 同步字节                                                     |
-| 2                      | transport_error_indicator    | 1bit  | 错误指示信息（1：该包至少有1bits传输错误）                   |
-| 3                      | payload_unit_start_indicator | 1bit  | 负载单元开始标志（packet不满188字节时需填充）<br />多个ts包组成一个视频帧时，第一个为1，后续为0 |
-| 4                      | transport_priority           | 1bit  | 传输优先级标志（1：优先级高）                                |
-| 5                      | PID                          | 13bit | Packet ID号码，唯一的号码对应不同的包                        |
-| 6                      | transport_scrambling_control | 2bits | 加密标志（00：未加密；其他表示已加密）                       |
-| 7                      | adaptation_field_control     | 2bits | 附加区域控制                                                 |
-| 8                      | continuity_counter           | 4bits | 包递增计数器                                                 |
+```c
+typedef struct MPEGTS_FIXED_HEADER
+{
+	/* byte 0 */
+	unsigned sync_byte : 8; // 同步字节，值为 0x47
 
-- `sync_byte`  
+	/* byte 1, 2 */
+	unsigned transport_error_indicator : 1; // 传输错误指示位，置 1 时，表示传送包中至少有一个不可纠正的错误位
+	unsigned payload_unit_start_indicator : 1; // 负载单元起始指标位，针对不同的负载，有不同的含义
+	unsigned transport_priority : 1; // 传输优先级，表明该包比同个 PID 的但未置位的 TS 包有更高的优先级
+	unsigned PID : 13; // 该 TS 包的 ID 号，如果净荷是 PAT 包，则 PID 固定为 0x00
 
-  - 一般以 0x47 开始，方便在某些场景下进行同步操作
-
-
-  ```c
-  MPEG_transport_stream()
-  {
-  	do {
-  		transport_packet()
-      } while(nextbits() == sync_byte) // sync_byte == 0x47
-  }
-  ```
-
-![](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809133716015)
-
-- PID（playload ID）， 表示了Packet的类型，是TS流中唯一识别标志
-  > Packet Data是什么内容就是由PID决定的
-  
-  - `0x0000`，PAT表
-    - PMT表的PID在PAT表中给出
-  - `0x0001`，CAT
-  - `0x0002`，TSDT
-  - `0x0012`，EIT,ST
-  - `0x0013`，RST,ST
-  - `0x0014`，TDT,TOT,ST
-  - ...
+	/* byte 3 */
+	unsigned transport_scrambling_control : 2; // 传输加扰控制位
+	unsigned adaptation_field_control : 2; // 自适应调整域控制位，分别表示是否有调整字段和负载数据
+	unsigned continuity_counter : 4;// 连续计数器，随着具有相同 PID 的 TS 包的增加而增加，达到最大时恢复为 0
+	/* 如果两个连续相同 PID 的 TS 包具有相同的计数，则表明这两个包是一样的，只取一个解析即可。 */
+} MPEGTS_FIXED_HEADER; // MPEG-TS 包头占 4 字节
+```
 
 
 
@@ -132,11 +205,27 @@ continuity_counte=0010               即0x02,表示当前传送的相同类型�
 
 ​		[DVB-SI/PSI_Destiny青羽的博客-CSDN博客](https://blog.csdn.net/kkdestiny/category_1553561.html)
 
-​		Program Specific Information，你可以把 PSI 理解成 节目特定信息。TS 包是对 PES 包的封装，但是不只是 PES，TS 还可以是对 PSI 数据的封装
+​		Program Specific Information，节目特定信息，用来描述`TS`的组成结构。
 
-​		 PSI 不是一个表，PSI 是一个统称， PAT，PMT，CAT，NIT 这些都是 PSI。
+- TS 包是对 PES 包的封装，但是不只是 PES，TS 还可以是对 PSI 数据的封装
+-  PSI 不是一个表，PSI 是 PAT，PMT，CAT，NIT...这些表的统称。
 
-​		在解析TS流的时候，首先寻找PAT表，根据PAT获取所有PMT表的PID；再寻找PMT表，获取该频段所有节目数据并保存。这样，只需要知道节目的PID就可以根据PacketHeade给出的PID过滤出不同的Packet，从而观看不同的节目。这些就是PAT表和PMT表之间的关系。
+PSI信息由四种类型的表组成，包括
+
+- 节目关联表（PAT，Program Association Table）
+  - 0x0000  解析 .ts 文件的第一步就是找到 PAT 表，然后获取 PMT 表的 PID 值
+- 节目映射表（PMT，Program Map Table）
+  - 在 PAT 中给出  根据 PMT 表找到 audio pes packet 和 video pes packet 的 PID 值
+- 条件接收表（CAT，Conditional Access Table）
+  - 0x0001  将一个或多个专用EMM流分别与唯一的PID相关联，描述了TS流的加密方式
+- 网络信息表（NIT，Network Infomation Table）
+  - PAT 中给出  描述整个网络，如多少个TS流，频点和调制方式等
+
+> ​		PAT与PMT两张表帮助我们找到该传送流中的所有节目与流。PAT告诉我们，该TS流由哪些节目组成，每个节目的节目映射表PMT的PID是什么；而PMT告诉我们，该节目由哪些流组成，每一路流的类型与PID是什么。
+>
+> - 在解析TS流的时候，首先寻找PAT表
+> - 根据PAT获取所有PMT表的PID；再寻找PMT表，获取该频段所有节目数据并保存。
+> - 这样，只需要知道节目的PID就可以根据`Packet Heade`给出的`PID`过滤出不同的Packet，从而观看不同的节目。
 
 ### PAT表
 
@@ -150,15 +239,33 @@ continuity_counte=0010               即0x02,表示当前传送的相同类型�
 
 ​		PAT表主要包含频道号码和每一个频道对应的PMT的PID号码，以流ID唯一标识一个TS流：
 
+| 字段名                                                       | 位   | 具体值                      | 次序                                                         | 说明                    |
+| ------------------------------------------------------------ | ---- | --------------------------- | ------------------------------------------------------------ | ----------------------- |
+| table_id                                                     | 8    | 0000                        | 第1个字节 0000 0000B(0x00)                                   | PAT的table_id只能是0x00 |
+| section_syntax_indicator                                     | 1    | 1                           | 第2、3个字节1011 0000 0001 0001B(0xb0 11)                    | 段语法标志位，固定为1   |
+| zero                                                         | 1    | 0                           |                                                              |                         |
+| reserved                                                     | 2    | 11                          |                                                              |                         |
+| section_length                                               | 12   | 0000 0001 0001B=0x011=17    | 段长度为17字节                                               |                         |
+| **transport_stream_id**                                      | 16   | 0x0001                      | 第4、5个字节 0x00 0x01                                       |                         |
+| reserved                                                     | 2    | 11                          | 第6个字节 1100 0001B(0xc1)                                   |                         |
+| version_number                                               | 5    | 00000                       | 一旦PAT有变化，版本号加1                                     |                         |
+| current_next_indicator                                       | 1    | 1                           | 当前传送的PAT表可以使用，若为0则要等待下一个表               |                         |
+| section_number                                               | 8    | 0x00                        | 第7个字节0x00                                                |                         |
+| last_section_number                                          | 8    | 0x00                        | 第8个字节 0x00                                               |                         |
+| 开始循环--------------------------                           |      |                             |                                                              |                         |
+| **program_number**                                           | 16   | 0x0000-第一次               | 2个字节(0x00 00)                                             | **节目号**              |
+| reserved                                                     | 3    | 111                         | 2个字节1110 0000 0001 1111B(0xe0 1f)                         |                         |
+| network_id(节目号为0时)<br />**program_map_PID**(节目号为其他时) | 13   | 0 0000 0001 1111B=31-第一次 | **节目号**为0x0000时,表示这是NIT，PID=0x001f，即31<br />**节目号**为0x0001时,表示这是PMT，PID=0x100，即256 |                         |
+| 结束循环---------------------------                          |      |                             |                                                              |                         |
+| CRC_32                                                       | 32   | --                          | 4个字节                                                      |                         |
+
+> ​		PAT表描述了当前流的NIT（Network Information Table，网络信息表）中的PID、当前流中有多少不同类型的PMT表及每个PMT表对应的频道号。
+
 - transport_stream_id，该ID标志唯一的流ID
 - program_number，该号码标志Ｓ流中的一个频道
   - 该频道可以包含很多的节目(即可以包含多个Video PID和Audio PID)
 - program_map_PID，*节目映射表的PID*
   - 因为可以有很多的频道,因此DVB规定PMT的PID可以由用户自己定义
-
-
-
-#### 实例
 
 ```c
 Packet Header		 |		 Packet Data
@@ -193,32 +300,11 @@ continuity_counte 			“0000” 		包递增计数器
 // |00|b0|11|00|01|c1|00|00|00|00|e0|1f|00|01|e1|00|24|ac|48|84|ff|ff|……|ff|ff
 ```
 
-|                                                              |      |                             |                                                              |                         |
-| ------------------------------------------------------------ | ---- | --------------------------- | ------------------------------------------------------------ | ----------------------- |
-| 字段名                                                       | 位   | 具体值                      | 次序                                                         | 说明                    |
-| table_id                                                     | 8    | 0000                        | 第1个字节 0000 0000B(0x00)                                   | PAT的table_id只能是0x00 |
-| section_syntax_indicator                                     | 1    | 1                           | 第2、3个字节1011 0000 0001 0001B(0xb0 11)                    | 段语法标志位，固定为1   |
-| zero                                                         | 1    | 0                           |                                                              |                         |
-| reserved                                                     | 2    | 11                          |                                                              |                         |
-| section_length                                               | 12   | 0000 0001 0001B=0x011=17    | 段长度为17字节                                               |                         |
-| **transport_stream_id**                                      | 16   | 0x0001                      | 第4、5个字节 0x00 0x01                                       |                         |
-| reserved                                                     | 2    | 11                          | 第6个字节 1100 0001B(0xc1)                                   |                         |
-| version_number                                               | 5    | 00000                       | 一旦PAT有变化，版本号加1                                     |                         |
-| current_next_indicator                                       | 1    | 1                           | 当前传送的PAT表可以使用，若为0则要等待下一个表               |                         |
-| section_number                                               | 8    | 0x00                        | 第7个字节0x00                                                |                         |
-| last_section_number                                          | 8    | 0x00                        | 第8个字节 0x00                                               |                         |
-| 开始循环--------------------------                           |      |                             |                                                              |                         |
-| **program_number**                                           | 16   | 0x0000-第一次               | 2个字节(0x00 00)                                             | **节目号**              |
-| reserved                                                     | 3    | 111                         | 2个字节1110 0000 0001 1111B(0xe0 1f)                         |                         |
-| network_id(节目号为0时)<br />**program_map_PID**(节目号为其他时) | 13   | 0 0000 0001 1111B=31-第一次 | **节目号**为0x0000时,表示这是NIT，PID=0x001f，即31<br />**节目号**为0x0001时,表示这是PMT，PID=0x100，即256 |                         |
-| 结束循环---------------------------                          |      |                             |                                                              |                         |
-| CRC_32                                                       | 32   | --                          | 4个字节                                                      |                         |
-
-> ​		PAT表描述了当前流的NIT（Network Information Table，网络信息表）中的PID、当前流中有多少不同类型的PMT表及每个PMT表对应的频道号。
-
 
 
 #### PAT表的结构
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/8460cdc6e2f75a0bbfe03e871204c182.webp?x-oss-process=image/format,png#pic_center)
 
 ```c++
 
@@ -329,11 +415,31 @@ void Process_Packet(unsigned char*buff)
 - 当前频道中包含的所有Audio数据的PID
 - 和当前频道关联在一起的其他数据的PID(如数字广播,数据通讯等使用的PID)
 
+| 字段名                   | 位数 | 具体值               | 次序                                                         | 说明                                    |
+| ------------------------ | ---- | -------------------- | ------------------------------------------------------------ | --------------------------------------- |
+| table_id                 | 8    | 0x02                 | 第1个字节                                                    |                                         |
+| section_syntax_indicator | 1    | 1B                   | 第2、3个字节1011 0000 0001 0010B=0xb012                      | 段语法标志                              |
+| zero                     | 1    | 0B                   |                                                              |                                         |
+| reserved                 | 2    | 11B=0x03             |                                                              |                                         |
+| section_length           | 12   | 0000 0001 0010B=0x12 | 段长度,从program_number开始,到CRC_32(含)的字节总数           |                                         |
+| program_number           | 16   | 0x0001               | 第4、5个字节 0x00 01                                         | 频道号码,表示当前的PMT关联到的频道      |
+| reserved                 | 2    | 11B=0x03             | 第6个字节1100 0001B=0xc1                                     |                                         |
+| version_number           | 5    | 00000B=0x00          | 版本号码,如果PMT内容有更新,则它会递增1通知解复用程序需要重新接收节目信息 |                                         |
+| current_next_indicator   | 1    | 1B=0x01              | 当前未来标志符                                               |                                         |
+| section_number           | 8    | 0x00                 | 第7个字节0x00                                                | 当前段号码                              |
+| last_section_number      | 8    | 0x00                 | 第8个字节 0x00                                               | 最后段号码,含义和PAT中的对应字段相同    |
+| reserved                 | 3    | 111B=0x07            | 第9、10个字节1110 0011 1110 1001B=0xe3e9                     |                                         |
+| PCR_PID                  | 13   | 000111110B=0x3e9     | PCR(节目参考时钟)所在TS分组的PID                             |                                         |
+| reserved                 | 4    | 1111B=0x0f           | 第11、12个字节1111 0000 0000 0000=0xf000                     |                                         |
+| program_info_length      | 12   | 000000000000B=0x000  | 节目信息长度(之后的是N个描述符结构,一般可以忽略掉,这个字段就代表描述符总的长度,单位是Bytes)紧接着就是频道内部包含的节目类型和对应的PID号码了 |                                         |
+| stream_type              | 8    | 0x1b                 | 第13个字节 0x1b                                              | 流类型,标志是Video还是Audio还是其他数据 |
+| reserved                 | 3    | 111B=0x07            | 第14、15个字节1110 0011 1110 1001B=0xe3e9                    |                                         |
+| elementary_PID           | 13   | 000111110 1001=0x3e9 | 该节目中包括的视频流，音频流等对应的TS分组的PID              |                                         |
+| reserved                 | 4    | 1111B=0x0f           | 第16、17个字节1111 0000 0000 0000B=0xf000                    |                                         |
+| ES_info_length           | 12   | 0000 0000 0000=0x000 |                                                              |                                         |
+| CRC                      | 32   | ——                   | ——                                                           |                                         |
 
-
-#### 实例
-
-```d
+```c
 Packet Header		 |		 Packet Data
 0x47 0x43 0xe8 0x12	 |	00 02 b0 12 00 01 c1 00 00 e3 e9 f0 00 1b e3 e9 f0 00 f0 af b4 4f ff ff…… ff ff
     
@@ -366,33 +472,11 @@ continuity_counte 			“0010” 		包递增计数器
 // 02 b0 12 00 01 c1 00 00 e3 e9 f0 00 1b e3 e9 f0 00 f0 af b4 4f ff ff…… ff ff
 ```
 
-| 字段名                   | 位数 | 具体值               | 次序                                                         | 说明                                    |
-| ------------------------ | ---- | -------------------- | ------------------------------------------------------------ | --------------------------------------- |
-| table_id                 | 8    | 0x02                 | 第1个字节                                                    |                                         |
-| section_syntax_indicator | 1    | 1B                   | 第2、3个字节1011 0000 0001 0010B=0xb012                      | 段语法标志                              |
-| zero                     | 1    | 0B                   |                                                              |                                         |
-| reserved                 | 2    | 11B=0x03             |                                                              |                                         |
-| section_length           | 12   | 0000 0001 0010B=0x12 | 段长度,从program_number开始,到CRC_32(含)的字节总数           |                                         |
-| program_number           | 16   | 0x0001               | 第4、5个字节 0x00 01                                         | 频道号码,表示当前的PMT关联到的频道      |
-| reserved                 | 2    | 11B=0x03             | 第6个字节1100 0001B=0xc1                                     |                                         |
-| version_number           | 5    | 00000B=0x00          | 版本号码,如果PMT内容有更新,则它会递增1通知解复用程序需要重新接收节目信息 |                                         |
-| current_next_indicator   | 1    | 1B=0x01              | 当前未来标志符                                               |                                         |
-| section_number           | 8    | 0x00                 | 第7个字节0x00                                                | 当前段号码                              |
-| last_section_number      | 8    | 0x00                 | 第8个字节 0x00                                               | 最后段号码,含义和PAT中的对应字段相同    |
-| reserved                 | 3    | 111B=0x07            | 第9、10个字节1110 0011 1110 1001B=0xe3e9                     |                                         |
-| PCR_PID                  | 13   | 000111110B=0x3e9     | PCR(节目参考时钟)所在TS分组的PID                             |                                         |
-| reserved                 | 4    | 1111B=0x0f           | 第11、12个字节1111 0000 0000 0000=0xf000                     |                                         |
-| program_info_length      | 12   | 000000000000B=0x000  | 节目信息长度(之后的是N个描述符结构,一般可以忽略掉,这个字段就代表描述符总的长度,单位是Bytes)紧接着就是频道内部包含的节目类型和对应的PID号码了 |                                         |
-| stream_type              | 8    | 0x1b                 | 第13个字节 0x1b                                              | 流类型,标志是Video还是Audio还是其他数据 |
-| reserved                 | 3    | 111B=0x07            | 第14、15个字节1110 0011 1110 1001B=0xe3e9                    |                                         |
-| elementary_PID           | 13   | 000111110 1001=0x3e9 | 该节目中包括的视频流，音频流等对应的TS分组的PID              |                                         |
-| reserved                 | 4    | 1111B=0x0f           | 第16、17个字节1111 0000 0000 0000B=0xf000                    |                                         |
-| ES_info_length           | 12   | 0000 0000 0000=0x000 |                                                              |                                         |
-| CRC                      | 32   | ——                   | ——                                                           |                                         |
-
 
 
 #### PMT结构
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/fd157a20be24c0e26aedb0da27d78398.webp?x-oss-process=image/format,png#pic_center)
 
 ```c++
 typedef struct TS_PMT_Stream
@@ -535,7 +619,7 @@ void Process_Packet(unsigned char*buff)
 
 
 
-### DVB搜台
+## DVB搜台
 
 ​		机顶盒先调整高频头到一个固定的频率(如498MHZ)，如果此频率有数字信号，则COFDM芯片(如MT352)会自动把TS流数据传送给MPEG- 2 decoder。 
 
@@ -551,3 +635,29 @@ void Process_Packet(unsigned char*buff)
 
 - elecard stream analyzer，支持 TS，FLV，MP4 等众多格式，可免费试用 30天
 - MPEG-2 TS packet analyser ，界面清晰简洁。
+
+
+
+## 实例
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/fbc79a66bba084e94d29bb0d2aef97ab.png#pic_center)
+
+- 一个TS包，它的PID是0，说明它的负载内容是PAT信息
+
+- 解析PAT信息，你发现节目1的PMT表的PID是0x10
+
+- 在比特流中寻找一个PID为0x10的TS包，它的负载内容是节目1的PMT表信息
+
+- 解析该PMT信息，可以发现
+
+  - 第一路流是MPEG2音频流，PID号0x21
+  - 第二路流是MPEG2视频流，PID号是0x22
+  - 第三路流是DVB字幕流，PID号是0x23
+
+- 解析完毕，凡是比特流中PID号为0x22的TS包，所负载的内容为MPEG2视频流
+
+  - 把这些包一个一个找出来，把其中的有效码流一部分一部分的拼接起来
+
+  - 然后送给解码器去解码。
+
+    > 就一般的视频流而言，只要拼接成一个完整的PES包，就可以送出去给解码器，然后再继续拼接下一个PES包。
