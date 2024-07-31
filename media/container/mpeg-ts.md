@@ -204,6 +204,47 @@ typedef struct MPEGTS_FIXED_HEADER
 
 
 
+### adaptation field
+
+​		为了传送打包后长度不足188B（包括包头）的不完整TS，或者为了在系统层插入节目时钟参考PCR（Program Clock Reference）字段，需要在TS包中插入可变长度的调整字段。
+
+​		当 TS Header 的 adaption_field_control 字段的第一个比特位是 1 时，说明该 TS packet 有调整字段（adaptation field）。
+
+​		调整字段包括对较高层次的解码功能有用的相关信息，调整字段的格式基于采用若干标志符，以表示该字段的某些特定扩展是否存在。调整字段由调整字段长度、不连续指示器、随机存取器、PCR标志符、基本数据流优先级指示器、拼接点标志符、传送专用数据标志、调整字段扩展标志以及有相应标志符的字段组成。
+
+| 字段                                 | 大小   | 描述                             |
+| ------------------------------------ | ------ | -------------------------------- |
+| adaptation_field_length              | 8 bit  | 调整字段长度                     |
+| discontinuity_indicator              | 1 bit  | 不连续指示器，一般为 0           |
+| random_access_indicator              | 1 bit  | 随机存取器，一般为 0             |
+| elementary_stream_priority_indicator | 1 bit  | 基本数据流优先级指示器，一般为 0 |
+| PCR_flag                             | 1 bit  | PCR标志符，携带 pcr 时置 1       |
+| OPCR_flag                            | 1 bit  | OPCR标志符，一般为 0             |
+| splicing_point_flag                  | 1 bit  | 拼接点标志符，一般为 0           |
+| transport_private_data_flag          | 1 bit  | 传送专用数据标志，一般为 0       |
+| adaptation_field_extension_flag      | 1 bit  | 调整字段扩展标志，一般为 0       |
+| PCR                                  | 40 bit | 当 PCR_flag=1 时携带             |
+| stuffing_bytes                       | 不定   | 填充字节，取值0xff               |
+
+​		![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/1f11d1c0a32eee64a1d5b00f836a64ae.png#pic_center)
+
+​		针对不同的 ts payload，adaptation field 的应用方式也不同：
+
+- 针对 PAT、PMT，不足 188 Bytes 的部分直接使用 0xff 进行填充，而不会使用 adaptation field（但是也有例外，有的编码器会携带）。
+- 针对 PES packet，才会使用 adaptation field 做填充。
+  - audio PES packet 不会在 adaptation field 中携带 PCR 字段。
+  - video PES packet 可以选择是否在 adaptation field 中携带 PCR 字段。一般 PES packet 被拆分时，会在第一个和最后一个拆分包添加 adaptation field。第一个拆分包的 adaptation field 才会携带 pcr 时钟，且主要作用是为了携带 pcr 时钟，而不是为了填充数据；最后一个拆分包的 adaptation field 不会携带 pcr 时钟，只做填充用。
+
+PCR 属于编码端的时钟，其作用是如果编码端时钟源与解码端时钟源不同步，那么解码端应该采用 pcr 作为自己的时钟源，以同步编码端。
+
+例如编码端时钟是解码端的 2 倍，解码端是正常的物理时钟，这时一个物理世界 5min 的视频，因为编码端时钟源走得太快，那么最后一个视频帧的 dts 就是 10min。播放端直接播放的话，就会播放 10min，显得播放得很慢。所以播放端需要加快播放，方法就是采用 pcr 时钟作为自己的时钟源，让自己的时钟走得跟编码端一样快，这样看起来就是正常速度播放了。
+
+> 注意，adaptation field 最少占用 1 个字节，即 adaptation_field_length 字段，这样最少可以填充 1 个字节。
+
+adaptation field 层次图：
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/34f29e448f68767e3d0b784f7692d4b2.png#pic_center)
+
 ## PSI
 
 ​		[DVB-SI/PSI_Destiny青羽的博客-CSDN博客](https://blog.csdn.net/kkdestiny/category_1553561.html)
