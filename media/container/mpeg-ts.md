@@ -60,7 +60,10 @@
       > - PAT 表：主要的作用就是指明了 PMT 表的 PID 值。
       > - PMT 表：主要的作用就是指明了音视频流的 PID 值。
 
-  ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a1a7238bf4fe0132fbe9be6dc7d85715.png)
+
+![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a1a7238bf4fe0132fbe9be6dc7d85715.png)
+
+![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/aHR0cHM6Ly9pbWFnZXMyMDE1LmNuYmxvZ3MuY29tL2Jsb2cvMTAxNjI2Ni8yMDE3MDUvMTAxNjI2Ni0yMDE3MDUxNTE5NTU1MjgyMi0yMDQ5MjY5NTY4LnBuZw)
 
 ### Header
 
@@ -644,20 +647,108 @@ void Process_Packet(unsigned char*buff)
 
 - 一个TS包，它的PID是0，说明它的负载内容是PAT信息
 
-- 解析PAT信息，你发现节目1的PMT表的PID是0x10
+- 一个 PAT 包含整个 TS 流的信息，其中有一张表
 
-- 在比特流中寻找一个PID为0x10的TS包，它的负载内容是节目1的PMT表信息
+  - 比较重要的两个属性 program_number 和program_map_PID，可能出现多对
+    - 每一对 program_number 表示一个节目
+    - 该节目对应的流信息应该放在一个 PID同为program_map_PID 的PMT 表中
 
 - 解析该PMT信息，可以发现
 
-  - 第一路流是MPEG2音频流，PID号0x21
-  - 第二路流是MPEG2视频流，PID号是0x22
-  - 第三路流是DVB字幕流，PID号是0x23
+  - 第一路流是MPEG2音频流
+  - 第二路流是MPEG2视频流
+  - 第三路流是DVB字幕流
+  - ...
 
-- 解析完毕，凡是比特流中PID号为0x22的TS包，所负载的内容为MPEG2视频流
+- 解析完毕，凡是比特流中PID号相同的TS包，所负载的内容为对应的数据流包
 
   - 把这些包一个一个找出来，把其中的有效码流一部分一部分的拼接起来
 
   - 然后送给解码器去解码。
 
     > 就一般的视频流而言，只要拼接成一个完整的PES包，就可以送出去给解码器，然后再继续拼接下一个PES包。
+
+```c
+  +-+-+-+-+-+-+-+-+-+-+-+
+  | PAT                 | 
+  |                     |
+  | program_number  5   |___
+  | program_map_PID 10  |   |
+  |                     |   |
+  | program_number  6   |___|__  
+  | program_map_PID 11  |   |  |
+  |                     |   |  |  
+  | program_number  7   |   |  |   
+  | program_map_PID 12  |   |  |
+  |                     |   |  |
+  |         ...         |   |  |
+  |                     |   |  |
+  +-+-+-+-+-+-+-+-+-+-+-+   |  |
+                            |  |
+  +-+-+-+-+-+-+-+-+-+-+-+   |  |
+  | PMT                 |   |  |
+  | TS Header PID = 10  |<——   |
+  |                     |      |
+  | stream_type    0x0f |______|__________________0x0f表示AAC音频，下方AAC数据打包PID=20,   
+  | elementary_PID 20   |      |
+  | stream_type    0x1b |______|__________________0x1b表示H264视频，下方H264数据打包PID=22 
+  | elementary_PID 22   |      |
+  |                     |      |  
+  +-+-+-+-+-+-+-+-+-+-+-+      |
+                               |
+  +-+-+-+-+-+-+-+-+-+-+-+      |
+  | PMT                 |      | 
+  | TS Header PID = 11  |<————— 
+  |                     |
+  | stream_type    0x0f |   
+  | elementary_PID 23   |
+  | stream_type    0x1b |
+  | elementary_PID 24   |
+  |                     |  
+  +-+-+-+-+-+-+-+-+-+-+-+
+```
+
+
+
+- 音频数据打包
+
+  ```c
+  裸ACC数据:
+    +-+-+-+-+-+-+-+-+-+-+-+
+    |         AAC         |          
+    +-+-+-+-+-+-+-+-+-+-+-+
+  添加PES头的ACC数据:
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    | AAC PES |         AAC         |          
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  添加TS头将PES分割之后的TS包，假设正好分割成2个TS包，包大小固定188字节，不够用adaptation域填充一般填充0xFF:
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |TS | AAC PES |  AAC 1  |TS | adaptation|    AAC 2    |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |- - - - Packet 1 - - - |- - - - - Packet 2 - - - - - |
+    <假设 PID = 20 的TS包>            
+  ```
+
+- 视频数据打包
+
+  ```c
+  裸H264数据，一帧:
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |              H264             |          
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  添加PES头之后的H264数据，一帧表示一个PES包:
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    | H264 PES|           H264                |          
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  将一个PES包分割之后，分别添加TS头之后的TS包。
+  这里假设分割成3个TS包，每个包固定大小188字节(包含TS包头在内)，
+  最后一个包不够188字节使用adaptaion域填充0xFF:
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |TS | H264 PES| H264 1|TS |  H264 2     |TS | adaptation|  H264 3 |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |- - - Packet 1 - - - |- - Packet 2 - - | - - - - Packet 3 - - - -|
+    <假设 PID = 22 的TS包>
+  ```
+
+
+
