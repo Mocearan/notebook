@@ -1,3 +1,24 @@
+
+
+# ffmpeg-build
+
+---
+
+
+
+
+
+
+
+## windows 
+
+### direct lib
+
+- 下载编译好的Windows版本：http://ffmpeg.zeranoe.com/builds/
+- 添加环境变量
+
+### msys2 
+
 ```shell
  # 编译64位 exe+lib
  ./../../sources/ffmpeg/configure   --prefix=./../../install/x64 \ 
