@@ -6,7 +6,87 @@
 
 
 
+## 参考
 
+[CentOS 7.5下FFmpeg安装、简单使用总结_Linux教程_Linux公社-Linux系统门户网站 (linuxidc.com)](https://www.linuxidc.com/Linux/2018-10/154934.htm)
+
+[Linux下ffmpeg的完整安装 - wanghetao - 博客园 (cnblogs.com)](https://www.cnblogs.com/wanghetao/p/3386311.html)
+
+[Linux下安装ffmpeg - 小得盈满 - 博客园 (cnblogs.com)](https://www.cnblogs.com/freeweb/p/6897907.html)
+
+[Linux中安装FFmpeg详解_Linux教程_Linux公社-Linux系统门户网站 (linuxidc.com)](https://www.linuxidc.com/Linux/2019-03/157443.htm)
+
+[FFmpeg在Linux下编译使用 - CrazyDiode - 博客园 (cnblogs.com)](https://www.cnblogs.com/CoderTian/p/6655568.html)
+
+
+
+## 编译配置
+
+
+
+### `--enable-libx264`
+
+​			`Unknown encoder 'libx264'`
+
+- 缺少libx264库，需要安装该库：
+
+  ```shell
+  git clone http://git.videolan.org/git/x264.git
+  cd x264
+  ./configure --enable-static --enable-shared
+  make && make install
+  
+  sudo vi /etc/ld.so.conf
+  # 添加libx264.so路径
+  sudo ldconfig
+  ```
+
+- rebuild ffmpeg
+
+  ```shell
+  ./configure --enable-gpl --enable-libx264
+  make clean
+  make && make install
+  
+  # 验证 ffmpeg -i input.mp4 -c:v libx264 -c:a copy -f mpegts output.ts
+  ```
+
+
+
+### `--enable-sdl2`
+
+​		默认的源码安装不会编译出`ffplay`，需要下载SDL2库依赖，然后重新编译添加`sdl2`支持
+
+- 下载SDL的源码
+
+  ```shell
+  wget http://libsdl.org/release/
+  tar zxvf SDL2-2.0.12.tar.gz
+  cd SDL2-2.0.12.tar.gz
+  ./configure
+  make && make install
+  ```
+
+- 重新编译配置`ffmpeg`
+
+  ```shell
+   ./configure --enable-gpl --enable-sdl
+  make clean
+  make && sudo make install
+  ```
+
+- 通过远程终端不能直接使用`ffplay`
+
+  - 远程终端没有用户界面
+
+## linux
+
+```shell
+git clone https://github.com/FFmpeg/FFmpeg.git
+
+./configure
+make && make install
+```
 
 
 
@@ -53,6 +133,16 @@
     --enable-libmp3lame \
     --enable-libopus
 ```
+
+
+
+
+
+
+
+
+
+
 
 
 
