@@ -9,7 +9,7 @@
 ## cmd 结构
 
 ```shell
-ffmpeg [options] [[infile options] -i infile]... {[outfile options] outfile}...
+ffmpeg [options] {[infile options] -i infile} ... {[outfile options] outfile} ...
 ```
 
 
@@ -47,11 +47,36 @@ ffmpeg -h full 	# 所有信息，信息过多，可以通过 ffmpeg -h full > ff
 - ``-f`` 设定输出格式（format）
 - ``-ss`` 开始时间
 - ``-t`` 时间长度
+- `-y`： 输出时覆盖输出目录已存在的同名文件
+- `-target type` 设置目标文件类型(vcd,svcd,dvd)
+
+  - `所有的格式选项（比特率，编解码以及缓冲区大小）自动设置 ，只需要输入如下的就可以了
+
+    ```shell
+    ffmpeg -i myfile.avi -target vcd /tmp/vcd.mpg
+    ```
+
+- `-hq` 高质量设置
+
+- `-itsoffset offset ` 设置以秒为基准的时间偏移，该选项影响所有后面的输入文件
+
+  - 该偏移被加到输入文件的时戳
+  - 定义一个正偏移意味着相应的流被延迟了 offset秒
+  - `[-]hh:mm:ss[.xxx]`的格式也支持
+
+
+
+
+- `-title string` 设置标题
+- `-author string `设置作者
+- `-copyright string `设置版权
+- `-comment string `设置评论
 
 
 
 ### 查询参数
 
+- `-L` ：license
 - `-version`： 显示版本
 - `-buildconf`： 显示编译配置
 - `-bsfs` ：显示可用比特流filter
@@ -76,10 +101,15 @@ ffmpeg -h full 	# 所有信息，信息过多，可以通过 ffmpeg -h full > ff
 - ``-b:a ``音频码率
 - ``-ar``  设定采样率
 - `-ac` 设定声音的channel数
-- `-acodec` 设定声音编解码器
-  - `copy` 表示原始表姐吗数据必须被拷贝
 - `-an`不处理音频
 - `-af` 音频过滤器
+- `-acodec` 设定声音编解码器
+  - 未设定时则使用与输入流相同的编解码器
+  - `copy` 表示原始编码数据必须被拷贝
+  
+- `-c:a`：输出视频格式
+
+
 
 ```shell
 ffmpeg -i test.mp4 -b:a 192k -ar 48000 -ac 2 -acodec libmp3lame -aframes 200 out2.mp3
@@ -90,17 +120,60 @@ ffmpeg -i test.mp4 -b:a 192k -ar 48000 -ac 2 -acodec libmp3lame -aframes 200 out
 ### 视频参数
 
 - `-vframes` 设置要输出的视频帧数
-- `-b` 设定视频码率
-- `-b:v` 视频码率
-- `-r`  设定帧率
-- `-s` 设定画面的宽高
+- `-bf` B帧数量控制
+- `-g` 关键帧间隔控制
+  - 视频跳转需要关键帧
+
+- `-b` 设定视频码率（`Kbit/s`）
+  - 缺省`200kb/s`
+  - `-b:v` 视频码率
+
+- `-bt tolerance`  设置视频码率容忍度`kbit/s`
+  - `-maxrate bitrate`设置最大视频码率容忍度
+  - `-minrate bitreate `设置最小视频码率容忍度
+
+- `-bufsize size` 设置码率控制缓冲区大小
+- `-r`  设定帧率（图像频率）
+  - 用于视频截图
+  - 缺省25
+- `-s` 设定画面的宽高（分辨率）
+  -  格式为`wXh `
+  - 缺省160X128.
+  - 下面的简写也可以直接使用：
+    - `Sqcif `：128X96 
+    - `qcif `：176X144 
+    - `cif `：252X288 
+    - `4cif `：704X576
+
 - `-vn` 不处理视频
-- `-aspect` 设置纵横比
+- `-aspect` 设置画幅纵横比
   - `4:3 / 16:9`
   - `1.3333 / 1.7777`
+- `-croptop size` 设置顶部切除带大小 像素单位
+  - `-cropbottom size `
+  - `–cropleft size `
+  - `–cropright size`
+
+- `-padtop size` 设置顶部补齐的大小 像素单位
+  - `-padbottom size `
+  - `–padleft size `
+  - `–padright size `
+  - `–padcolor color ` 设置补齐条颜色(hex,6个16进制的数，红:绿:兰排列，比如 000000代表黑色)
+
 - `-vcodec` 设定视频编解码器
+  - 未设定时则使用与输入流相同的编解码器
   - `copy` 表示原始编解码数据必须被拷贝
+
 - `-vf` 视频过滤器
+- `-c:v`：输出视频格式
+- `-sameq` 使用同样视频质量作为源（VBR）
+- `-pass n` 选择处理遍数（1或者2）
+  - 两遍编码非常有用
+    - 第一遍生成统计信息
+    - 第二遍生成精确的请求的码率
+
+  - `-passlogfile file` 选择两遍的纪录文件名为file
+
 
 ```shell
 ffmpeg -i test.mp4 -vframes 300 -b:v 300k -r 30 -s 640x480 -aspect 16:9 -vcodec libx265
