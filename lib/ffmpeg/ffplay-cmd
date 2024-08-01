@@ -1,0 +1,238 @@
+# ffplay-cmd
+
+---
+
+
+## cmd 结构
+
+```shell
+ffplay [options] input_file
+```
+
+
+
+## 参考
+
+[ffplay Documentation (ffmpeg.org)](https://www.ffmpeg.org/ffplay.html)
+
+[FFmpeg Filters Documentation](https://www.ffmpeg.org/ffmpeg-filters.html)
+
+
+
+## parameter
+
+### play cmd
+
+- `q, ESC` ：退出播放
+- `c` ： 循环切换节目
+- `a / v / t` ： 循环切换音、视频、字幕流
+- `s` ： 逐帧播放
+- `w `： 循环切换过滤器或显示模式
+- `f / mouse-double-left` ： 全屏切换
+- `p, SPC ` ：  暂停
+- `m ` ： 静音切换
+- `9 / 0 `： 9减少音量，0增加音量
+- `/, *` ：/减少音量，*增加音量
+- `left/right `： 向后/向前拖动10秒
+- `down/up `： 向后/向前拖动1分钟
+- `mouse-single-right` ： 拖动与显示宽度对应百分比的文件进行播放
+
+
+
+### control cmd
+
+#### play control
+
+- `-x / -y` 指定宽高
+
+- `-video_size size` ： 帧尺寸设置
+
+  - 显示帧存储(WxH格式)，仅适用于类似原始YUV等没有包含帧大小(WxH)的视频。
+
+  ```shell
+  ffplay -pixel_format yuv420p -video_size 320x240 -framerate 5  yuv420p_320x240.yuv
+  ```
+
+- `-pixel_format format` ： 格式设置像素格式
+
+- `-fs` ： 以全屏模式启动
+
+- `-an / -vn / -sn` ： 禁用音频 / 视频 / 字幕（不播放声音 / 视频 / 字幕）
+
+- `-ss pos ` 根据设置的秒进行定位拖动
+
+  - 注意时间单位
+    - `'55'` ：55 seconds
+    - ` '12:03:45' `：12 hours, 03 minutes and 45 seconds, 
+    - `'23.189' `：23.189 second
+
+- `-t duration` ： 设置播放视频/音频长度
+
+  - 时间单位同`-ss`选项
+
+
+
+- `-bytes `： 按字节进行定位拖动
+  - `0=off `
+  - `1=on `
+  - `-1=auto`
+- `-seek_interval `： interval 自定义左/右键定位拖动间隔（以秒为单位）
+  - 默认值为10秒（代码没有看到实现）
+- `-nodisp` ： 关闭图形化显示窗口，视频将不显示
+- `-noborder` ： 无边框窗口
+- `-volume vol `： 设置起始音量
+  - 音量范围`[0 ~100]`
+- `-f fmt` ： 强制使用设置的格式进行解析
+  - 比如`-f s16le`
+- `-window_title title` ： 设置窗口标题（默认为输入文件名）
+- `-loop number `：设置播放循环次数
+- `-showmodemode` ：设置显示模式
+  - 可用的模式值：
+    - `0` 显示视频，
+    - `1 `显示音频波形
+    - `2 `显示音频频谱
+  -  缺省为`0`，如果视频不存在则自动选择`2`
+
+
+
+- `-stats` 打印多个回放统计信息
+  - 包括显示流持续时间，编解码器参数，流中的当前位置，以及音频/视频同步差值。
+  - 默认情况下处于启用状态，要显式禁用它则需要指定`-nostats。`。
+- `-fast` ： 非标准化规范的多媒体兼容优化。
+- `-genpts` ： 生成pts。
+- `-sync type`  ： 同步类型
+  - 将主时钟设置为
+    - `audio（type=audio）`
+    - `video（type=video）`
+    - `external（type=ext）`
+  - 默认是audio为主时钟
+- `-ast / -vst / -sst stream_specifier`： 指定流索引
+  - `-ast3`，播放流索引为3的音频流
+  - `-vst4`，播放流索引为4的视频流
+  - `-sst5`，播放流索引为5的字幕流
+- `-autoexit` 视频播放完毕后退出。
+
+
+
+- `-exitonkeydown` ：键盘按下任何键退出播放
+
+- `-exitonmousedown `：鼠标按下任何键退出播放
+
+- `-codec:media_specifier codec_name` ： 强制使用设置的多媒体解码器
+
+  - media_specifier可用值为 
+
+    - a（音频）
+    - v（视频）
+    - s字幕
+
+    > 比如`codec:v h264_qsv `强制视频采用`h264_qsv`解码
+
+- `-acodec / -vcodec / -scodec codec_name` ：强制使用设置的音、视频、字幕解码器进行解码
+
+- `-autorotate `： 根据文件元数据自动旋转视频
+
+  - 值为0或1 ，默认为1。
+
+- `-framedrop` ： 如果视频不同步则丢弃视频帧
+
+  - 当主时钟非视频时钟时默认开启。
+  - 若需禁用则使用`-noframedrop`
+
+- `-infbuf` #：不限制输入缓冲区大小。
+
+  - 尽可能快地从输入中读取尽可能多的数据。
+  - 播放实时流时默认启用，如果未及时读取数据，则可能会丢弃数据。
+  - 此选项将不限制缓冲区的大小。若需禁用则使用`-noinfbu`
+
+
+
+### filter cmd
+
+- `-vf filtergraph` ： 设置视频滤镜
+- `-af filtergraph` ： 设置音频滤镜
+
+
+
+
+
+## in use
+
+### play
+
+- 播放本地文件
+
+  ```shell
+  ffplay -window_title "test time" -ss 2 -t 10 -autoexit test.mp4
+  ffplay buweishui.mp3 
+  ```
+
+  - 播放YUV数据
+
+    ```shell
+    ffplay -pixel_format yuv420p -video_size 320x240 -framerate 5 yuv420p_test.yuv
+    ```
+
+  - 播放RGB数据
+
+    ```shell
+    ffplay -plxel_format rgb24 -video_size 320x240 -i rgb24_test.rgb
+    ffplay -pixel_foramt rgb24 -video_size 320x240 -framerate 5 -i rgb24_test.rgb
+    ```
+
+  - 播放PCM数据
+
+    ```shell
+    ffplay -ar 48000 -ac -f f32le 48000_2_f32.pcm
+    # -ar   set audio sampling rate (in Hz) (from 0 to INT_MAX) (default 0)
+    # -ac   set number of audio channels (from 0 to INT_MAX) (defau
+    ```
+
+- 播放网络流
+
+  ```shell
+  ffplay -window_title "rtmp stream" rtmp://202.69.69.180:443/webcast/bshdlive-pc
+  ```
+
+- 指定解码器
+
+  ```shell
+  ffplay  -vcodec mpeg4 test.mp4 # mpeg4解码器
+  ffplay -vcodec h264 test.mp4  # h264解码器
+  ```
+
+-  禁用音频/视频
+
+  ```shell
+  ffplay test.mp4 -an # 禁用音频
+  ffplay test.mp4 -vn # 禁用视频
+  ```
+
+
+
+### filter
+
+- 视频旋转
+
+  ```shell
+  ffplay -i test.mp4 -vf transpose=1
+  ```
+
+- 视频反转
+
+  ```shell
+  ffplay test.mp4 -vf hflip
+  ffplay test.mp4 -vf vflip
+  
+  ffplay test.mp4 -vf hflip,transpose=1
+  ```
+
+- 变速
+
+  ```shell
+  1ffplay -i test.mp4 -af atempo=2     # 音频变速
+  ffplay -i test.mp4 -vf setpts=PTS/2  # 视频变速
+  ffplay -i test.mp4 -vf setpts=PTS/2 -af atempo=2
+  ```
+
+  
