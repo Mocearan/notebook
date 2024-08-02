@@ -4,7 +4,9 @@
 
 ​		SDL（Simple DirectMedia Layer）是一个跨平台开发库，旨在通过 OpenGL 和 Direct3D 提供对音频、键盘、鼠标、游戏杆和图形硬件的低级访问。它被视频播放软件、模拟器和流行游戏使用。
 
+## 参考
 
+​		[Lazy Foo' Productions - Beginning Game Programming v2.0](https://lazyfoo.net/tutorials/SDL/index.php)
 
 ## 特性
 
@@ -279,4 +281,3 @@ void SDLCALL SDL_PauseAudio(int pause_on);
 - 多线程：Qt和SDL都支持多线程编程。
   - Qt提供了`QThread`类和相关的同步原语（如`QMutex、QSemaphore`等）。
   - SDL则提供了`SDL_Thread`、`SDL_CreateThread`、`SDL_WaitThread`等函数和同步原语（如`SDL_mutex`、`SDL_sem`等）。
-    
