@@ -95,18 +95,43 @@ ffmpeg -h full 	# 所有信息，信息过多，可以通过 ffmpeg -h full > ff
 
 
 
+### 采集参数
+
+- `-vd device` ：设置视频捕获设备。比如/dev/video0
+- `-vc channel`：设置视频捕获通道 DV1394专用
+- `-tvstd standard`： 设置电视标准 NTSC PAL(SECAM)
+- `-dv1394` ：设置DV1394捕获
+- `-av device`： 设置音频设备 比如/dev/dsp
+
+
+
+### 高级参数
+
+- `-map file:stream`： 设置输入流映射
+- `-debug `：打印特定调试信息
+- `-benchmark `：为基准测试加入时间
+- `-hex`： 倾倒每一个输入包
+- `-bitexact`： 仅使用位精确算法 用于编解码测试
+- `-ps size` ：设置包大小，以bits为单位
+- `-re` ：以本地帧频读数据，主要用于模拟捕获设备
+- `-loop `：循环输入流。只工作于图像流，用于ffserver测试
+
+
+
 ### 音频参数
 
 - ``aframes ``设置要输出的音频帧数
-- ``-b:a ``音频码率
-- ``-ar``  设定采样率
-- `-ac` 设定声音的channel数
+- ``-b:a bitrate ``音频码率
+  - `-ab`
+
+- ``-ar freq``  设定采样率
+- `-ac channels` 设定声音的channel数
 - `-an`不处理音频
 - `-af` 音频过滤器
-- `-acodec` 设定声音编解码器
+- `-acodec codec` 设定声音编解码器
   - 未设定时则使用与输入流相同的编解码器
   - `copy` 表示原始编码数据必须被拷贝
-  
+
 - `-c:a`：输出视频格式
 
 
@@ -175,8 +200,56 @@ ffmpeg -i test.mp4 -b:a 192k -ar 48000 -ac 2 -acodec libmp3lame -aframes 200 out
   - `-passlogfile file` 选择两遍的纪录文件名为file
 
 
+
+- `-g gop_size`：设置图像组大小
+- `-intra`： 仅适用帧内编码
+- `-qscale q`： 使用固定的视频量化标度(VBR)
+- `-qmin q`： 最小视频量化标度(VBR)
+- `-qmax q`： 最大视频量化标度(VBR)
+- `-qdiff q`： 量化标度间最大偏差 (VBR)
+- `-qblur blur `：视频量化标度柔化(VBR)
+- -qcomp compression 视频量化标度压缩(VBR)
+- -rc_init_cplx complexity 一遍编码的初始复杂度
+- -b_qfactor factor 在p和b帧间的qp因子
+- -i_qfactor factor 在p和i帧间的qp因子
+- -b_qoffset offset 在p和b帧间的qp偏差
+- -i_qoffset offset 在p和i帧间的qp偏差
+- -rc_eq equation 设置码率控制方程 默认tex^qComp
+- -rc_override override 特定间隔下的速率控制重载
+- -me method 设置运动估计的方法 可用方法有 zero phods log x1 epzs(缺省) full
+- -dct_algo algo 设置dct的算法 可用的有 0 FF_DCT_AUTO 缺省的DCT 1 FF_DCT_FASTINT 2 FF_DCT_INT 3 FF_DCT_MMX 4 FF_DCT_MLIB 5 FF_DCT_ALTIVEC
+- -idct_algo algo 设置idct算法。可用的有 0 FF_IDCT_AUTO 缺省的IDCT 1 FF_IDCT_INT 2 FF_IDCT_SIMPLE 3 FF_IDCT_SIMPLEMMX 4 FF_IDCT_LIBMPEG2MMX 5 FF_IDCT_PS2 6 FF_IDCT_MLIB 7 FF_IDCT_ARM 8 FF_IDCT_ALTIVEC 9 FF_IDCT_SH4 10 FF_IDCT_SIMPLEARM
+- -er n 设置错误残留为n 1 FF_ER_CAREFULL 缺省 2 FF_ER_COMPLIANT 3 FF_ER_AGGRESSIVE 4 FF_ER_VERY_AGGRESSIVE
+- -ec bit_mask 设置错误掩蔽为bit_mask,该值为如下值的位掩码 1 FF_EC_GUESS_MVS (default=enabled) 2 FF_EC_DEBLOCK (default=enabled)
+- -bf frames 使用frames B 帧，支持mpeg1,mpeg2,mpeg4
+- -mbd mode 宏块决策 0 FF_MB_DECISION_SIMPLE 使用mb_cmp 1 FF_MB_DECISION_BITS 2 FF_MB_DECISION_RD
+- -4mv 使用4个运动矢量 仅用于mpeg4
+- -part 使用数据划分 仅用于mpeg4
+- -bug param 绕过没有被自动监测到编码器的问题
+- -strict strictness 跟标准的严格性
+- -aic 使能高级帧内编码 h263+
+- -umv 使能无限运动矢量 h263+
+- -deinterlace 不采用交织方法
+- -interlace 强迫交织法编码 仅对mpeg2和mpeg4有效。当你的输入是交织的并且你想要保持交织以最小图像损失的时候采用该选项。可选的方法是不交织，但是损失更大
+- -psnr 计算压缩帧的psnr
+- -vstats 输出视频编码统计到vstats_hhmmss.log
+- -vhook module 插入视频处理模块 module 包括了模块名和参数，用空格分开
+
+
+
+
+
+
 ```shell
 ffmpeg -i test.mp4 -vframes 300 -b:v 300k -r 30 -s 640x480 -aspect 16:9 -vcodec libx265
+
+#-i test.mp4：指定输入文件。
+#-vframes 300：限制输出为前300帧。
+#-b:v 300k：设置视频的比特率为300 kbps。
+#-r 30：设置输出帧率为每秒30帧。
+#-s 640x480：将输出视频的分辨率调整为640x480像素。
+#-aspect 16:9：设置纵横比为16:9（但请注意，640x480的实际纵横比是4:3）。
+#-vcodec libx265：指定使用H.265编码进行视频压缩。
 ```
 
 
@@ -228,9 +301,11 @@ ffmpeg -i test.mp4 -vframes 300 -b:v 300k -r 30 -s 640x480 -aspect 16:9 -vcodec 
   # wav是在pcm音频裸数据前面打上WAV头部
   ```
 
-- 转封装
+- 转封装(转码)
 
   ```shell
+  ffmpeg -i input.mp4 output.avi
+  
   # 转封装保持编码格式
   ffmpeg -i test.mp4 -vcodec copy -acodec copy out.ts
   ffmpeg -i test.mp4 -codec copy out.ts # -codec == -vcodec + -acodec
@@ -254,7 +329,38 @@ ffmpeg -i test.mp4 -vframes 300 -b:v 300k -r 30 -s 640x480 -aspect 16:9 -vcodec 
   
   # 转封装修改音频采样率
   ffmpeg -i test.mp4 -ar 44100 out.mp4
+  
+  # -bf B帧数目控制, -g 关键帧间隔控制, -s 分辨率控制
+  ffmpeg -i test.mp4 -vcodec h264 -s 352*278 -an -f m4v test.264    #转码为码流原始文件
+  ffmpeg -i test.mp4 -vcodec h264 -bf 0 -g 25 -s 352-278 -an -f m4v test.264    #转码为码流原始文件
+  ffmpeg -i test.avi -vcodec mpeg4 -vtag xvid -qsame test_xvid.avi    #转码为封装文件 
   ```
+
+- 视频解封装
+
+  ```shell
+  ffmpeg -i test.mp4 -vcodec copy -an -f m4v test.264
+  ffmpeg -i test.avi -vcodec copy -an -f m4v test.264
+  ```
+
+- 视频封装
+
+  ```shell
+  ffmpeg -i video_file -i audio_file -vcodec copy -acodec copy output_file
+  ```
+
+  
+
+- 切分视频
+
+  ```shell
+  ffmpeg -i input.avi -ss 0:1:30 -t 0:0:20 -vcodec copy -acoder copy output.avi 
+  # 剪切视频 -r 提取图像频率， -ss 开始时间， -t 持续时间
+  
+  ffmpeg -i input.mp4 -c:v libx264 -c:a aac -strict -2 -f hls -hls_time 20 -hls_list_size 0 -hls_wrap 0 output.m3u8 # 切分视频并生成M3U8文件
+  ```
+
+  
 
 - 拼接视频
 
@@ -300,6 +406,11 @@ ffmpeg -i test.mp4 -vframes 300 -b:v 300k -r 30 -s 640x480 -aspect 16:9 -vcodec 
   ```shell
   ffmpeg -i test.mp4 -y -f image2 -ss 00:00:02 -vframes 1 -s 640x360 test.jpg
   ffmpeg -i test.mp4 -y -f image2 -ss 00:00:02 -vframes 1 -s 640x360 test.bmp
+  ffmpeg -i test.avi -r 1 -f image2 image.jpeg # 视频截图
+  ffmpeg -i input_file -y -f mjpeg -ss 8 -t 0.001 -s 320x240 output.jpg # 第8.01秒出截取230x240的缩略图
+  ffmpeg -i out.mp4 -f image2 -vf fps=fps=1 out%d.png # 每隔一秒截一张图
+  ffmpeg -i out.mp4 -f image2 -vf fps=fps=1/20 out%d.png # 每隔20秒截一张图
+  ffmpeg -i out.mp4 -frames 3 -vf "select=not(mod(n\,1000)),scale=320:240,tile=2x3" out.png # 每隔一千帧(秒数=1000/fps25)即40s截一张图,多张截图合并到一个文件里（2x3）
   
   # -y 确认覆盖
   # -f 图片格式 image2
@@ -311,8 +422,11 @@ ffmpeg -i test.mp4 -vframes 300 -b:v 300k -r 30 -s 640x480 -aspect 16:9 -vcodec 
 - 视频图片集转换
 
   ```shell
+  ffmpeg -i out.mp4 out%4d.png # 转换视频为图片（每帧一张图)
   ffmpeg -i test.mp4 -t 5 -s 640x360 -r 15 frame%03d.jpg # -r 指定gop提取中帧数，%03d为提取的图片集命名规则
+  
   ffmpeg -f image2 -i frame%03d.jpg -r 25 video.mp4 # -r 指定生成的视频gop帧率
+  ffmpeg -f image2 -i out%4d.png -r 25 video.mp4
   ```
 
 - 视频GIF转换
@@ -320,8 +434,73 @@ ffmpeg -i test.mp4 -vframes 300 -b:v 300k -r 30 -s 640x480 -aspect 16:9 -vcodec 
   ```shell
   ffmpeg -i test.mp4 -t 5 -r 1 image1.gif
   ffmpeg -i test.mp4 -t 5 -r 25 -s 640x360 image2.gif
+  ffmpeg -i out.mp4 -t 10 -pix_fmt rgb24 out.gif
+  ffmpeg -i input_file -vframes 30 -y -f gif output.gif # 前30帧转换成一个Animated Gif
+  ffmpeg -ss 3 -t 5 -i input.mp4 -s 480*270 -f gif out.gif # 从视频截选指定长度的内容生成GIF图片
   
   ffmpeg -f gif -i image2.gif image2.mp4
+  ```
+
+- 视频转录
+
+  ```shell
+  ffmpeg -i rtsp://hostname/test -vcodec copy out.avi
+  ```
+
+- 反转
+
+  ```shell
+  # For video only
+  ffmpeg -i input-file.mp4 -vf reverse output.mp4
+   
+  # For audio and video:
+  ffmpeg -i input-file.mp4 -vf reverse -af areverse output.mp4
+  ```
+
+- 添加logo
+
+  ```shell
+  ffmpeg -i input2.mp4 -i logo.jpg -filter_complex overlay output_logo.mp4 
+  ffmpeg -i input2.mp4 -i logo.jpg -filter_complex overlay=W-w output.mp4 
+  ffmpeg -i input2.mp4 -i logo.jpg -filter_complex overlay=0:H-h output.mp4 
+  
+  # 需要限制logo图片的大小，这样才不至于让logo图片占据过大
+  ffmpeg -i input2.mp4 -vf "movie=logo.jpg,scale= 60: 30[watermask]; [in] [watermask] overlay=30:10 [out]" output_logo.mp4
+  # scale是用来设置宽高的
+  
+  # 去掉视频的logo
+  # -vf delogo=x:y:w:h[:t[:show]]
+  # x:y 离左上角的坐标 
+  # w:h logo的宽和高 
+  # t: 矩形边缘的厚度默认值4 
+  # show：若设置为1有一个绿色的矩形，默认值0。
+  ffmpeg -i output_logo.mp4 -vf delogo=30:10:60:30:1 output_no_logo.mp4
+  ```
+
+- 查看本地的可用录制设备
+
+  ```shell
+  # linux
+  ffmpeg -devices
+  
+  # windows
+  ffmpeg -list_devices true -f dshow -i dummy 
+  ```
+
+- 采集
+
+  ```shell
+  # windows
+  
+  # 采集音频
+  ffmpeg -f dshow -i audio="内装麦克风 (Conexant ISST Audio)" window.mp3 
+  ffmpeg -f dshow -i audio="内装麦克风 (Conexant ISST Audio)" -acodec libmp3lame window.mp3 # 指定音频格式
+  
+  # 采集视频频
+   ffmpeg -f dshow -i video="HP HD Camera" window.mp4
+   
+   # 采集音视频
+   ffmpeg -f dshow -i audio="内装麦克风 (Conexant ISST Audio)" -f dshow -i video="HP HD Camera" destop.mp4
   ```
 
   
