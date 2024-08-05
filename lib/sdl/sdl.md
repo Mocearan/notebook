@@ -2,7 +2,7 @@
 
 ---
 
-​		SDL（Simple DirectMedia Layer）是一个跨平台开发库，旨在通过 OpenGL 和 Direct3D 提供对音频、键盘、鼠标、游戏杆和图形硬件的低级访问。它被视频播放软件、模拟器和流行游戏使用。
+​	SDL（Simple DirectMedia Layer）是一个跨平台开发库，旨在通过 OpenGL 和 Direct3D 提供对音频、键盘、鼠标、游戏杆和图形硬件的低级访问。它被视频播放软件、模拟器和流行游戏使用。
 
 ## 参考
 

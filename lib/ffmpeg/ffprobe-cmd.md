@@ -1,5 +1,7 @@
 # ffprobe-cmd
 
+[ffplay Documentation (ffmpeg.org)](https://ffmpeg.org/ffplay.html)
+
 ---
 
 

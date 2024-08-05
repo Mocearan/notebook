@@ -1,5 +1,7 @@
 # ffplay-cmd
 
+[ffplay Documentation (ffmpeg.org)](https://ffmpeg.org/ffplay.html)
+
 ---
 
 
@@ -19,15 +21,17 @@ ffplay [options] input_file
 
 
 
-## parameter
 
-### play cmd
+
+
+
+## play control
 
 - `q, ESC` ：退出播放
 - `c` ： 循环切换节目
 - `a / v / t` ： 循环切换音、视频、字幕流
 - `s` ： 逐帧播放
-- `w `： 循环切换过滤器或显示模式
+- `w `： 循环切换过滤器或显示模式 / 显示音频波形
 - `f / mouse-double-left` ： 全屏切换
 - `p, SPC ` ：  暂停
 - `m ` ： 静音切换
@@ -35,13 +39,16 @@ ffplay [options] input_file
 - `/, *` ：/减少音量，*增加音量
 - `left/right `： 向后/向前拖动10秒
 - `down/up `： 向后/向前拖动1分钟
-- `mouse-single-right` ： 拖动与显示宽度对应百分比的文件进行播放
+- `page down / page up`：向后10min/向前10min
+- `mouse-single-right` ： 跳转到与显示宽度对应百分比的文件进行播放
 
 
 
-### control cmd
 
-#### play control
+
+## control cmd
+
+#### play cmd
 
 - `-x / -y` 指定宽高
 
@@ -69,6 +76,8 @@ ffplay [options] input_file
 - `-t duration` ： 设置播放视频/音频长度
 
   - 时间单位同`-ss`选项
+  
+- `-autoexit`， 播放完成后自动退出
 
 
 
@@ -111,6 +120,36 @@ ffplay [options] input_file
   - `-vst4`，播放流索引为4的视频流
   - `-sst5`，播放流索引为5的字幕流
 - `-autoexit` 视频播放完毕后退出。
+
+| 名称            | 有参数 | 作用                                     |
+| --------------- | ------ | ---------------------------------------- |
+| x               | Y      | 强制屏幕宽度                             |
+| y               | Y      | 强制屏幕高度                             |
+| s               | Y      | 强制屏幕大小                             |
+| fs              | N      | 全屏                                     |
+| an              | N      | 关闭音频                                 |
+| vn              | N      | 关闭视频                                 |
+| ast             | Y      | 设置想播放的音频流（需要指定流ID）       |
+| vst             | Y      | 设置想播放的视频流（需要指定流ID）       |
+| sst             | Y      | 设置想播放的字幕流（需要指定流ID）       |
+| ss              | Y      | 从指定位置开始播放，单位是秒             |
+| t               | Y      | 播放指定时长的视频                       |
+| nodisp          | N      | 无显示屏幕                               |
+| f               | Y      | 强制封装格式                             |
+| pix_fmt         | Y      | 指定像素格式                             |
+| stats           | N      | 显示统计信息                             |
+| idct            | Y      | IDCT算法                                 |
+| ec              | Y      | 错误隐藏方法                             |
+| sync            | Y      | 视音频同步方式（type=audio/video/ext）   |
+| autoexit        | N      | 播放完成自动退出                         |
+| exitonkeydown   | N      | 按下按键退出                             |
+| exitonmousedown | N      | 按下鼠标退出                             |
+| loop            | Y      | 指定循环次数                             |
+| framedrop       | N      | CPU不够的时候丢帧                        |
+| window_title    | Y      | 显示窗口的标题                           |
+| rdftspeed       | Y      | Rdft速度                                 |
+| showmode        | Y      | 显示方式(0 = video, 1 = waves, 2 = RDFT) |
+| codec           | Y      | 强制解码器                               |
 
 
 
