@@ -2,11 +2,21 @@
 
 ---
 
-​	SDL（Simple DirectMedia Layer）是一个跨平台开发库，旨在通过 OpenGL 和 Direct3D 提供对音频、键盘、鼠标、游戏杆和图形硬件的低级访问。它被视频播放软件、模拟器和流行游戏使用。
+​		SDL（Simple DirectMedia Layer）是一个跨平台开发库，旨在通过 `OpenGL `和 `Direct3D `提供对音频、键盘、鼠标、游戏杆和图形硬件的低级访问。它被视频播放软件、模拟器和流行游戏使用。
+
+​		`SDL`习惯性的视为跨平台的`DirectX`，但`SDL`的定位是轻量级的多媒体框架库，用于简化低层次跨平台对于图像、声音、输出、UI控制、线程管理等接口。但是
+
+- 更高级的图形和音效控制需要配合专业的图形、音频库（`openGL/Vulkan/Metal`和`openAL`）等；
+- 更高级的UI控制需要配合丰富的UI组件库（`Qt/DuiLib`等）；
+- 更高级的线程管理及其他基础设施需要配合更强大的工具库（`Boost/Qt/c++ std/folly/Abseil`)
+
+![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/4f93a75a51504bcda91af189dac059fc.png)
 
 ## 参考
 
 ​		[Lazy Foo' Productions - Beginning Game Programming v2.0](https://lazyfoo.net/tutorials/SDL/index.php)
+
+
 
 ## 特性
 
@@ -58,10 +68,8 @@
 
 ## 架构
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/direct/4f93a75a51504bcda91af189dac059fc.png)
 
-
-​		SDL将功能分成下列数个子系统（subsystem）：
+​		`SDL`将功能分成下列数个子系统（subsystem）：
 
 - Video（图像）：图像控制以及线程（thread）和事件管理（event）。
 - Audio（声音）：声音控制。
@@ -73,6 +81,14 @@
 - Haptic：触摸事件响应。
 - Timer：时间管理。
 - Everything：包含上述所有选项
+
+​		除此之外，还有一些单独的官方扩充函数库。这些库由官方网站提供，并包含在官方文档中，共同组成了SDL的“标准库”：
+
+- SDL_image—支持时下流行的图像格式：BMP、PPM、XPM、 PCX、GIF、JPEG、PNG、TGA。
+- SDL_mixer—更多的声音输出函数以及更多的声音格式支持。
+- SDL_net—网络支持。
+- SDL_ttf—TrueType字体渲染支持。
+- SDL_rtf—简单的RTF渲染支持。
 
 
 
@@ -248,11 +264,9 @@ void SDLCALL SDL_PauseAudio(int pause_on);
 
 - 性能优化：请注意优化 ARM 平台的性能，尤其是在处理器性能较弱的设备上。请参阅上一个回答中关于 SDL 性能特点与优化策略的建议。
 
-  ------------------------------------------------
+  
 
-                              版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
 
-  原文链接：https://blog.csdn.net/ProgramNovice/article/details/137025797
 
 ## QT vs SDL
 
