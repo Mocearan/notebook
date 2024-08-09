@@ -228,6 +228,8 @@ void SDLCALL SDL_PauseAudio(int pause_on);
 
 
 
+
+
 ## 性能与优化
 
 ​		SDL 的性能通常足以满足大部分 2D 游戏和应用程序的需求，但在某些情况下可能需要对其进行优化。以下是一些 SDL 性能特点和优化策略：
