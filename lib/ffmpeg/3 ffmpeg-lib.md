@@ -5,13 +5,31 @@
 ---
 
 - `libavformat`：封装格式的生成和解析。
+  - 封装了Protocol层和Demuxer、Muxer层，使得协议和格式对于开发者来说是透明的。
+
 - `libavcodec`：声音/图像编解码；
+  - 有一些Codec是具备自己的License的，`FFmpeg`不会默认添加像`libx264`、`FDK-AAC`等库的
+  - 但是FFmpeg就像一个平台一样
+    - 可以在编译时自行决定将其他的第三方的`Codec`以插件的方式添加进来
+    - 然后为开发者提供统一的接口
+
 - `libavutil`：公共的工具函数；
 - `libswscale`：视频场景比例缩放、 色彩映射转换；
+  - 图像进行格式转换的模块(yuv->rgb)
+  - 缩放（1280x730 -> 8xx x480）
+
 - `libpostproc`：用于后期效果处理
-- `libavdevice`：多媒体设备交互
-- `libswresample`：高度优化的音频重采样、rematrixing 和样本格式转换操作
-- `libavfilter`：过滤器，修改多媒体文件内容
+  - 使用AVFilter的时候需要打开该模块的开关，因为Filter中会使用到该模块的一些基础函数。
+
+- `libavdevice`：多媒体输入输出设备交互
+  - 需要编译出播放声音或者视频的工具ffplay，就需要确保该模块是打开的
+  - 同时也需要SDL的预先编译，因为该设备模块播放声音与播放视频使用的都是SDL库。
+
+- `libswresample`：高度优化的音频重采样、`rematrixing `和样本格式转换操作
+  - 可以对数字音频进行声道数、数据格式、采样率等多种基本信息的转换
+
+- `libavfilter`：过滤器（滤镜），修改多媒体文件内容
+  - 提供了包括音频特效和视频特效的处理
 
 - 容器文件、容器格式：特定封装格式的多媒体文件/流，如mp4/flv/mkv/ts/ps
 - 媒体流：一段连续的多媒体数据，一段视频、音频、字幕等。可以是编码的或非编码的
@@ -20,13 +38,37 @@
   - 解码前用于传输或存储的一个数据单元成为数据包
   - 数据包解码后得到一或多个数据帧，数据帧是编码器最小处理单元
 
+> `av_register_all()`注册所有组件，在ffmpeg 4.0中弃用。
+>
+> ` avdevice_register_all()`对设备进行注册，比如`V4L2`等
+>
+> `avformat_network_init()`;初始化网络库以及网络加密协议相关的库（比如`openssl`）
+
+## 组件注册
+
+### ffmpeg 3.x
+
+- 执行av_register_all，把全局的解码器、编码器等结构体注册到各自全局的对象链表里，以便后面查找调用。
+
+![img](https://developer.qcloudimg.com/http-save/yehe-7620466/3ce9fafec0380072101a0f0e7f41b8ad.png)
 
 
-## 整体结构
 
-​		`ffmpeg`几个可执行程序
+### ffmpeg 4.x
 
+FFmpeg内部去做，不需要用户调用API去注册。以codec编解码器为例：
 
+1. 在configure的时候生成要注册的组件`./configure:7203:print_enabled_components libavcodec/codec_list.c AVCodec codec_list $CODEC_LIST`这里会生成一个`codec_list.c `文件，里面只有`static const AVCodec * const codec_list[]`数组。
+2. 在`libavcodec/allcodecs.c`将`static const AVCodec * const codec_list[]`的编解码器用链表的方式组织起来。
+
+#### ffmpeg 4.0.2
+
+FFmepg内部去做，不需要用户调用API去注册。
+
+对于demuxer/muxer（解复用器，也称容器）则对应
+
+1. libavformat/muxer_list.c libavformat/demuxer_list.c 这两个文件也是在configure的时候生成，也就是说直接下载源码是没有这两个文件的。
+2. 在libavformat/allformats.c将demuxer_list[]和muexr_list[]以链表的方式组织。
 
 ## avdevice
 
@@ -85,12 +127,43 @@ avformat_open_input(&pFormatCtx,"video=HP HD Camera",ifmt,NULL) ;
 
 ## avcodec
 
+```c
+• avcodec_alloc_context3(): 分配解码器上下文
+• avcodec_free_context():释放解码器上下文，包含了avcodec_close()
+    
+• avcodec_find_decoder()：根据ID查找解码器
+• avcodec_find_decoder_by_name():根据解码器名字
+    
+• avcodec_open2()：打开编解码器
+• avcodec_close():关闭解码器
+    
+• avcodec_decode_video2()：解码一帧视频数据
+• avcodec_decode_audio4()：解码一帧音频数据
+• avcodec_send_packet(): 发送编码数据包
+• avcodec_receive_frame(): 接收解码后数据
+
+• avcodec_close():关闭解码器
+```
+
 
 
 ## avformat
 
 - 包括获取解码所需信息以生成解码上下文结构和读取音视频帧等功能
 - 包含 demuxers 和 muxer 库；
+
+```c
+◼ avformat_alloc_context();负责申请一个AVFormatContext结构的内存,并进行简单初始化
+◼ avformat_free_context();释放该结构里的所有东西以及该结构本身
+    
+◼ avformat_close_input();关闭解复用器。关闭后就不再需要使用avformat_free_context 进行释放。
+◼ avformat_open_input();打开输入视频文件
+    
+◼ avformat_find_stream_info()：获取音视频文件信息
+◼ av_read_frame(); 读取音视频包
+◼ avformat_seek_file(); 定位文件
+◼ av_seek_frame():定位文件
+```
 
 
 
