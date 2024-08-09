@@ -13,6 +13,19 @@
 - `libswresample`：高度优化的音频重采样、rematrixing 和样本格式转换操作
 - `libavfilter`：过滤器，修改多媒体文件内容
 
+- 容器文件、容器格式：特定封装格式的多媒体文件/流，如mp4/flv/mkv/ts/ps
+- 媒体流：一段连续的多媒体数据，一段视频、音频、字幕等。可以是编码的或非编码的
+  - 有些音频码流是纯PCM的
+- 数据帧/数据包：
+  - 解码前用于传输或存储的一个数据单元成为数据包
+  - 数据包解码后得到一或多个数据帧，数据帧是编码器最小处理单元
+
+
+
+## 整体结构
+
+​		`ffmpeg`几个可执行程序
+
 
 
 ## avdevice
@@ -70,8 +83,6 @@ avformat_open_input(&pFormatCtx,"video=HP HD Camera",ifmt,NULL) ;
     - 该方法好处是可以使用程序自动获取名称。但是当设备名称中包含中文字符的时候，会出现设备名称为乱码的情况。
       - 如果直接把乱码的设备名作为输入的话，是无法打开该设备的。这时候需要把乱码ANSI转换为UTF-8。
 
-
-
 ## avcodec
 
 
@@ -92,6 +103,11 @@ avformat_open_input(&pFormatCtx,"video=HP HD Camera",ifmt,NULL) ;
 ​		ffmpeg4.x
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/v2-47142db7477a14628a39cd46b5526e84_1440w.webp)
+
+## player framwork
+
+![img](https://developer.qcloudimg.com/http-save/yehe-7620466/4fbd7c6180f0c68f7aa5dd604c4b04d0.png)
+>>>>>>> Stashed changes:lib/ffmpeg/ffmpeg-lib.md
 
 
 
