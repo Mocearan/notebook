@@ -4,6 +4,12 @@
 
 
 
+## 参考
+
+[图像格式：常见图像格式RAW, RGB, YUV&&图像格式的解析、格式转换和看图软件_raw图片编码-CSDN博客](https://blog.csdn.net/weixin_45264425/article/details/132626509)
+
+[FFMPEG 内部YUV转RGB过程 - 洛笔达 - 博客园 (cnblogs.com)](https://www.cnblogs.com/luoyinjie/p/13669368.html)
+
 ## 图像的物理性质
 
 ​		白光能被分解为三原色，红光（R）、绿光（G）、蓝光（B），即RGB。等量的三原色光叠加会变为白光。
