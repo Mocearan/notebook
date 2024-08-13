@@ -138,11 +138,18 @@ make && make install
 
 
 
+## ffmpeg in golang
 
 
 
+[2023-04-04：使用 Golang 和 ffmpeg-go 库实现 demuxing_decoding.c，轻松掌握音视频-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/2295107)
 
+[go语言中ffmpeg使用的方法是什么 - 问答 - 亿速云 (yisu.com)](https://www.yisu.com/ask/3974196.html)
 
+[windows系统 ---go环境搭建 ---详细教程_windows go-CSDN博客](https://blog.csdn.net/xuezhe5212/article/details/139327521)
 
+[2023-03-24：音视频mp3和h264混合（muxer）编码为mp4，用go语言编写。-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/2295089)
 
+[2023-03-23：音视频解混合（demuxer）为PCM和YUV420P，用go语言编写。-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/2295088)
 
+[2023-02-18：ffmpeg是c编写的音视频编解码库，请问用go语言如何调用？例子是03输出版本号。-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/2295058)

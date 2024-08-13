@@ -16,7 +16,7 @@
 
 ​		[Lazy Foo' Productions - Beginning Game Programming v2.0](https://lazyfoo.net/tutorials/SDL/index.php)
 
-
+[SDL入门_慕课手记 (imooc.com)](https://www.imooc.com/article/25190)
 
 ## 特性
 
