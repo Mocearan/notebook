@@ -2,7 +2,7 @@
 
 ---
 
-
+[「音视频处理」RTMP、HLS、HTTP-FLV、WebRTC、RTSP直播协议详解 (baidu.com)](https://baijiahao.baidu.com/s?id=1764675214360978466&wfr=spider&for=pc)
 
 - 传统视频流协议主要有：
 
