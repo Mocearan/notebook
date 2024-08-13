@@ -247,6 +247,8 @@ git branch -d [bname]
 
 ### 切换 checkout
 
+​		切换分支实际上是将给定分支引用的提交记录签出工作区，并将``HEAD``引用到该分支引用上。
+
 ```shell
 # 切换分支
 git checkout [bname]
@@ -254,8 +256,6 @@ git checkout [bname]
 # 如果`bname`分支不存在，则创建并切换到该分支
 git checkout -b [bname]
 ```
-
-- 将要切换到的分支上的最近提交记录签出工作区。实际上是将``HEAD``引用到该分支引用上。
 
 
 
@@ -381,19 +381,21 @@ git pull <remote_name> <remote_bname>:<local_bname>
 - `git pull` 其实就是 `git fetch`和 `git merge FETCH_HEAD` 两步的简写
 - `remote_name`通常是 `origin`，这是 Git 默认的远程仓库名称。
 - `remote_bname`通常是 `main` 或 `master`，也可以是其他分支。
-  - `<remote_bname>`:`<local_bname>`, 缺省默认都为master
+  - `<remote_bname>`:`<local_bname>`, 缺省默认都为`master`
     - `git pull` / `git pull origin`
-  - 如果远程分支与当前分支合并，则冒号后面的部分可以省略。
+  - 如果远程分支与当前分支合并，则冒号后面的部分可以省略
     - `git pull origin master`
 - 使用`--rebase`来保持远程分支线性
   - `git pull --rebase`
+    - `pull = fetch + merge`
+    - `pull --rebase = fetch + rebase`
   - [直接使用git pull拉取代码，被同事狠狠地diss了！ (qq.com)](https://mp.weixin.qq.com/s/n1KbNaT46SwVPCBxpW31ow)
 - 可能产生冲突
   - 当 `pull` 操作发现不仅远端仓库包含本地没有的 `commit`
   - 而且本地仓库也包含远端没有的 `commit` 时
   - 它就会把远端和本地的独有 `commit`进行合并，自动生成一个新的 `commit`。
 
->   ​		和手动的 `commit` 不同，这种 `commit` 会自动填入一个默认的提交信息，简单说明了这条 `commit` 的来由。你可以直接退出界面来使用这个自动填写的提交信息，也可以修改它来填入自己提交信息
+>   ​		和手动的 `commit` 不同，这种 `commit` 会自动填入一个默认的提交信息，简单说明了这条 `commit` 的来由。你可以直接退出界面来使用这个自动填写的提交信息，也可以修改它来填入自己提交信息。
 
 ### 推送 push
 
@@ -477,19 +479,16 @@ git push origin --delete master
 
 ### 提交 commit
 
-​		将暂存区内容添加到提交记录中
-
->   ​		暂存区的目录树写到对象库中，分支会做相应的更新。即分支目录树就是提交时暂存区的目录树。
-
-`git commit {file_list} -ma"message"`
-
 ​		将暂存区中缓存的所有工作内容作为一次记录，提交到仓库。
 
-> HEAD将指向这次提交记录。
->
-> 会弹出一个文件要求提供提交信息。
->
-> `{file_list}`，提交暂存区的指定文件到提交记录，文件列表缺省默认提交暂存区中所有文件
+>   暂存区的目录树写到对象库中，分支会做相应的更新。即分支目录树就是提交时暂存区的目录树。
+
+```shell
+git commit {file_list} -ma"message"
+```
+
+- `HEAD`，将指向这次提交记录
+- `{file_list}`，提交暂存区的指定文件到提交记录，文件列表缺省默认提交暂存区中所有文件
 
 - `-m`，带信息的提交
 
@@ -598,9 +597,9 @@ git blame webpack.mix.js -L 5,5
 >   ```shell
 >   Author: mass <mazengrong12211@163.com>
 >   Date:   Wed Nov 3 21:25:37 2021 +0800
->     
+>       
 >       new
->     
+>       
 >   diff --git a/new.txt b/new.txt
 >   new file mode 100644
 >   index 0000000..c586658
@@ -850,26 +849,41 @@ git reset --keep [commit]
 
 ### 变基 rebase
 
-​		重新设置分支的`commit`序列的基础点（父`commit`）。
+​		将一个分支的整体迁移到另一个分支上。以`commit`的角度看，是重新设置分支的`commit`序列的基础点（父`commit`）。
 
-`git rebase [HEAD/bname/commit]`
+> ​		`merge`之后`commit`历史就会出现分支叉再汇合的结构，如果不希望`commit`历史出现分支叉，可以用`rebase`代替`merge`
 
-> ​		将指定`commit`所在的分支上的所有`commit`串，重新提交到指定的`commit`后。
->
-> ​		`merge`之后`commit`历史就会出现分支叉再汇合的结构，如果不希望`commit`历史出现分支叉，可以用`rebase`代替`merge`。
->
-> `git merger branch1`
->
-> ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/15fdea7b6646a1f3~tplv-t2oaga2asx-watermark.awebp)
+```shell
+git rebase [<options>] [<upstream> [<branch>]] 
+```
 
+- 将指定`branch`所在的分支上的所有`upstream`串，重新提交到指定的`upstream`后
+  - `upstream`: 目标分支（即你想要将当前分支的提交移至其之上；可以是分支名、commit ID等）。
+  - `branch`: 需要进行rebase的分支（默认为当前分支，如果不指定）
+  - `option`：
+    - `--onto <newbase>`: 指定新的基底，对于复杂的rebase情况很有用
+    - `-i`, `--interactive`: 交互式rebase，可以选择、重排或修改提交
+    - `--continue`: 在解决冲突后继续正在进行的rebase操作
+    - `--abort`: 取消当前的rebase操作，返回到rebase之前的状态
+    - `--skip`: 跳过当前提交，继续rebase操作
+    - `-p`, `--preserve-merges`: 保留合并提交（自Git 2.34起已经被弃用，推荐使用`--rebase-merges`）
+    - `--rebase-merges`: 保留合并提交的结构
+    - `-v`, `--verbose`: 在rebase过程中显示详细信息
+- `git rebase`也可能造成冲突
 
+#### merge vs. rebase
 
-> `git checkout branch1`
->
-> `git rebase master`
->
-> ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/1600abd620a8e28c~tplv-t2oaga2asx-watermark.awebp)
->
+- `git merge branch1`
+
+![img](https://gitee.com/masstsing/picgo-picserver/raw/master/15fdea7b6646a1f3~tplv-t2oaga2asx-watermark.awebp)
+
+- `git rebase master`
+
+  > - ``git checkout branch1`
+  > - `git rebase master`
+
+![img](https://gitee.com/masstsing/picgo-picserver/raw/master/1600abd620a8e28c~tplv-t2oaga2asx-watermark.awebp)
+
 > `git checkout master`
 >
 > `git merge branch1`
@@ -879,12 +893,12 @@ git reset --keep [commit]
 > ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/160149e054fe485c~tplv-t2oaga2asx-watermark.awebp)
 >
 > > ​		假设master上的记录都已经提交并推送到了关联仓库，那么如果在master上向分支`rebase`，因为`master`跟随变基引用到`rebase`后分支上的最新`commit`，导致原来`master`上自分叉点开始的提交都被剔除（没有引用指向了）。因为这些提交在关联仓库存在，从而导致无法`push`
-> >
+>>
 > > ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/16014b5a6919c0b7~tplv-t2oaga2asx-watermark.awebp)
-> >
-> > > 为了避免这种情况发生，一般是在其他分支上向`master`主支`rebase`。
-> > >
-> > > 其他的两个分支之间进行`rebase`就不必如此。
+>>
+> > 为了避免这种情况发生，一般是在其他分支上向`master`主支`rebase`。
+>> 
+> > 其他的两个分支之间进行`rebase`就不必如此。
 
 - `git rebase HEAD`
 
@@ -896,61 +910,77 @@ git reset --keep [commit]
 
   ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/15fdf5fd00522381~tplv-t2oaga2asx-watermark.awebp)
 
-- `-i`， 交互式`base`
+#### `-i`
 
-  `git rebase -i `/ `git rebase --interavtive`
+​		交互式`rebase`
 
-  > ​		在`rebase`前，可以指定要`rebase`的`commit`串中的每一个`commit`是否进一步修改。可以据此来进行一次原地`rebase`，来修正此前提交中中的内容而不添加新的`commit`。
-  >
-  > > `git commit --amend`
-  >
-  > `git rebase -i HEAD^^`， 可以在原地`commit`加上`-i`，进入交互界面
-  >
-  > ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/15fdf5fd04f46d6e~tplv-t2oaga2asx-watermark.awebp)
-  >
-  > - 顶部列出将要被`rebase`的所有`commit`
-  >
-  >   最老的`commit`在最上
-  >
-  > - `pick`，操作`commit`的方式，`pick`为直接应用
-  >
-  >   - `edit`， 将`commit`操作方式改为，应用`commit`，然后停下来等待继续修正。
-  >   - 其他操作列在上图`Commands`中
-  >   - 删除该条操作记录，可以从分支串中移除该`commit`
-  >
-  > 退出界面后，命令提示`rebase`停止在操作中断的位置，`edit`则可以修改`commit`了。
-  >
-  > ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/15fdf5fd007159fa~tplv-t2oaga2asx-watermark.awebp)
-  >
-  > `git rebase --continue`可以完成当前`rebase`中断位置，继续到下一个操作终端的地方。
-  >
-  > 在`edit`操作中断的地方，可以使用`git commit --amend`进行修正。
-  >
-  > `git rebase --continue`，修改每个操作中断的`rebase`位置，最终会提示`rebase`成功。
+```shell
+git rebase -i 
+git rebase --interavtive
+```
 
-- `--onto`， 指定`rebase`时重新提交的起点
+- 在`rebase`前，可以指定要`rebase`的`commit`串中的每一个`commit`是否进一步修改
+  - 可以据此来进行一次原地`rebase`，来修正此前提交中中的内容而不添加新的`commit`
+  - `git commit --amend`
 
-​		默认的，`rebase`时起点是自动判定的，起点是当前`commit`和目标`commit`交叉点。
 
-> 起点`commit`在`rebase`时不包含在内，从其子`commit`开始。
 
-​		`--onto`可以指定`rebase`时目标`commit`、起点`commit`、终点`commit`
-
-> `git rebase --onto commit3 commit4 branch1`
+> `git rebase -i HEAD^^`， 可以在原地`commit`加上`-i`，进入交互界面
 >
-> ![img](https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2017/11/22/15fe24400d7d73d0~tplv-t2oaga2asx-watermark.awebp)
+> ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/15fdf5fd04f46d6e~tplv-t2oaga2asx-watermark.awebp)
 >
-> - commit3  指定目标
-> - commit4 指定起点（从子`commit`开始）
-> - `branch1`，终点commit
-
-​		可以使用原地`rebase --onto`来撤销提交：
-
-> `git rebase --onto HEAD~2 HEAD~1 branch1 `
+> - 顶部列出将要被`rebase`的所有`commit`
 >
-> > ​		以倒数第二个 `commit` 为起点（起点不包含在 `rebase` 序列里哟），`branch1` 为终点，`rebase` 到倒数第三个 `commit` 上。
+>   最老的`commit`在最上
+>
+> - `pick`，操作`commit`的方式，`pick`为直接应用
+>
+>   - `edit`， 将`commit`操作方式改为，应用`commit`，然后停下来等待继续修正。
+>  - 其他操作列在上图`Commands`中
+>   - 删除该条操作记录，可以从分支串中移除该`commit`
+>
+> 退出界面后，命令提示`rebase`停止在操作中断的位置，`edit`则可以修改`commit`了。
+> 
+> ![img](https://gitee.com/masstsing/picgo-picserver/raw/master/15fdf5fd007159fa~tplv-t2oaga2asx-watermark.awebp)
+>
+> `git rebase --continue`可以完成当前`rebase`中断位置，继续到下一个操作终端的地方。
+>
+> 在`edit`操作中断的地方，可以使用`git commit --amend`进行修正。
+>
+> `git rebase --continue`，修改每个操作中断的`rebase`位置，最终会提示`rebase`成功。
+
+#### `--onto`
+
+​		`--onto`， 指定`rebase`时重新提交的起点。
+
+- `rebase`时起点默认是自动判定的
+
+  - 起点是当前`commit`和目标`commit`交叉点
+  - 起点`commit`在`rebase`时不包含在内，从其子`commit`开始
+
+- `--onto`可以指定`rebase`时目标`commit`、起点`commit`、终点`commit`
+
+  > ```shell
+  > git rebase --onto commit3 commit4 branch1
+  > ```
+  >
+  > ![img](https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2017/11/22/15fe24400d7d73d0~tplv-t2oaga2asx-watermark.awebp)
+  >
+  > - commit3  指定目标
+  > - commit4 指定起点（从子`commit`开始）
+  > - `branch1`，终点commit
+
+- 可以使用原地`rebase --onto`来撤销`commit`：
+
+> ```shell
+>  git rebase --onto HEAD~2 HEAD~1 branch1
+> ```
+>
+> ​		以倒数第二个 `commit` 为起点（起点不包含在 `rebase` 序列里哟），`branch1` 为终点，`rebase` 到倒数第三个 `commit` 上。
 >
 > ![img](https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/gold-user-assets/2017/11/22/15fe243fce5804fd~tplv-t2oaga2asx-watermark.awebp)
+
+​	
 
 
 
@@ -973,9 +1003,9 @@ git reset --keep [commit]
 > > ​		对于关联仓库，`revert` 完成之后，把新的 `commit` 再 `push` 上去，这个 `commit` 的内容就被撤销了。
 >
 > >  				如果出错内容在 `master`：不要强制 `push`，而要用 `revert` 把写错的 `commit` 撤销。
-> >	
+> >		
 > >  		​		如果出错内容在私有 `branch`：在本地把内容修正后，强制 `push` (`push -f`）一次就可以解决。
-> >	
+> >		
 > >  		> ​		本地对已有的 `commit` 做了修改，这时你再 `push` 就会失败，因为中央仓库包含本地没有的 `commit`s。但这个和前面讲过的情况不同，这次的冲突不是因为同事 `push` 了新的提交，而是因为你刻意修改了一些内容，这个冲突是你预料到的，你本来就希望用本地的内容覆盖掉中央仓库的内容。那么这时就不要乖乖听话，按照提示去先 `pull` 一下再 `push` 了，而是要选择「强行」`push`：
 > >  		>
 > >  		> `git push origin branch1 -f`

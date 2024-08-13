@@ -52,6 +52,24 @@ git push gitee master
 
 
 
+
+
+## gitlab
+
+​		用于**仓库管理**系统的开源项目。它是使用git作为代码管理工具，并在此基础上搭建起来的web服务，与github功能类似。
+
+#### gitlab使用
+
+- 访问([git.cootel.com](http://git.cootel.com/))
+- `注册`与`登陆`
+  - 输入用户名及密码和可用邮箱进行注册，登录邮箱点击验证链接完成注册
+  - 输入刚才注册成功的用户名和密码进行登陆
+- `git bash 下载`
+  - 访问(https://git-scm.com/download/)
+  - 下载安装**git bash**
+- `配置SSH Keys`
+  - 在git bash中输入
+
 ## 搭建私有Git服务器
 
 -   安装Git
