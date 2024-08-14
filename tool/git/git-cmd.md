@@ -2,7 +2,7 @@
 
 ---
 
-
+[Git 分支操作全解析：创建、切换、合并、删除及冲突解决 (qq.com)](https://mp.weixin.qq.com/s/uIA_APfF8oBjAOPM1lgeLQ)
 
 
 
@@ -597,9 +597,9 @@ git blame webpack.mix.js -L 5,5
 >   ```shell
 >   Author: mass <mazengrong12211@163.com>
 >   Date:   Wed Nov 3 21:25:37 2021 +0800
->       
+>         
 >       new
->       
+>         
 >   diff --git a/new.txt b/new.txt
 >   new file mode 100644
 >   index 0000000..c586658
@@ -1003,9 +1003,9 @@ git rebase --interavtive
 > > ​		对于关联仓库，`revert` 完成之后，把新的 `commit` 再 `push` 上去，这个 `commit` 的内容就被撤销了。
 >
 > >  				如果出错内容在 `master`：不要强制 `push`，而要用 `revert` 把写错的 `commit` 撤销。
-> >		
+> >			
 > >  		​		如果出错内容在私有 `branch`：在本地把内容修正后，强制 `push` (`push -f`）一次就可以解决。
-> >		
+> >			
 > >  		> ​		本地对已有的 `commit` 做了修改，这时你再 `push` 就会失败，因为中央仓库包含本地没有的 `commit`s。但这个和前面讲过的情况不同，这次的冲突不是因为同事 `push` 了新的提交，而是因为你刻意修改了一些内容，这个冲突是你预料到的，你本来就希望用本地的内容覆盖掉中央仓库的内容。那么这时就不要乖乖听话，按照提示去先 `pull` 一下再 `push` 了，而是要选择「强行」`push`：
 > >  		>
 > >  		> `git push origin branch1 -f`

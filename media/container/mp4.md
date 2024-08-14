@@ -667,15 +667,23 @@ stz2
   +-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-1. 普通MP4，General MP4，box模式为ftyp-mdat-moov。头在后面，FFMPEG默认出的就是这种，写入比较简单。读取时需要seek；所以有些浏览器会需要完全下载后才能开始播放，有些应该可以用HTTP RANGE跳过mdat读取moov。SRS录制MP4文件可以用这种模式。
-2. 快速MP4，Faststart MP4，box模式为ftyp-moov-mdat。头在前面，FFMEPG需要指定参数，生成MP4后，再过一遍文件才能支持。比上面的对于某些浏览器会比较友好，但是就需要再过一遍文件。对于SRS录制成MP4文件而言，容易造成IO阻塞（等待的时间过长，导致服务线程挂起，具体看ST的实现，不可以长时间的做CPU操作或者磁盘操作）。
+- 普通MP4，General MP4，box模式为ftyp-mdat-moov。
 
-   > ​		因为 MP4 标准中没有对 moov 和 mdat 的存放位置没有强制先后要求，所以它们的顺序不定。在互联网视频的点播中，如果希望 MP4 文件被快速打开，则需要将 moov 存放在 mdat 的前面；如果moov 放在 mdat 的后面，则需要将 MP4 文件全部下载完才可以播放
-3. 切片MP4，Fragmented MP4，或FMP4，box模式为ftyp-moov-moof-mdat。分段模式，浏览器H5直接播放时，有些能播，有些不行。这种一般用在DASH中，不会直接用浏览器播放，而是通过JS解析后，给MSE播放（APPEND到Video对象的Buffer中去，具体参考MSE的文章）。FFMPEG也是需要指定参数才能生成。这种对于流媒体比较合适，SRS生成DASH可以用这种。
+​		头在后面，FFMPEG默认出的就是这种，写入比较简单。读取时需要seek；所以有些浏览器会需要完全下载后才能开始播放，有些应该可以用HTTP RANGE跳过mdat读取moov。SRS录制MP4文件可以用这种模式。
+
+- 快速MP4，Faststart MP4，box模式为ftyp-moov-mdat。
+
+​		头在前面，FFMEPG需要指定参数，生成MP4后，再过一遍文件才能支持。比上面的对于某些浏览器会比较友好，但是就需要再过一遍文件。对于SRS录制成MP4文件而言，容易造成IO阻塞（等待的时间过长，导致服务线程挂起，具体看ST的实现，不可以长时间的做CPU操作或者磁盘操作）。
+
+> ​		因为 MP4 标准中没有对 moov 和 mdat 的存放位置没有强制先后要求，所以它们的顺序不定。在互联网视频的点播中，如果希望 MP4 文件被快速打开，则需要将 moov 存放在 mdat 的前面；如果moov 放在 mdat 的后面，则需要将 MP4 文件全部下载完才可以播放
+
+- 切片MP4，Fragmented MP4，或FMP4，box模式为ftyp-moov-moof-mdat。
+
+​		分段模式，浏览器H5直接播放时，有些能播，有些不行。这种一般用在DASH中，不会直接用浏览器播放，而是通过JS解析后，给MSE播放（APPEND到Video对象的Buffer中去，具体参考MSE的文章）。FFMPEG也是需要指定参数才能生成。这种对于流媒体比较合适，SRS生成DASH可以用这种。
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/fa1f7373789fe4d7ed91ed31e8b36f47.png)
 
-
+![图片](https://i0.hdslb.com/bfs/article/cf3c8621da31ed79fa76c6a0a8babfe1e166beeb.png@1256w_916h_!web-article-pic.webp)
 
 ## 解析过程
 
