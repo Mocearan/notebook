@@ -10,6 +10,8 @@
 
 ## 音频编码
 
+![img](https://pics7.baidu.com/feed/e61190ef76c6a7ef01ae77147e8fff5df2de66fe.jpeg@f_auto?token=84e5eea3d1eeafb271fb080a8692422e)
+
 - `MP3 (MPEG Audio Layer III)`: 最普遍的音频压缩格式，以较小的文件大小提供合理的声音质量。
 - `AAC (Advanced Audio Coding)`: 与MP3相比，它提供更好的音质和压缩率，被广泛用于Apple设备。
 - `WAV (Waveform Audio File Format)`: 一种未压缩的音频格式，提供高质量的音频数据，但文件较大。
@@ -302,11 +304,14 @@
 - 解码端必须从接收到的第一个I帧开始才可以正确解码出原始图像，否则会无法正确解码。
 - 根据不同的业务场景，适当地设置`gop_size`的大小，以得到更高质量的视频。
 - 但是过多的P、B帧会影响编码的效率
+  - 为了防止未加载完跳转卡顿时间长等问题，一般设置GOP为帧率的4-5倍，保证4-5秒必有I帧
+  - 直播流一般禁止B帧，有利于直播的流畅
+
 - 还会影响seek操作的响应速度
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/2d11ae3d85b2bd5b0bb18da7a68cad87.png#pic_center)
 
-
+​	
 
 ### PTS / DTS
 

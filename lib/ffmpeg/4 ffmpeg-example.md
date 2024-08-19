@@ -1,3 +1,9 @@
+[「音视频处理」转编码H264 to H265，FFmpeg，代码分享讲解 (baidu.com)](https://baijiahao.baidu.com/s?id=1774998230928237935)
+
+[「音视频处理」转封装实战，文件转直播流，FFmpeg代码示例讲解 (baidu.com)](https://baijiahao.baidu.com/s?id=1773175521001190576)
+
+https://github.com/YiiGaa/VideoProcessing/blob/main/remux/remux_tostream.cpp
+
 
 
 # ffmpeg 采集音频流程
