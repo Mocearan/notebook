@@ -1,20 +1,20 @@
 # 运算符
 
-The specific operation to be performed is denoted by a construct (typically a symbol or pair of symbols) called an **operator**.
+​		The specific operation to be performed is denoted by a construct (typically a symbol or pair of symbols) called an **operator**.
+
+​		表示要执行的具体操作的结构（一个或一对符号）称为运算符。
 
 ---
 
-​		The number of operands that an operator takes as input is called the operator’s *arity*.
+​		运算符作为输入的操作数的数量称为运算符的元（arity）。
 
-​		Operators in C++ come in three different *arities*:
+​		C++中的运算符有三种不同的变体：
 
-**Unary** operators act on one operand. 
+- **一元**运算符作用于一个操作数。
+- **二元**运算符作用于两个操作数（称为*left*和*right*）。
+- **三元**运算符作用于三个操作数。
 
-**Binary** operators act on two operands (known as *left* and *right*). 
-
-**Ternary** operators act on three operands.
-
-​		Note that some operators have more than one meaning depending on how they are used.
+> 根据使用方式，同一运算符可能具有多种含义。
 
 
 
@@ -50,21 +50,13 @@ The specific operation to be performed is denoted by a construct (typically a sy
 
 ### 类型转换运算符
 
-类型转换运算符包括：
-
 - C风格转型
 - `static_cast`
 - `dynamic_cast`
 - `const_cast`
 - `reinterpret_cast`
 
-引起类型转换。
 
-> **类型转换：**
->
-> ​		转换位序列的类型语义。
->
-> ps：c++/基本概念/实体/类型
 
 ## Table of operators
 
@@ -75,6 +67,8 @@ The specific operation to be performed is denoted by a construct (typically a sy
 ![image-20220814192843069](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20220814192843069.png)
 
 ​		you can explicitly parenthesize the expression to make it evaluate the way you want. This works in C++ because parentheses have one of the highest precedence levels, so parentheses generally evaluate before whatever is inside them.
+
+
 
 ## 运算符优先级
 
@@ -102,6 +96,16 @@ The specific operation to be performed is denoted by a construct (typically a sy
 
 
 
+## 运算对象转换
+
+​		在表达式求值的过程中，运算对象常常由一种类型转换成另外一种类型。
+
+
+
+
+
 ## 运算符重载
 
 ​		makes it possible to specify the behavior of the operators with user-defined classes.
+
+​		当运算符作用于类类型的运算对象时，用户可以自行定义其含义。因为这种自定义的过程事实上是为已存在的运算符赋予了另外一层含义，所以称之为重载运算符（overloaded operator）。
