@@ -18,7 +18,9 @@
 
 `ffmpeg`的Github项目地址是:https://github.com/FFmpeg/FFmpeg
 
+[gstream教程-CSDN博客](https://huahuaboy.blog.csdn.net/article/details/122484992)
 
+[FFmpeg教程（超级详细版）-CSDN博客](https://blog.csdn.net/m0_37605642/article/details/121566820?ops_request_misc=%7B%22request%5Fid%22%3A%22172295105516800184128835%22%2C%22scm%22%3A%2220140713.130102334..%22%7D&request_id=172295105516800184128835&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_positive~default-1-121566820-null-null.142^v100^pc_search_result_base8&utm_term=FFmpeg&spm=1018.2226.3001.4187)
 
 ## 项目组成
 

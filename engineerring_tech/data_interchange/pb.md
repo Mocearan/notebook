@@ -3,6 +3,8 @@
 > https://developers.google.cn/protocol-buffers/docs/overview
 >
 > https://github.com/protocolbuffers/protobuf
+>
+> [Protocol Buffers (protobuf) 入门指南 (qq.com)](https://mp.weixin.qq.com/s/ShcZ0fnAw_22gN0r-3fY0A)
 
 ---
 

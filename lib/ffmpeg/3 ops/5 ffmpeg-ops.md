@@ -73,3 +73,70 @@ static bool isH264iFrame(byte[] paket)
 ### 包乱序。
 
 打印RTP包的SeqNumber看有没有不连续或乱序的问题，如果是用UDP传输，则RTP包容易发生乱序，需要对包按顺序进行重组再解码。
+
+
+
+## ffmpeg将h264码流保存到文件
+
+​		`av_read_frame()`得到的视频的AVPacket存为本地文件即可。
+
+- MPEG2码流的时候，直接存储AVPacket即可
+- H.264码流的时候，直接存储AVPacket后的文件可能是不能播放的
+
+​		不能播放的原因和负载H264码流的封装格式有关：
+
+- TS（MPEG2 Transport Stream），直接存储后的文件是可以播放的
+
+- 复用格式是FLV，MP4则不行
+
+  - 第一次存储AVPacket之前需要在前面加上H.264的SPS和PPS
+
+    - AVCodecContext的extradata
+    - 使用FFMPEG中的名为"h264_mp4toannexb"的bitstream filter 进行处理
+    - 将处理后的extradata存入文件
+
+    > ```c
+    > FILE *fp=fopen("test.264","ab");
+    > AVCodecContext *pCodecCtx=... 
+    >     
+    > unsigned char *dummy=NULL;   //输入的指针  
+    > int dummy_len;  
+    > AVBitStreamFilterContext* bsfc =  av_bitstream_filter_init("h264_mp4toannexb");    
+    > av_bitstream_filter_filter(bsfc, pCodecCtx, NULL, &dummy, &dummy_len, NULL, 0, 0);  
+    > fwrite(pCodecCtx->extradata,pCodecCtx-->extradata_size,1,fp);  
+    > av_bitstream_filter_close(bsfc);    
+    > free(dummy);  
+    > ```
+
+  - 查看FFMPEG源代码我们发现，AVPacket中的数据起始处没有分隔符(0x00000001), 也不是0x65、0x67、0x68、0x41等字节，所以可以AVPacket肯定这不是标准的nalu
+
+    - AVPacket前4个字表示的是nalu的长度，从第5个字节开始才是nalu的数据。
+    - 直接将AVPacket前4个字节替换为0x00000001即可得到标准的nalu数据
+
+    > ```c
+    > char nal_start[]={0,0,0,1};  
+    > fwrite(nal_start,4,1,fp);  
+    > fwrite(pkt->data+4,pkt->size-4,1,fp);  
+    > fclose(fp);  
+    > ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
