@@ -8,6 +8,11 @@
 
 ​		AAC比MP3的压缩率更高，压缩后的文件越小，二是保真性比MP3强。ACC最开始是基于MPEG-2的音频编码技术，MPEG-4标准出现后，AAC重新集成了其特性，加入了SBR（Spectral Band Replication， 频段重现）和PS（Parametric Stereo，参数化）技术。
 
+- 1997 年推出的基于 MPEG-2 的音频编码技术
+- 2000 年，MPEG-4 标准出现后，AAC 重新集成了其特性，加入了 SBR 技术和 PS 技术
+- 为了区别于传统的 MPEG-2 AAC 又称为 MPEG-4 AAC。
+- AAC 比 MP3 有更高的压缩比，同样大小的音频文件，AAC 的音质更高
+
 
 
 ## 特点
@@ -183,6 +188,54 @@
 > [该网站](https://www.p23.nl/projects/aac-header/)提供了一个解析 AAC ADTS Frame Header 的工具，你可以输入头部 7 或 9 个字节的数据，点击 Submit 就能看到头部各字段对应的含义。
 >
 > [最简单的 AAC 音频码流解析程序_aac裸流结果-CSDN博客](https://blog.csdn.net/ProgramNovice/article/details/137225523)
+
+
+
+
+
+- 结构
+
+  ​	由7或9个字节组成，其中按位赋予不同的含义。 
+
+![image-20240225194835753](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240225194835753.png)
+
+- 12bit，同步字， 所有位必须是1，`0xFFF`
+
+  ​	通过识别`0xFFF`来识别一个ADTS头。
+
+-  1bit，MPEG编码规范，`0 MPEG-4 / 1 MPEG-2`
+
+- 2bit，layer，总是`0`
+
+- 1bit，CRC保护标识，`0 CRC / 1 no CRC`
+
+  ​	有CRC保护则在7字节基础上增加2个字节的CRC校验码，成为9个字节
+
+- 2bit，profile，`MPEG-4`音频对象类型，即不同的AAC版本。
+
+  - 1, AAC Main
+  - 2, AAC LC
+  - 5, SBR
+  - 29, PS
+
+- 4bit，MPEG-4采样率
+
+  - 0, 96000HZ
+  - 1, 88200HZ
+  - 2, 64000HZ
+  - 3, 48000HZ
+  - 4, 44100HZ
+  - 5, 32000HZ
+  - 6, 24000HZ
+  - 7, 22050HZ
+  - 8, 16000HZ
+  - 9, 12000HZ
+  - 10, 11025HZ
+  - 11, 8000HZ
+  - 12, 7350HZ
+  - 13, Reserved
+  - 14, Reserved
+  - 15: frequency is wirtten explictly
 
 
 
