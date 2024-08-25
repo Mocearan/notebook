@@ -483,12 +483,13 @@ static int read_thread(void *arg)
     if ( genpts )
         ic->flags |= AVFMT_FLAG_GENPTS;
 
-    //* 获取流的编解码参数。如果失败，记录警告并处理失败。
+    //* 获取媒体流流的编解码参数。如果失败，记录警告并处理失败。
     if ( find_stream_info ) {
+        //* 媒体流信息的选项指针数组，每个媒体流对应一个AVDictionary*
         AVDictionary **opts;
         int orig_nb_streams = ic->nb_streams;
 
-        //* 设置查找流信息的选项
+        //* 设置查找时所用的各个媒体流信息的选项
         err = setup_find_stream_info_opts(ic, codec_opts, &opts);
         if (err < 0) {
             av_log(NULL, AV_LOG_ERROR,
@@ -497,11 +498,13 @@ static int read_thread(void *arg)
             goto fail;
         }
 
-        //* 获取流的编解码参数
+        //* 获取每个媒体流的信息设置到ic中
         err = avformat_find_stream_info(ic, opts);
-        for (i = 0; i < orig_nb_streams; i++)
+        //* 释放媒体流选项指针数组
+        for ( i = 0; i < orig_nb_streams; i++ )
             av_dict_free(&opts[i]);
         av_freep(&opts);
+
         //* 检查并记录流的状态，如果找不到编解码参数，记录警告并退出
         if ( err < 0 ) {
             av_log(NULL, AV_LOG_WARNING,
@@ -510,6 +513,7 @@ static int read_thread(void *arg)
             goto fail;
         }
     }
+
 
     if ( ic->pb )
         //*  eof_reached 设置为 0，来指示流读取未结束，以便后续读取能够正确进行。
@@ -817,6 +821,265 @@ fail:
     }
     //* 销毁互斥锁
     SDL_DestroyMutex(wait_mutex);
+    return 0;
+}
+```
+
+
+
+## `event_loop`
+
+```c
+//* 利用 SDL（Simple DirectMedia Layer）来处理与视频播放相关的事件。主要目的是管理用户通过键盘和鼠标输入进行的交互，从而实现视频播放的各种控制。
+static void event_loop(VideoState *cur_stream)
+{
+    SDL_Event event;
+    double incr, pos, frac;
+
+    //* loop
+    for ( ;;) {
+        double x;
+        //* 阻塞当前线程，直到有新的事件发生。
+        refresh_loop_wait_event(cur_stream, &event);
+        //* event handle
+        switch ( event.type ) {
+        //* 键盘输入处理
+        case SDL_KEYDOWN:
+            //* 按 ESC 键、q 键或者通过预定义的退出变量 （exit_on_keydown）来退出应用程序
+            if ( exit_on_keydown || event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q ) {
+                do_exit(cur_stream);
+                break;
+            }
+            // If we don't yet have a window, skip all key events, because read_thread might still be initializing...
+            //* 没有窗口就忽略所有键盘事件
+            if ( !cur_stream->width )
+                continue;
+            //* 键盘事件
+            switch ( event.key.keysym.sym ) {
+            //* f 键可以在全屏和窗口模式之间切换
+            case SDLK_f:
+                toggle_full_screen(cur_stream);
+                cur_stream->force_refresh = 1;
+                break;
+            //* 按 p 或 SPACE 键可以切换暂停/播放状态
+            case SDLK_p:
+            case SDLK_SPACE:
+                toggle_pause(cur_stream);
+                break;
+            //* 按 m 键可以静音或取消静音。
+            case SDLK_m:
+                toggle_mute(cur_stream);
+                break;
+            //* KP_MULTIPLY（小键盘的乘号）或 0 键增加音量。
+            case SDLK_KP_MULTIPLY:
+            case SDLK_0:
+                update_volume(cur_stream, 1, SDL_VOLUME_STEP);
+                break;
+            //* KP_DIVIDE（小键盘的除号）或 9 键降低音量
+            case SDLK_KP_DIVIDE:
+            case SDLK_9:
+                update_volume(cur_stream, -1, SDL_VOLUME_STEP);
+                break;
+            //* 逐帧播放，按 s 键可以跳到下一帧。
+            case SDLK_s: // S: Step to next frame
+                step_to_next_frame(cur_stream);
+                break;
+            //* a、v、c、t 和 w 键可以在音频、视频和字幕频道之间切换。
+            case SDLK_a:
+                stream_cycle_channel(cur_stream, AVMEDIA_TYPE_AUDIO);
+                break;
+            case SDLK_v:
+                stream_cycle_channel(cur_stream, AVMEDIA_TYPE_VIDEO);
+                break;
+            case SDLK_c:
+                stream_cycle_channel(cur_stream, AVMEDIA_TYPE_VIDEO);
+                stream_cycle_channel(cur_stream, AVMEDIA_TYPE_AUDIO);
+                stream_cycle_channel(cur_stream, AVMEDIA_TYPE_SUBTITLE);
+                break;
+            case SDLK_t:
+                stream_cycle_channel(cur_stream, AVMEDIA_TYPE_SUBTITLE);
+                break;
+            case SDLK_w:
+                if (cur_stream->show_mode == SHOW_MODE_VIDEO && cur_stream->vfilter_idx < nb_vfilters - 1) {
+                    if (++cur_stream->vfilter_idx >= nb_vfilters)
+                        cur_stream->vfilter_idx = 0;
+                } else {
+                    cur_stream->vfilter_idx = 0;
+                    toggle_audio_display(cur_stream);
+                }
+                break;
+            //* 使用 PAGEUP 和 PAGEDOWN 键在可用的章节之间切换。
+            case SDLK_PAGEUP:
+                if (cur_stream->ic->nb_chapters <= 1) {
+                    incr = 600.0;
+                    goto do_seek;
+                }
+                seek_chapter(cur_stream, 1);
+                break;
+            case SDLK_PAGEDOWN:
+                if (cur_stream->ic->nb_chapters <= 1) {
+                    incr = -600.0;
+                    goto do_seek;
+                }
+                seek_chapter(cur_stream, -1);
+                break;
+            //* 箭头键（←、→、↑、↓）可用于在视频中前后寻址。增加或减少的时间间隔由 seek_interval 指定（如果有）或使用标准值。
+            case SDLK_LEFT:
+                incr = seek_interval ? -seek_interval : -10.0;
+                goto do_seek;
+            case SDLK_RIGHT:
+                incr = seek_interval ? seek_interval : 10.0;
+                goto do_seek;
+            case SDLK_UP:
+                incr = 60.0;
+                goto do_seek;
+            case SDLK_DOWN:
+                incr = -60.0;
+            do_seek:
+                    if (seek_by_bytes) {
+                        pos = -1;
+                        if (pos < 0 && cur_stream->video_stream >= 0)
+                            pos = frame_queue_last_pos(&cur_stream->pictq);
+                        if (pos < 0 && cur_stream->audio_stream >= 0)
+                            pos = frame_queue_last_pos(&cur_stream->sampq);
+                        if (pos < 0)
+                            pos = avio_tell(cur_stream->ic->pb);
+                        if (cur_stream->ic->bit_rate)
+                            incr *= cur_stream->ic->bit_rate / 8.0;
+                        else
+                            incr *= 180000.0;
+                        pos += incr;
+                        stream_seek(cur_stream, pos, incr, 1);
+                    } else {
+                        pos = get_master_clock(cur_stream);
+                        if (isnan(pos))
+                            pos = (double)cur_stream->seek_pos / AV_TIME_BASE;
+                        pos += incr;
+                        if (cur_stream->ic->start_time != AV_NOPTS_VALUE && pos < cur_stream->ic->start_time / (double)AV_TIME_BASE)
+                            pos = cur_stream->ic->start_time / (double)AV_TIME_BASE;
+                        stream_seek(cur_stream, (int64_t)(pos * AV_TIME_BASE), (int64_t)(incr * AV_TIME_BASE), 0);
+                    }
+                break;
+            default:
+                break;
+            }
+            break;
+        //*  鼠标输入处理
+        case SDL_MOUSEBUTTONDOWN:
+            if (exit_on_mousedown) {
+                do_exit(cur_stream);
+                break;
+            }
+            if ( event.button.button == SDL_BUTTON_LEFT ) {
+                //* 快速双击左键会切换全屏。
+                static int64_t last_mouse_left_click = 0;
+                if (av_gettime_relative() - last_mouse_left_click <= 500000) {
+                    toggle_full_screen(cur_stream);
+                    cur_stream->force_refresh = 1;
+                    last_mouse_left_click = 0;
+                } else {
+                    last_mouse_left_click = av_gettime_relative();
+                }
+            }
+        //* 鼠标移动处理
+        case SDL_MOUSEMOTION:
+            //* 如果鼠标被移动且光标被隐藏，则会显示光标。
+            if ( cursor_hidden ) {
+                SDL_ShowCursor(1);
+                cursor_hidden = 0;
+            }
+            //* 根据鼠标按键的状态（按下或移动）来决定是否进行视频的寻址。
+            cursor_last_shown = av_gettime_relative();
+            if (event.type == SDL_MOUSEBUTTONDOWN) {
+                if (event.button.button != SDL_BUTTON_RIGHT)
+                    break;
+                x = event.button.x;
+            } else {
+                if (!(event.motion.state & SDL_BUTTON_RMASK))
+                    break;
+                x = event.motion.x;
+            }
+            if (seek_by_bytes || cur_stream->ic->duration <= 0) {
+                uint64_t size =  avio_size(cur_stream->ic->pb);
+                stream_seek(cur_stream, size*x/cur_stream->width, 0, 1);
+            } else {
+                int64_t ts;
+                int ns, hh, mm, ss;
+                int tns, thh, tmm, tss;
+                tns  = cur_stream->ic->duration / 1000000LL;
+                thh  = tns / 3600;
+                tmm  = (tns % 3600) / 60;
+                tss  = (tns % 60);
+                frac = x / cur_stream->width;
+                ns   = frac * tns;
+                hh   = ns / 3600;
+                mm   = (ns % 3600) / 60;
+                ss   = (ns % 60);
+                av_log(NULL, AV_LOG_INFO,
+                        "Seek to %2.0f%% (%2d:%02d:%02d) of total duration (%2d:%02d:%02d)       \n", frac*100,
+                        hh, mm, ss, thh, tmm, tss);
+                ts = frac * cur_stream->ic->duration;
+                if (cur_stream->ic->start_time != AV_NOPTS_VALUE)
+                    ts += cur_stream->ic->start_time;
+                stream_seek(cur_stream, ts, 0, 0);
+            }
+            break;
+        //* 窗口事件
+        case SDL_WINDOWEVENT:
+            switch ( event.window.event ) {
+            //* 窗口大小发生变化
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+                //* 会更新流的宽度和高度
+                screen_width = cur_stream->width = event.window.data1;
+                screen_height = cur_stream->height = event.window.data2;
+                //* 销毁纹理（如果存在）
+                if ( cur_stream->vis_texture ) {
+                    SDL_DestroyTexture(cur_stream->vis_texture);
+                    cur_stream->vis_texture = NULL;
+                }
+                //* 在适用时调整渲染器的大小。
+                if ( vk_renderer )
+                    vk_renderer_resize(vk_renderer, screen_width, screen_height);
+             //* 窗口被暴露，将强制刷新显示
+            case SDL_WINDOWEVENT_EXPOSED:
+                cur_stream->force_refresh = 1;
+            }
+            break;
+        //* 退出处理
+        //* 检查 SDL_QUIT 和自定义的退出事件（FF_QUIT_EVENT）
+        case SDL_QUIT:
+        case FF_QUIT_EVENT:
+            do_exit(cur_stream);
+            break;
+        default:
+            break;
+        }
+    }
+}
+```
+
+
+
+## `is_realtime`
+
+```c
+//* 通过检查输入格式的名称以及流的 URL 来确定流的类型。
+//* 如果流是 RTP、RTSP 或 SDP 格式
+//* 或者其 URL 以 rtp : 或 udp : 开头
+//* 则视为实时流，返回 1。否则，返回 0。
+static int is_realtime(AVFormatContext *s)
+{
+    if ( !strcmp(s->iformat->name, "rtp")
+        || !strcmp(s->iformat->name, "rtsp")
+        || !strcmp(s->iformat->name, "sdp")
+    )
+        return 1;
+
+    if ( s->pb && (!strncmp(s->url, "rtp:", 4)
+        || !strncmp(s->url, "udp:", 4)
+        )
+    )
+        return 1;
     return 0;
 }
 ```

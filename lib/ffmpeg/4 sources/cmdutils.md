@@ -179,5 +179,56 @@ typedef struct OptionDef {
 
 
 
+## `setup_find_stream_info_opts`
+
+```c
+//* 用于在 AVFormatContext 结构中查找流信息并设置编解码器选项。
+//* 该函数的目的是为每个流分配一个代表其编解码选项的字典，并通过 dst 返回。调用该函数后可以获得与每个流对应的编解码器选项，以便进一步配置或使用。
+//* AVFormatContext *s: 指向一个 FFmpeg 格式上下文的指针，表示包含多个流信息的媒体文件的上下文。
+//* AVDictionary *codec_opts: 一个指向 AVDictionary 的指针，包含全局编解码器的选项。
+//* [out] AVDictionary ***dst: 一个指向字典指针的指针，用于返回设置后的编解码器选项。
+int setup_find_stream_info_opts(AVFormatContext *s,
+                                AVDictionary *codec_opts,
+                                AVDictionary ***dst)
+{
+    int ret;
+    //* 指向 AVDictionary 指针的数组，将用于存储每个流的编码选项。
+    AVDictionary **opts;
+
+    //* 将 *dst 指针置为 NULL，用于确保在没有流的情况下返回一个有效的指针。
+    *dst = NULL;
+
+    //* 没有需要处理的流。
+    if ( !s->nb_streams )
+        return 0;
+
+    //* 大小为s->nb_streams的AVDictionary*数组 
+    opts = av_calloc(s->nb_streams, sizeof(*opts));
+    if (!opts)
+        return AVERROR(ENOMEM);
+
+    for ( int i = 0; i < s->nb_streams; i++ ) {
+        //* 从全局编解码参数中过滤出每个流所需的编解码选项并设置到对应的字典中
+        //* codec_opts：全局编解码选项。
+        //* s->streams[i]->codecpar->codec_id：流的编解码器 ID。
+        //* s：格式上下文。
+        //* s->streams[i]：当前处理的流。
+        //* &opts[i]：指向当前流的选项指针地址。
+        ret = filter_codec_opts(codec_opts, s->streams[i]->codecpar->codec_id,
+                                s, s->streams[i], NULL, &opts[i]);
+        if (ret < 0)
+            goto fail;
+    }
+    *dst = opts;
+    return 0;
+fail:
+    for (int i = 0; i < s->nb_streams; i++)
+        av_dict_free(&opts[i]);
+    av_freep(&opts);
+    return ret;
+}
+
+```
+
 
 
