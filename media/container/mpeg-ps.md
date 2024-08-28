@@ -14,6 +14,8 @@
 
 [流媒体基础-RTP封装PS流 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/595923734)
 
+
+
 ## 基本结构
 
 - PS流或者文件可以视为多个 PS GOP
@@ -35,7 +37,7 @@
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/1343107-20220524143245043-389558396.png)
 
-
+![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/7afd4879bf0f2888314624299b908d4d.png#pic_center)
 
 ## PS Header
 
@@ -152,7 +154,7 @@ static int gb28181_make_sys_header(char *pData)
 
 
 
-### PSM
+## PSM
 
 ​		节目流映射 PSM 提供节目流中基本流的描述及其相互关系。作为一个PES分组出现。
 
