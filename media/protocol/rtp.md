@@ -646,7 +646,11 @@ kRtpExtensionNumberOfExtensions  // Must be the last entity in the enum.
 
 [RTP扩展头部AbsoluteSendTime的应用（REMB GCC拥塞控制） ](https://blog.csdn.net/weixin_38102771/article/details/127780907?spm=1001.2014.3001.5502)
 
-[RTP扩展头部TransportSequenceNumber的应用（TFB GCC拥塞控制）](https://blog.csdn.net/weixin_38102771/article/details/128218672?spm=1001.2014.3001.5502)
+[RTP扩展头部TransportSequenceNumber的应用（TCC GCC拥塞控制）](https://blog.csdn.net/weixin_38102771/article/details/128218672?spm=1001.2014.3001.5502)
+
+[RTP扩展头部RtpStreamId的应用（simulcast）](https://blog.csdn.net/weixin_38102771/article/details/140647968)
+
+
 
 ​		为RTP传输协议增加扩展性，方便扩展版本功能，同时允许用户增加私有信息。
 

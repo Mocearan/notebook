@@ -2,18 +2,23 @@
 
 ---
 
-​		AAC（Advanced Audio Coding）是一种现代的音频编码技术，用于数字音频的传输和存储领域。AAC是MPEG-2和MPEG-4标准中的一部分，可提供更高质量的音频数据。
+​		AAC（Advanced Audio Coding）是一种现代的音频编码技术，用于数字音频的传输和存储领域。
 
-​		AAC是音频最常用的编码格式之一，几乎所有的播放器都支持这个编码格式。
+- AAC是MPEG-2和MPEG-4标准中的一部分，可提供更高质量的音频数据
+  - ACC最开始是基于MPEG-2的音频编码技术,1997 年推出的基于 MPEG-2 的音频编码技术
+  - MPEG-4标准出现后，AAC重新集成了其特性
+    - 2000 年，MPEG-4 标准出现后，AAC 重新集成了其特性，加入了 SBR 技术和 PS 技术
+    - SBR（Spectral Band Replication， 频段重现）
+    - PS（Parametric Stereo，参数化）技术
+  - 为了区别于传统的 MPEG-2 AAC 又称为 MPEG-4 AAC
+- AAC是音频最常用的编码格式之一，几乎所有的播放器都支持这个编码格式
+- AAC比MP3的压缩率更高，保真性比MP3强
 
-​		AAC比MP3的压缩率更高，压缩后的文件越小，二是保真性比MP3强。ACC最开始是基于MPEG-2的音频编码技术，MPEG-4标准出现后，AAC重新集成了其特性，加入了SBR（Spectral Band Replication， 频段重现）和PS（Parametric Stereo，参数化）技术。
-
-- 1997 年推出的基于 MPEG-2 的音频编码技术
-- 2000 年，MPEG-4 标准出现后，AAC 重新集成了其特性，加入了 SBR 技术和 PS 技术
-- 为了区别于传统的 MPEG-2 AAC 又称为 MPEG-4 AAC。
-- AAC 比 MP3 有更高的压缩比，同样大小的音频文件，AAC 的音质更高
 
 
+## 参考
+
+[最简单的 AAC 音频码流解析程序_aac裸流结果-CSDN博客](https://blog.csdn.net/ProgramNovice/article/details/137225523)
 
 ## 特点
 
@@ -28,6 +33,8 @@
   - > 双通道、采样率为48KHz的话，则一个音频帧的长度大约为0.01秒
 
   - 如果每个音频帧的采样数不对，则可能会造成播放过快或过慢的问题
+
+
 
 ## SBR 频带重现
 
@@ -65,7 +72,11 @@
 
 
 
-## 编码规格
+
+
+
+
+## 规格
 
 ​		通过附加的编码技术（PS，SBR等），衍生出了
 
@@ -106,13 +117,28 @@
 
 - 但一般音频码率都会在128Kbps以上，所以一般选用常规的AAC-LC即可。
 
+## AAC 编码
 
 
 
+### AAC ES
 
-## 编码格式
+​		AAC ES是指仅经过AAC编码器编码，还未进行ADTS或ADIF封装的原始编码数据流。
 
-​		AAC 有两种封装格式：ADIF，ADTS
+​		AAC ES 通常由一系列连续的AAC音频帧组成：
+
+- 每帧以特定标志符开始，表示这是一个AAC音频帧
+- 每个音频帧拥有相同的长度（`1024`个样本时间段）
+  - `1024`个样本时间段，但是并不一定包含相同数量的采样点
+    - 采样率和声道数量可能会发生变化
+- AAC ES 采用大端字节顺序，其中高位字节排在前面，低位字节排在后面
+- AAC ES中，音频数据按照从左到右、自上而下的顺序排列
+
+
+
+## AAC封装格式
+
+​		AAC一般指AAC编码，但在比较广泛的上下文中，AAC指的是一种包含了编码和封装格式两部分的音频封装码流。其中，AAC标准定义了两种封装格式：ADIF，ADTS。
 
 - `ADIF（Audio Data Interchange Format）`，音频数据交换格式
   - 只有一个文件头部，存储用于音频解码播放的信息（例如采样率，通道数等）
@@ -122,7 +148,15 @@
   - 多个音频帧构成一个音频序列
   - 可以从任何帧位置解码播放，更适用于流媒体传输
 
-### ADIF 
+​		[该网站](https://www.p23.nl/projects/aac-header/)提供了一个解析 AAC ADTS Frame Header 的工具，你可以输入头部 7 或 9 个字节的数据，点击 Submit 就能看到头部各字段对应的含义。
+
+
+
+### ADIF
+
+​		`ADIF（Audio Data Interchange Format）`，音频数据交换格式。
+
+​		只在**文件头部存储**用于音频解码播放的头信息（例如采样率，通道数等），它的解码播放必须从文件头部开始，一般用于存储在本地磁盘中播放。
 
 ​		![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/25cc8f265c27a1ac0655341c61db3815.png)
 
@@ -130,130 +164,121 @@
 
 ### ADTS
 
+​		`ADTS（Audio Data Transport Stream）`，音频数据传输流。由7或9个字节组成。
+
+​		将数据看做连续的音频帧，**每帧都存储**了用于音频解码播放的头信息（例如采样率，通道数等），即可以从任何帧位置解码播放，更适用于流媒体传输。
+
+-  ADTS Frame 组成AAC 码流
+  - ` ...| ADTS Frame | ADTS Frame | ADTS Frame | ADTS Frame | ADTS Frame |...`
+- 把AAC的ES流打包成ADTS的格式即ADTS Frame
+  - 在AAC ES流前添加7个字节的ADTS header
+  - 每个 ADTS Frame 是由 头部和数据组成
+    - 头部包含 固定头部和可变头部
+
 ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/3311dba799a441bda48618bab8811ba7.png)
 
-​		ADTS 格式的 AAC 码流是由一个个的 ADTS Frame 组成.
-
-> ​		一般的AAC解码器都需要把AAC的ES流打包成ADTS的格式，一般是在AAC ES流前添加7个字节的ADTS header。也就是说ADTS是AAC的frame header。
-
-```c
- ...| ADTS Frame | ADTS Frame | ADTS Frame | ADTS Frame | ADTS Frame |...
-```
-
-​		每个 ADTS Frame 是由头部（固定头部+可变头部）和数据组成
-
-```c
-// ADTS Frame
-```
+​		
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/527383512e8c48eba228bdc71bfe98ba.png)
 
-### 固定头部
 
-| 序号 | 字段名称                              | 长度 (bits) | 说明                                                         |
-| ---- | ------------------------------------- | ----------- | ------------------------------------------------------------ |
-| 1    | Syncword                              | 12          | ADTS文件的标志符，它用于确定音频帧的开始位置和结束位置，通常为`0xFFF`。 |
-| 2    | MPEG version ID                       | 1           | 使用的MPEG版本<br />0 表示 MPEG-4，1 表示 MPEG-2             |
-| 3    | Layer                                 | 2           | 所有位必须为0                                                |
-| 4    | Protection Absent                     | 1           | 是否存在 CRC 校验<br />0 表示存在 CRC 校验字段；1 表示不存在 CRC 校验字段 |
-| 5    | Profile                               | 2           | AAC规格<br />0 表示 AAC Main；1 表示 AAC LC；2 表示 AAC SSR；11 AAC LTP |
-| 6    | MPEG-4 <br />Sampling Frequence Index | 4           | 采样率索引<br />0 表示 96000Hz，4 表示 44100Hz，11 表示 8000Hz<br />[详见此处](https://wiki.multimedia.cx/index.php/MPEG-4_Audio#Sampling_Frequencies) |
-| 7    | Private Stream                        | 1           | 编码时将该值设为 0，解码时忽略                               |
-| 8    | MPEG-4 Channel Configuration          | 3           | 通道数，指示音频的通道数，如单声道、立体声或多声道等<br />取值为0时，通过inband 的PCE设置channel configuration |
-| 9    | Originality/copy                      | 1           | Originality指示编码数据是否被原始产生。<br />编码时将该值设置为 0，解码时忽略 |
-| 10   | Home                                  | 1           | 编码时将该值设为 0，解码时忽略                               |
+
+#### 固定头部
+
+​		`28 bit`
+
+- `Syncword`， `12 bit`，ADTS文件的标志符
+
+  - 它用于确定音频帧的开始位置和结束位置
+  - 通常为`0xFFF`
+
+- `MPEG version ID`， `1 bit`，  使用的MPEG版本
+
+  - `0` 表示 `MPEG-4`
+  - `1` 表示 `MPEG-2`
+
+- `Layer`， `2 bit`，  所有位必须为`0`
+
+- `Protection Absent` ，`1 bit`，  是否存在 CRC 校验字段
+
+  - `0` 表示存在 CRC 校验字段
+  - `1` 表示不存在 CRC 校验字段
+
+- `Profile `， `2 bit`，AAC规格
+
+  - `0` ，`AAC Main`
+  - `1` ，`AAC LC`
+  - `2` ，AAC SSR`
+  - `11`， `AAC LTP`
+
+- `MPEG-4 Sampling Frequence Index`，  `4 bit` ， 采样率索引
+
+  - `0 `表示 `96000Hz`
+  - `4 `表示 `44100Hz`
+  - `11 `表示 `8000Hz`
+  - [详见此处](https://wiki.multimedia.cx/index.php/MPEG-4_Audio#Sampling_Frequencies)
+
+- `Private Stream` ，`1 bit`  
+
+  - 编码时将该值设为 `0`
+  - 解码时忽略
+
+- `MPEG-4 Channel Configuration` ，`3 bit`，通道数，指示音频的通道数
+
+  - 如单声道、立体声或多声道等
+  - 取值为0时，通过`inband `的`PCE`设置`channel configuration`
+
+- `Originality/copy`， `1 bit`，  `Originality`指示编码数据是否被原始产生
+
+  - 编码时将该值设置为 `0`
+  - 解码时忽略
+
+- `home`，`1 bit`  
+
+  - 编码时将该值设为 0
+  - 解码时忽略
+
+  
+
+  
 
 ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20161028130919091)
 
 ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a54370ede8963b6c1025e5350d62c0b3.png)
 
-### 可变头部
-
-| 序号 | 字段名称             | 长度 (bits) | 说明                                                         |
-| ---- | -------------------- | ----------- | ------------------------------------------------------------ |
-| 11   | Copyrighted Stream   | 1           | 编码时将该值设为 0，解码时忽略                               |
-| 12   | Copyrighted Start    | 1           | 编码时将该值设为 0，解码时忽略                               |
-| 13   | Frame Length         | 13          | ADTS 帧长度，包括ADTS头部所占的长度和AAC ES长度，单位Byte    |
-| 14   | Buffer Fullness      | 11          | 值为 0x7FF 时表示动态码率，0x000 表示固定码率的码流          |
-| 15   | Number of AAC Frames | 2           | 值为 ADTS 帧里的 AAC 帧数量减一<br />为了最大的兼容性通常每个ADTS frame 包含一个AAC frame，所以该值一般为0。<br />一个AAC原始帧包含一段时间内1024个采样及相关数据 |
-
-### CRC
-
-| 序号 | 字段名称 | 长度 (bits) | 说明 |
-| ---- | -------- | ----------- | ---- |
-| 16   | CRC      | 16          | CRC  |
 
 
+#### 可变头部
 
-> [该网站](https://www.p23.nl/projects/aac-header/)提供了一个解析 AAC ADTS Frame Header 的工具，你可以输入头部 7 或 9 个字节的数据，点击 Submit 就能看到头部各字段对应的含义。
->
-> [最简单的 AAC 音频码流解析程序_aac裸流结果-CSDN博客](https://blog.csdn.net/ProgramNovice/article/details/137225523)
+​		`28 bit`
 
+- `Copyrighted Stream`， `1 bit` 
+  - 编码时将该值设为 0，解码时忽略
+- `Copyrighted Start` ，`1 bit` 
+  - 编码时将该值设为 0，解码时忽略
+- `Frame Length` ，`13 bit`  ，ADTS 帧长度
+  - 包括ADTS头部长度和AAC ES长度，单位Byte
+-  `Buffer Fullness`，`11 bit` 
+  -  `0x7FF `时表示动态码率
+  - `0x000 `表示固定码率的码流
+- `Number of AAC Frames` ，`2 bit`  
+  - 值为 ADTS 帧里的 AAC 帧数量减一
+  - 为了最大的兼容性通常每个ADTS frame 包含一个AAC frame，所以该值一般为0
+  - AAC原始帧包含一段时间内`1024`个采样及相关数据
 
+#### CRC
 
-
-
-- 结构
-
-  ​	由7或9个字节组成，其中按位赋予不同的含义。 
-
-![image-20240225194835753](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240225194835753.png)
-
-- 12bit，同步字， 所有位必须是1，`0xFFF`
-
-  ​	通过识别`0xFFF`来识别一个ADTS头。
-
--  1bit，MPEG编码规范，`0 MPEG-4 / 1 MPEG-2`
-
-- 2bit，layer，总是`0`
-
-- 1bit，CRC保护标识，`0 CRC / 1 no CRC`
-
-  ​	有CRC保护则在7字节基础上增加2个字节的CRC校验码，成为9个字节
-
-- 2bit，profile，`MPEG-4`音频对象类型，即不同的AAC版本。
-
-  - 1, AAC Main
-  - 2, AAC LC
-  - 5, SBR
-  - 29, PS
-
-- 4bit，MPEG-4采样率
-
-  - 0, 96000HZ
-  - 1, 88200HZ
-  - 2, 64000HZ
-  - 3, 48000HZ
-  - 4, 44100HZ
-  - 5, 32000HZ
-  - 6, 24000HZ
-  - 7, 22050HZ
-  - 8, 16000HZ
-  - 9, 12000HZ
-  - 10, 11025HZ
-  - 11, 8000HZ
-  - 12, 7350HZ
-  - 13, Reserved
-  - 14, Reserved
-  - 15: frequency is wirtten explictly
+- CRC ，`16 bit `
+  - 可能存在校验和字段，视固定头部中`Protection Absent`字段而定
+  - 没有则ADTS头部7字节
+  - 有则ADTS头部9字节
 
 
-
-### AAC ES
-
-​		AAC ES（AAC Elementary Stream）是AAC音频编码的一种基本数据格式，也是AAC音频数据在流式传输和文件存储中的常见格式之一。
-
-​		AAC ES不同于其他容器格式（如MP4、M4A等），它不包含额外的元数据或结构信息，仅包含未经任何封装或压缩处理的原始音频数据。这些原始数据可以作为音频文件或流传输的基础，同时也可以用于对AAC音频进行转码、编辑或重组。
-
-​		AAC ES 通常由一系列连续的AAC音频帧组成，每个帧以一个特定的标志符开始，该标志符表示这是一个AAC音频帧。在AAC ES中，每个音频帧拥有相同的长度（1024个样本时间段），但是并不一定包含相同数量的采样点，因为采样率和声道数量可能会发生变化。
-
-​		AAC ES 的另一个关键特征是其比特流顺序，即数字音频数据的组织方式。AAC ES 采用大端字节顺序，其中高位字节排在前面，低位字节排在后面。此外，在AAC ES中，音频数据按照从左到右、自上而下的顺序排列，与典型的文本文件不同。
 
 
 
 ```c
 // 贴上ffmpeg中添加ADTS头的代码，就可以很清晰的了解ADTS头的结构：
-
 
 int ff_adts_write_frame_header(ADTSContext *ctx, 
                                uint8_t *buf, int size, int pce_size) 

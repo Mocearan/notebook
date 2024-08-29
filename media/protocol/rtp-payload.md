@@ -10,13 +10,17 @@
 
 ### 荷载AAC
 
-> [使用RTP包荷载AAC码流数据_aac rtp打包-CSDN博客](https://blog.csdn.net/weixin_38102771/article/details/128304673)
->
-> [使用RTP包荷载AAC码流数据 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/642179319)
->
 > [Enscript Output (rfc-editor.org)](https://www.rfc-editor.org/rfc/pdfrfc/rfc6416.txt.pdf)
 
-​	RTP Payload 前面需要先加 4 个字节的荷载标识
+```c
+// | RTP Header | 荷载标识（4byte） | ADTS Frame Data（不包括 Frame Header）|
+//              | ------------------RTP Payload--------------------------|
+```
+
+- 音频帧一般较小，一般只用一个 RTP 包也可以承载
+  - 一般一个RTP包也只荷载一帧
+- RTP Payload 要去除ADTS头
+- RTP Payload 前面加 4 个字节的荷载标识
 
 ```c
 // 荷载标识
@@ -26,10 +30,7 @@ payload[2] = (frameLength & 0x1FE0) >> 5; // frameLength 记录在AAC frame head
 payload[3] = (frameLength & 0x1F) << 3;
 ```
 
-```c
-// | RTP Header | 荷载标识（4byte） | ADTS Frame Data（不包括 Frame Header）|
-//              | ------------------RTP Payload--------------------------|
-```
+
 
 ​		接下来将 ADTS Frame Data 拷贝到 RTP Payload[4] 开始的位置，注意 ADTS Frame Header 无需拷贝。
 

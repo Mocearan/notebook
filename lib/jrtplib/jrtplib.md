@@ -441,6 +441,67 @@ int GetFrequenceFromIndex(uint8_t idx);
 
 ```c++
 // aac.cpp
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include "aac.h"
+
+// 定义 ADTS 帧头的长度
+#define ADTS_HEADER_LENGTH 7
+
+// 获取 ADTS 帧
+int GetAdtsFrame(FILE* f, AdtsFrame* aframe) {
+    uint8_t header[ADTS_HEADER_LENGTH];
+    
+    // 读取 ADTS 帧头
+    if (fread(header, 1, ADTS_HEADER_LENGTH, f) != ADTS_HEADER_LENGTH) {
+        return -1; // 读取失败
+    }
+
+    // 解析 ADTS 帧头
+    if ((header[0] != 0xFF) || ((header[1] & 0xF6) != 0xF0)) {
+        return -1; // 不是 ADTS 帧
+    }
+
+    aframe->profile = (header[2] >> 6) & 0x03; // Profile
+    aframe->frequenceIdx = (header[2] >> 2) & 0x0F; // Sampling Frequency Index
+    aframe->frameLength = ((header[3] & 0x03) << 11) | (header[4] << 3) | ((header[5] >> 5) & 0x07); // Frame Length
+    aframe->headerLen = ADTS_HEADER_LENGTH; // Header Length
+    aframe->bodyLen = aframe->frameLength - ADTS_HEADER_LENGTH; // Body Length
+
+    // 分配内存给音频数据
+    aframe->body = new uint8_t[aframe->bodyLen];
+    if (fread(aframe->body, 1, aframe->bodyLen, f) != aframe->bodyLen) {
+        delete[] aframe->body;
+        return -1; // 读取失败
+    }
+
+    return aframe->bodyLen; // 返回有效数据长度
+}
+
+// 分配 ADTS 帧结构体
+AdtsFrame* AllocAdtsFrame() {
+    return new AdtsFrame();
+}
+
+// 释放 ADTS 帧结构体
+void FreeAdtsFrame(AdtsFrame* aframe) {
+    if (aframe) {
+        delete[] aframe->body; // 释放音频数据
+        delete aframe; // 释放结构体
+    }
+}
+
+// 从频率索引获取采样率
+int GetFrequenceFromIndex(uint8_t idx) {
+    static const int frequencies[] = {96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350};
+    if (idx < sizeof(frequencies) / sizeof(frequencies[0])) {
+        return frequencies[idx];
+    }
+    return -1; // 无效索引
+}
 
 ```
 
@@ -574,7 +635,7 @@ int main(int argc, char** argv) {
 g++ jrtp_aac.cpp aac/aac.cpp -ljrtp -o jrtp_aac
 ```
 
-  `jrtp_aac `程序启动后，设置本端使用的发送端口以及对端地址后，进程就开始发包了，我们使用 VLC 设置 sdp 信息开始接收流并播放。
+  `jrtp_aac `程序启动后，设置本端使用的发送端口以及对端地址后，进程就开始发包了，我们使用 VLC 设置 sdp 信息开始接收流并播放。需要在同一机器上。
 
 ```
 m=audio 10004 RTP/AVP 97
