@@ -165,7 +165,7 @@
 
 ### RTP
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/8452c33f5e794d6a8eeebc5b4b140a6e.png)
+
 
 ```c
 // 0  2 3 4   8  9      16                32
