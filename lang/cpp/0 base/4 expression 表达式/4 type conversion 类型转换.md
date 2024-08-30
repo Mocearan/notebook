@@ -1,23 +1,25 @@
 # type conversion
 
-​		The process of converting a value from one data type to another data type is called a **type conversion**.
+​		将值从一种数据类型转换为另一种数据类型的过程称为类型转换。
 
 ---
 
+​		C++语言不会直接将两个不同类型的值相加，而是先根据类型转换规则设法将运算对象的类型统一后再求值。
+
+​		类型转换可以通过以下两种方式之一调用:隐式(根据编译器的需要)或显式(根据程序员的要求)。
 
 
-​		Type conversion can be invoked in one of two ways: either implicitly (as needed by the compiler), or explicitly (when requested by the programmer). 
 
 ## The standard conversions 标准转换
 
-​		The C++ language standard defines how different fundamental types (and in some cases, compound types) can be converted to other types.These conversion rules are called the **standard conversions**.
+​		c++语言标准定义了如何将不同的基本类型(在某些情况下是复合类型)转换为其他类型。这些转换规则被称为标准转换。
 
-​		The standard conversions can be broadly divided into 4 categories, each covering different types of conversions:
+​		标准转换可大致分为4类，每一类涵盖不同类型的转换:
 
 - Numeric promotions 数值提升
 - Numeric conversions 数值转换
 - Arithmetic conversions 算数转换
-- Other conversions (which includes various pointer and reference conversions)
+-  其他转换(包括各种指针和引用转换)
 
 ​		When a type conversion is needed, the compiler will see if there are standard conversions that it can use to convert the value to the desired type. The compiler may apply zero, one, or more than one standard conversions in the conversion process.
 
@@ -27,16 +29,16 @@
 
 
 
-### Numeric promotions
+### Numeric promotions 数值提升
 
-> ​		A wider data type is one that uses more bits, and a narrower data type is one that uses less bits.
->
-> - Some 32-bit processors (such as the x86 series) can manipulate 8-bit or 16-bit values directly. 
-> - Other 32-bit CPUs (like the PowerPC), can only operate on 32-bit values, and additional tricks must be employed to manipulate narrower values.
->
-> ​		C++ is designed to be portable and performant across a wide range of architectures,C++ defines a category of type conversions informally called the `numeric promotions`.
+​		算术类型之间的隐式转换被设计得尽可能避免损失精度。因此在转换时保护值不被改变，类型转换成为提升（promotion）。
 
-​		保护值不被改变类型转换成为提升（promotion）。执行算数运算之前，通常把较短的整数类型通过整型提升（integral promotion）成`int`。提升的结果一般不会是`long`（除非运算对象的类型是`char16_t / char32_t / wchar_t`或者本身比`int`大的一个普通枚举类型）或`long double`。这反映了C语言中类型提升的本质：把算数对象变得复合算数运算的“自然尺寸”。
+> 较宽的数据类型是使用较多位的数据类型，较窄的数据类型是使用较少位的数据类型。
+>
+> - —某些32位处理器(如x86系列)可以直接操作8位或16位值。
+> - —其他32位cpu(如PowerPC)只能操作32位值，并且必须使用额外的技巧来操作更窄的值。
+>
+> c++被设计成在各种架构中具有可移植性和高性能，c++定义了一种类型转换，非正式地称为“数值提升”。
 
 ​		整型提升的规则：
 
@@ -44,7 +46,7 @@
   - 则将该数据转换为`int`
   - 否则转化`unsigned int`
 - `char16_t / char32_t / wchar_t`或普通枚举类型的数据转换成下列类型中的第一个能够表示其全部值的类型：`int / usigned int / long / unsigned long / unsigned long long`
-- 如果位域的全局值能用`int`表示，则它转换为`int`；否则如果全部值能用`unsigned int`表示，则它转换为`unsignedint``
+- 如果位域的全局值能用`int`表示，则它转换为`int`；否则如果全部值能用`unsigned int`表示，则它转换为`unsignedint`
   - 如果`int`和`unsigned int`都不行，则不执行任何整数提升
 - `bool`值转换成`int`，其中`false -> 0 / true -> 1`
 
@@ -144,7 +146,7 @@ int main()
 
 
 
-### Numeric conversions
+### Numeric conversions 数值转换
 
 ​		**numeric conversions**, that cover additional type conversions not covered by the numeric promotion rules.
 
@@ -295,7 +297,7 @@ char c{2.3};
 
 
 
-### Arithmetic conversion
+### Arithmetic conversion 算数转换
 
 ​		c++会在基础类型的算数运算和赋值运算中进行有意义的类型转换，使得他们可以自由的组合。目的是保证表达式计算的结果具有更高的精度。
 
@@ -346,27 +348,79 @@ char c{2.3};
   - 否则，如果一个运算对象的类型是`unsigned`，则另一个也转化成`unsigned`
   - 否则，两个运算对象都转换成`int`
 
+### Other conversions 其他转换
+
+- 数组转换成指针：在大多数用到数组的表达式中，数组自动转换成指向数组首元素的指针
+
+  - 数组的退化转换在以下情况不会发生
+
+    - `decltype`关键字的参数
+
+    - 作为取地址符（`&`）
+
+    - `sizeof`及`typeid`
+
+    - 引用数组
+
+      ```c++
+      int arr[10];
+      int (&arr_ref)[10] = arr;
+      ```
+
+- 指针转换：
+
+  - 常量整数值`0`或者字面值`nullptr`能转换成任意指针类型
+  - 指向任意非常量的指针能转换成`void*`
+  - 指向任意对象的指针能转换成`const void*`
+
+- 到布尔的转换：
+
+  - 指针或算术类型的值为0，转换结果是false；否则转换结果是true
+
+- 到常量的转换：
+
+  - 允许将指向非常量类型的指针转换成指向相应的常量类型的指针，对于引用也是这样
+
+    ```c++
+    int i;
+    const int &j = i;
+    const int *p = &i;
+    ```
+
+- `class`类型定义的转换：
+
+  - 由类重载的运算符、类型转换构造函数来决定行为
 
 
-## Implicit type conversion
 
-​		**Implicit type conversion** (also called **automatic type conversion** or **coercion**) is performed automatically by the compiler when one data type is required, but a different data type is supplied. 
 
-​		When a type conversion is invoked (whether implicitly or explicitly), the compiler will determine whether it can convert the value from the current type to the desired type. If a valid conversion can be found, then the compiler will produce a new value of the desired type. 
 
-> Note that type conversions don’t change the value or type of the value or object being converted.
+## Implicit type conversion 隐式类型转换
 
-​		If the compiler can’t find an acceptable conversion, then the compilation will fail with a compile error. 
+​		**隐式类型转换**(也称为**自动类型转换**或**强制转换**)在需要一种数据类型时由编译器自动执行，但提供了不同的数据类型。
 
-- the compiler might not know how to convert a value between the original type and the desired type
+​		当调用类型转换时(无论是隐式还是显式)，编译器将确定是否可以将值从当前类型转换为所需类型。如果可以找到有效的转换，则编译器将生成所需类型的新值。
 
-- statements may disallow certain types of conversions. 
+-  在大多数表达式中，比int类型小的整型值首先提升为较大的整数类型。
+-  在大多数表达式中，比int类型小的整型值首先提升为较大的整数类型。
+-  在大多数表达式中，比int类型小的整型值首先提升为较大的整数类型。
+-  在大多数表达式中，比int类型小的整型值首先提升为较大的整数类型。
+- 函数调用时也会发生类型转换
 
-  ```c++
-  int x { 3.5 }; // brace-initialization disallows conversions that result in data loss
-  ```
+> 类型转换不会改变被转换的值或值或对象的类型。
+>
 
-  
+​		如果编译器找不到可接受的转换，则编译将失败并出现编译错误
+
+- 编译器可能不知道如何在原始类型和期望类型之间转换值
+
+- 语句可能不允许某些类型的转换
+
+  - ```c
+    int x { 3.5 }; // brace-initialization disallows conversions that result in data loss
+    ```
+
+
 
 ### cases
 
@@ -516,7 +570,7 @@ inline To down_cast(From* f)                     // so we only accept pointers
 
 
 
-## explicit type conversion
+## explicit type conversion 显示类型转换
 
 ​		explicit requests by the programmer, this form of type conversion is often called an **explicit type conversion** (as opposed to implicit type conversion, where the compiler performs a type conversion automatically).
 
@@ -545,6 +599,11 @@ inline To down_cast(From* f)                     // so we only accept pointers
 ### static_cast 
 
 ​		**static_cast**, which can be used to convert a value of one type to a value of another type.
+
+​		任何具有明确定义的类型转换，只要不包含底层const，都可以使用static_cast。
+
+- 一般进行窄化数值转换或算数转换。
+- 或从`void*`中还原本来的指针类型
 
 ​		The `static_cast` operator takes an expression as input, and returns the evaluated value converted to the type specified inside the angled brackets.
 
@@ -664,4 +723,29 @@ int main()
 ​		`static_cast`也能进行downcasting，类似于静态的强制转换，不验证期望的派生类类型信息，因而不安全。
 
 > use static_cast unless you’re downcasting, in which case dynamic_cast is usually a better choice. However, you should also consider avoiding casting altogether and just use virtual functions.
+
+### const_cast
+
+​		将常量对象转换成非常量对象的行为，我们一般称其为“去掉const性质（cast away the const）”。
+
+- 只有const_cast能改变表达式的常量属性，使用其他形式的命名强制类型转换改变表达式的常量属性都将引发编译器错误。
+- 也不能用const_cast改变表达式的类型
+
+```c++
+const char *p;
+char* q = static_cast<char*>(cp); // err, static_cast不能去掉const属性
+static_cast<string>(cp); // static_cast将字面量转换成string
+const_cast<string>(cp); // err, const_cast只进行常量性转换
+```
+
+
+
+### reinterpret_cast
+
+​		reinterpret_cast通常为运算对象的位模式提供较低层次上的重新解释
+
+```c++
+int *ip;
+char* pc = reinterpret_cast<char*>(ip);
+```
 
