@@ -6,7 +6,7 @@
 
 
 
-## while
+## `while`
 
 ​		A `while statement` is declared using the **while** keyword. When a `while statement` is executed, the `condition` is evaluated. If the condition evaluates to `true`, the associated statement executes.
 
@@ -21,7 +21,7 @@ while (condition)
 
 
 
-## do-while
+## `do-while`
 
 ​		A **do while statement** is a looping construct that works just like a while loop, except the statement always executes at least once. 
 
@@ -35,7 +35,7 @@ while (condition);
 
 
 
-### do-while(0)
+### `do-while(0)`
 
 ​		`do-while(0)`的作用是使得多条语句成块。
 
@@ -77,9 +77,9 @@ while (condition);
 
 
 
-## for
 
-​		The **for statement** (also called a **for loop**) is preferred when we have an obvious loop variable because it lets us easily and concisely define, initialize, test, and change the value of loop variables.
+
+## `for`
 
 ```c++
 for (init-statement; condition; end-expression)
@@ -127,7 +127,7 @@ int main()
 > Prefer `for loops` over `while loops` when there is an obvious loop variable.
 > Prefer `while loops` over `for loops` when there is no obvious loop variable.
 
-## range-for （for-each loops)
+## `range-for （for-each loops)`
 
 ```c++
 for(element_declaration : container)
@@ -136,9 +136,20 @@ for(element_declaration : container)
 
 ​		`element_declaration` 具有相同的类型，因此，通常使用`auto`来进行类型推断。对于只读的复合类型，往往使用`const auto &`来进行访问。
 
-​		支持`range-for`需要为被迭代的类中实现`begin() / end()`函数，或者允许通过`begin(x) / end(x)`得到相应的迭代器。
+​		`range-for`是来自于`begin()/end()`的语法糖，其底层实现为：
 
-​		范围for语句体内不应改变其所遍历序列的大小。
+```c++
+for(auto beg = container.begin(), end = container.end(); beg not_eq end; ++beg) {
+    auto& r = *beg;
+	statement;
+}
+```
+
+​		所以支持`range-for`需要为被迭代的类中实现`begin() / end()`函数，或者允许通过`begin(x) / end(x)`得到相应的迭代器。
+
+> 因此，使用范围for语句体内不应改变其所遍历序列的大小。
+
+
 
 - 编译器首先查找可用的成员`begin / end`
   - 找到但不可用则`range-for`错误
@@ -162,7 +173,7 @@ for (auto number : fibonacci)  { // iterate over array fibonacci
 }
 ```
 
-​		可以使用`auto &`来更易元素，但在`range-for`中避免进行更易容器的操作。
+​		可以使用`auto &`来更易元素，但在`range-for`中避免进行更易容器的操作。因为对容器进行了增加或删除，`end()`的值可能就无效了。
 
 ​		对于非标准库定义的容器（无`std::initializer_list`)，仅支持`fixed array`，对于退化的数组和变长数组都是不支持的。
 
@@ -171,6 +182,7 @@ int sumArray(const int array[]) // err, array is a pointer
 ```
 
 ​		大多数容器不支持索引访问，因此，c++没有提供获取当前元素索引的方法。在`c++20`中，`range-for`可以定义初始化语句，从而较为内聚的自定义索引：
+
 ```c++
 for(ini-statement; element_declaration : container)
     statement;
@@ -187,7 +199,7 @@ for(ini-statement; element_declaration : container)
 
 
 
-## infinite loops (死循环)
+##` infinite loops `(死循环)
 
 ​		if the expression always evaluates to true, the while loop will execute forever.
 
@@ -213,7 +225,7 @@ for(ini-statement; element_declaration : container)
 
   
 
-### intentional infinite loops
+### `intentional infinite loops`
 
 ​		Favor `while(true)` for intentional infinite loops.
 
@@ -221,3 +233,10 @@ for(ini-statement; element_declaration : container)
 
 ​		It is common to see this kind of loop in web server applications that run continuously and service web requests.
 
+
+
+
+
+## `no raw loop`
+
+[algorithm - C++ "No raw loops" without losing perfomance - Stack Overflow](https://stackoverflow.com/questions/58530330/c-no-raw-loops-without-losing-perfomance)
