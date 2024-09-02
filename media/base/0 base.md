@@ -45,7 +45,16 @@
 
 ​		互联网流媒体直播需要一种形式的源媒体（如摄像机、音频接口、屏幕捕捉软件）、将内容数字化的编码器、媒体发布者和内容传输网络来分发和传递内容。
 
-​		
+
+
+## 多媒体文件结构
+
+![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/b29b31c510649290780b19484c3469f4.png)
+
+- **封装容器**
+  - 将已经编码压缩好的视频轨和音频轨按照一定的格式组织到一个文件中
+  - 包含多媒体文件所包含的视频信息、音频信息和相关的配置信息
+  - mp4、mkv、webm、avi、3gp、mov、wmv、flv、mpeg、asf、rmvb等
 
 ## 流媒体基本原理
 
@@ -132,7 +141,7 @@
 > - MPEG-4 第二部分，可以使用在网络传输、广播和媒体存储上。比起 MPEG-2 第二部分和第一版的 H.263，它的压缩性能有所提高。
 > - MPEG-4 第十部分，等同于 H.264，是这两个编码组织合作诞生的标准。
 
-
+![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/3811ea9bd9eef3f03e74ef5baeaa4a04.png)
 
 ### 音频编码
 
@@ -195,7 +204,7 @@
     - 独立编码方式并且可以直接在网上实时观看视频节目的文件封装格式。
     - 同等视频质量下，`WMV `格式的文件可以边下载边播放，很适合在网上播放和传输。
   - `MPEG(Moving Picture Experts Group)`
-    - `.mpg / mpeg / .vob / .dat / .3gp .mp4`
+    - `.mpg / mpeg / .vob / .dat / .3gp / .mp4`
     - 由运动图像专家组制定的视频格式， 1988 年组建该专家组，专门负责视频和音频标准制定，其成员都是视频、音频以及系统领域的技术专家
     - MPEG 格式目前有三个压缩标准，分别是 MPEG-1、MPEG-2和 MPEG-4。
     - MPEG-4 现在用的比较多的视频封装格式，是为播放流式媒体的高质量视频而专门设计的，以求使用最少的数据获得最佳的图像质量。
@@ -214,7 +223,7 @@
 
 ​		H264 + AAC封装为FLV或MP4是最为流行的封装模式。
 
-
+![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/51e31c6fef70210afd9d4b87f96b2167.png)
 
 ## 音视频传输
 
@@ -247,6 +256,8 @@ Avsync模块，目前只支持audio master的方式。
 各个模块关键时间点的监测：
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/direct/27634419690040d59b231b7a64c96f14.png)
+
+
 
 ## 音视频渲染
 

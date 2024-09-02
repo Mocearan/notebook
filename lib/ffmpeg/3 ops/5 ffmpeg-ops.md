@@ -128,7 +128,9 @@ static bool isH264iFrame(byte[] paket)
 
 
 
+## 为什么不再需要 `av_register_all`
 
+[ffmpeg4.x为什么不再需要调用av_register_all呢-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1910867)
 
 
 
