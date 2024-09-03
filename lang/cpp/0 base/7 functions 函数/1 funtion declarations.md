@@ -16,6 +16,65 @@ For such a *member function*, the name of its class is also part of the function
 
 ## parameter list
 
+### const形参和实参
+
+​		当用实参初始化形参时会忽略掉顶层const。
+
+```c++
+void f(const int i);
+
+// 调用fcn函数时，既可以传入const int也可以传入int。
+// 反之，用const int和int调用 void f(const int i) 和 void f(int i)的调用形式是一样的，所以这两个函数原型不构成重载，会产生重定义错误
+```
+
+
+
+### 数组形参
+
+- 不允许拷贝数组
+- 使用数组时会将其转换成指针
+  - 失去对数组元素个数的维度
+
+```c++
+void p(const int *);
+void p(const int[]);
+void p(const int[10]); // 形参在函数内部使用含有10个元素的数组，但实际传入的不一定
+
+// 尽管表现形式不同，但上面的三个函数是等价的：每个函数的唯一形参都是const int＊类型的。
+
+void p(const int(&arr)[10]); // 引用含有10个元素的数组
+```
+
+​		有三种方式来安全的传递数组：
+
+- 增加尾标识
+  - 如c风格字符串结尾加`\0`
+- 标准库头尾指针方式
+  - `void p(const int *begin, const int* end);`
+- c风格 指针加 元素个数
+  - `void p(const int* arr, size_t size);`
+
+
+
+​		在C++语言中实际上没有真正的多维数组，所谓多维数组其实是数组的数组。
+
+​		当将多维数组传递给函数时，真正传递的是指向数组首元素的指针。
+
+- 因为我们处理的是数组的数组，所以首元素本身就是一个数组，指针就是一个指向数组的指针
+
+- 数组第二维的大小都是数组类型的一部分，不能省略
+  ```c++
+  int *mareix[10]; // [*p, *p, ...]
+  int (*matrix)[10]; // p->[10]
+  
+  // matrix[][10] == (*matrix)[10] == p->[10]
+  void p(int matrix[][10], int rowsize);
+  ```
+
+  
+
+
+
 ### default arguments
 
 ​		A **default argument** is a default value provided for a function parameter.
@@ -90,3 +149,43 @@ print(1, 2.5); // will resolve to print(int, double)
 print(1); // ambiguous function call
 ```
 
+
+
+### 可变形参
+
+​		无法提前预知应该向函数传递几个实参，C++11新标准提供了两种主要的方法：
+
+- 如果所有的实参类型相同，可以传递一个名为`std::initializer_list`的标准库类型
+
+  - 用于表示某种特定类型的值的数组
+
+  - 定义`initializer_list`对象时，必须说明列表中所含元素的类型
+
+  - `initializer_list`的元素永远是常量值
+
+    ```c++
+    std::initializer_list<T> lst;
+    std::initializer_list<T> lst{a,b,c,...};
+    lst2(lst);
+    lst2 = lst;
+    lst.size();
+    lst.begin();
+    lst.end();
+    ```
+
+    
+
+- 如果实参的类型不同，我们可以编写一种特殊的函数，也就是所谓的可变参数模板
+
+- 除此之外，使用名为varargs的C标准库功能的省略符形参
+
+  - 大多数类类型的对象在传递给省略符形参时都无法正确拷贝
+
+  - 省略符形参只能出现在形参列表的最后一个位置
+
+    ```c++
+    void f(param_list, ...);
+    void f(...);
+    ```
+
+    
