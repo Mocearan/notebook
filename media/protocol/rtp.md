@@ -161,7 +161,7 @@
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/dcb599171e054b88b1459aac5c07e1d9.png)
 
-
+![img](https://p-blog.csdn.net/images/p_blog_csdn_net/bripengandre/%E6%B5%81%E5%AA%92%E4%BD%93%E5%BA%94%E7%94%A8%E7%9A%84%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84.JPG)
 
 ### RTP
 
@@ -428,28 +428,6 @@ kRtpExtensionNumberOfExtensions  // Must be the last entity in the enum.
 
 
 
-
-
-
-| 类型 | 缩写                             | 用途                                                         |
-| ---- | -------------------------------- | ------------------------------------------------------------ |
-| 200  | SR（Sender Report）              | 发送端报告<br />所谓发送端是指发出RTP数据报的应用程序或者终端，发送端同时也可以是接收端。 |
-| 201  | RR（Receiver Report）            | 接收端报告<br />所谓接收端是指仅接收但不发送RTP数据报的应用程序或者终端。 |
-| 202  | SDES（Source Description Items） | 源点描述<br />主要功能是作为会话成员有关标识信息的载体，如用户名、邮件地址、电话号码等，此外还具有向会话成员传达会话控制信息的功能。 |
-| 203  | BYE                              | 结束传输<br />主要功能是指示某一个或者几个源不再有效，即通知会话中的其他成员自己将退出会话。 |
-| 204  | APP                              | 特定应用<br />由应用程序自己定义，解决了RTCP的扩展性问题，并且为协议的实现者提供了很大的灵活性。 |
-
-![img](https://pic4.zhimg.com/80/v2-1954a33c0a99bc236f928b7d27ff23a7_720w.webp)
-
-#### SR
-
-​		发送端报告分组SR（Sender Report）用来使发送端以多播方式向所有接收端报告发送情况。
-
-- 相应的RTP流的SSRC
-- RTP流中最新产生的RTP分组的时间戳和NTP，
-- RTP流包含的分组数
-- RTP流包含的字节数
-
 ```c
 // 0  2 3     8       16                  32
 // ----------------------------------------
@@ -507,9 +485,28 @@ kRtpExtensionNumberOfExtensions  // Must be the last entity in the enum.
 */
 ```
 
+| 类型 | 缩写                             | 用途                                                         |
+| ---- | -------------------------------- | ------------------------------------------------------------ |
+| 200  | SR（Sender Report）              | 发送端报告<br />所谓发送端是指发出RTP数据报的应用程序或者终端，发送端同时也可以是接收端。 |
+| 201  | RR（Receiver Report）            | 接收端报告<br />所谓接收端是指仅接收但不发送RTP数据报的应用程序或者终端。 |
+| 202  | SDES（Source Description Items） | 源点描述<br />主要功能是作为会话成员有关标识信息的载体，如用户名、邮件地址、电话号码等，此外还具有向会话成员传达会话控制信息的功能。 |
+| 203  | BYE                              | 结束传输<br />主要功能是指示某一个或者几个源不再有效，即通知会话中的其他成员自己将退出会话。 |
+| 204  | APP                              | 特定应用<br />由应用程序自己定义，解决了RTCP的扩展性问题，并且为协议的实现者提供了很大的灵活性。 |
+
+![img](https://pic4.zhimg.com/80/v2-1954a33c0a99bc236f928b7d27ff23a7_720w.webp)
+
+#### SR
+
+​		发送端报告分组SR（Sender Report）用来使发送端以多播方式向所有接收端报告发送情况。
+
+- 相应的RTP流的SSRC
+- RTP流中最新产生的RTP分组的时间戳和NTP，
+- RTP流包含的分组数
+- RTP流包含的字节数
 
 
-#### 组合包
+
+#### RTCP 组合包
 
 ​		不同类型的RTCP信息包可堆叠，不需要插入任何分隔符就可以将多个RTCP包连接起来形成一个RTCP组合包，然后由低层协议用单一包发送出去。由于需要低层协议提供整体长度来决定组合包的结尾，在组合包中没有单个RTCP包的显式计数。
 
@@ -571,6 +568,10 @@ kRtpExtensionNumberOfExtensions  // Must be the last entity in the enum.
 - 监控网络流量：及时发现异常行为和潜在攻击。
 
 
+
+## RTP over tcp
+
+[RTSP - RTP over TCP - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/4483497.html)
 
 
 

@@ -856,3 +856,22 @@ Session: 132169028622239
 RTP-Info: url=rtsp://192.168.1.108:554/live.sdp/live.sdp
 ```
 
+
+
+## 相关项目
+
+```
+      name      side? lang   url
+    -----------------------------------------------------------------------  
+    * live.com   C/S   C++   http://www.live555.com
+    * darwin     S     C++   http://www.opensource.apple.com/darwinsource/
+    * VLC        C     C     http://www.videolan.org
+    * mplayer    C     C     http://www.mplayerhq.hu
+    * omsp       C/S   C     http://streaming.polito.it/
+         Fenice is Server 
+         NeMeSI is Client
+    * spook      S     C     http://www.litech.org/spook/
+         网络摄像机
+    * MPEG4IP    C     C     http://www.mpeg4ip.net/
+```
+

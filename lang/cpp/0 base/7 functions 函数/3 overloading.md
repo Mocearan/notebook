@@ -37,6 +37,36 @@
 
 > overload based on name mangling
 
+​		把函数调用与一组重载函数中的某一个关联起来的过程叫做函数匹配，函数匹配也叫做重载决议（overload resolution）。编译器首先将调用的实参与重载集合中每一个函数的形参进行比较，然后根据比较的结果决定到底调用哪个函数。
+
+- 最佳匹配
+- 无匹配
+- 二义性匹配
+
+
+
+## const形参
+
+​		顶层const不能用于在重载时区分形参。
+
+```c++
+Record lookup(Phone);
+Record lookup(const Phone); // 重复声明Record lookup(Phone);
+
+Record lookup(Phone*);
+Record lookup(Phone* const); // 重复声明Record lookup(Phone*);
+
+Record lookup(Phone&);
+Record lookup(const Phone&); // 底层const，构成重载
+
+Record lookup(Phone*);
+Record lookup(const Phone*); // 底层const，构成重载
+```
+
+
+
+
+
 
 
 ## overloading deferentiate
