@@ -39,13 +39,15 @@
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/7afd4879bf0f2888314624299b908d4d.png#pic_center)
 
+
+
 ## PS Header
 
-​		PSH (Program Stream pack Header)是PS包的包头，主要包含系统时间信息。
+​		`PSH `(Program Stream pack Header)是PS包的包头，主要包含系统时间信息。
 
-​		PSH主要包含了系统同步时间，MPEG2 part 1并没有定义PSH与其后数据之间的必然关系。
+​		`PSH`主要包含了系统同步时间，MPEG2 part 1并没有定义`PSH`与其后数据之间的必然关系。
 
-- PSH是一个PS包的包头，但PSH并不包含PS包负载数据的内容和长度信息
+- PSH`是`一个PS包的包头，但PSH并不包含PS包负载数据的内容和长度信息
 - 这些信息存在PS包负载的PES包内
   - 一个PS包内包含的PES包个数、类型和长度没有限制。
   - 一个PS流文件只需要有头上一个PSH，后面的视频、音频和私有数据PES包可以交错排列
@@ -98,7 +100,7 @@ static int gb28181_make_ps_header(char *pData, unsigned long long s64Scr)
 
 | 字段                         | bit  | 说明                                                         |
 | ---------------------------- | :--: | ------------------------------------------------------------ |
-| system_header_start_code     |  32  | 为0x000001BB，标识系统头的起始。                             |
+| system_header_start_code     |  32  | 为0x000001 BB，标识系统头的起始。                            |
 | header_length                |  16  | 指示跟随 header_length 字段后的系统头的长度，以字节为单位。  |
 | rate_bound                   |  22  | rate_bound 为大于或等于在任意节目流包中编码的 program_mux_rate 字段的最大值的整数值。它可供解码器使用来评估它是否有能力解码该完整流。 |
 | audio_bound                  |  6   | audio_bound 为 0 到 32 闭区间内的一个整数，在解码过程同时被激活的节目流中，它被设置为大于或等于 ISO/IEC 13818-3 和 ISO/IEC 11172-3 音频流最大数的整数值。出于本子节的目的， 规定只要 STD 缓冲器非空或者只要显示单元正在 P-STD 模型中显示， ISO/IEC 13818-3 或 ISO/IEC11172-3 音频流的解码处理就被激活。 |
@@ -156,9 +158,9 @@ static int gb28181_make_sys_header(char *pData)
 
 ## PSM
 
-​		PS system Map，节目流映射 ，提供节目流中基本流的描述及其相互关系。作为一个PES分组出现。
+​		program stream Map，节目流映射 ，提供节目流中基本流的描述及其相互关系。作为一个PES分组出现。
 
-节目流映射中字段的语义定义
+​		节目流映射中字段的语义定义
 
 | 字段                          | bit  | 说明                                                         |
 | ----------------------------- | :--: | ------------------------------------------------------------ |
@@ -258,8 +260,14 @@ static int gb28181_make_psm_header(char *pData)
 2. 除B帧外的帧输出的多个单元封装时应当在第一个单元头部添加PSH；
 3. 当一个NALu单元长度超过系统PES包长限制时，可以将该NALu分割成多个PES包，但每个PES包内不应当包含多于1个NALu的数据；
 4. 每个帧的第一个处理单元所封装成的第一个PES包包头应当带有PTS；
-5. 每个I帧封装时应当在PSH之后添加PSM；
+5. 每个I帧封装时应当在PSH之后添加PSM
 6. 当元素流的基本特性（编码格式，帧率，分辨率，场编码等）发生变化时，变化后的第一帧封装时必须在PSH之后添加PSM；
+
+> 需要添加PSM时，即产生IDR的时刻
+>
+> - 每个`IDR NALU `前一般都会包含`SPS`、`PPS `、`SEI`等`NALU`
+> - 这几个包的NALU加上PES header之后构成一个PES包
+> - 这三个PES包加在PSM和IDR PES之间
 
 典型的H.264 I帧 PS包：
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/1343107-20220524163613065-1943205378.png)
