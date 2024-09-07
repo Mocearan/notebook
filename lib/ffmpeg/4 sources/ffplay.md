@@ -4,6 +4,20 @@
 
 
 
+## 参考
+
+[ffmpeg源码分析之ffplay主流程 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/480718019)
+
+[ffplay.c源码分析【1】 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/645264655)
+
+[ffplay源代码音视频同步分析-三种播放模式分析 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/543209746)
+
+[详解FFplay音视频同步 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/637120851)
+
+[(55 封私信 / 84 条消息) 不鸡娃的菜鸡 - 知乎 (zhihu.com)](https://www.zhihu.com/people/liao-ming-hua/columns)
+
+
+
 ## `options`
 
 ```c
