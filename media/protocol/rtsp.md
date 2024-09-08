@@ -31,6 +31,12 @@
 
 
 
+## 参考
+
+[RFC 2326 - Real Time Streaming Protocol (RTSP) (ietf.org)](https://datatracker.ietf.org/doc/html/rfc2326)
+
+
+
 ## 协议特点
 
 - 可扩展性: 新方法和参数很容易加入RTSP.
