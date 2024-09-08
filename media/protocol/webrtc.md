@@ -31,3 +31,17 @@ MediaStream （又称getUserMedia）
 
 - RTCPeerConnection
 - RTCDataChannel
+
+
+
+## 参考
+
+[如何构建分布式SFU/MCU媒体服务器？-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1478326)
+
+[服务器sfu是什么 • Worktile社区](https://worktile.com/kb/ask/1411471.html)
+
+[史上最全的WebRTC服务器技术选型分析 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/613619262)
+
+[一文看懂WebRTC流媒体服务器 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/663832662)
+
+[使用级联SFU改善媒体质量和规模-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1871182)
