@@ -18,22 +18,37 @@
 
 ## 基本结构
 
-- PS流或者文件可以视为多个 PS GOP
+​		`PS`流由多个` PS GOP`组成。
 
-- 一个PS GOP由一个或多个PS包组成
+- `PS GOP`
 
-  - 每个GOP是以I帧起始的多帧集合
-  - 各GOP之间的信息没有相互依赖性，可以进行剪切拼接
+  - 包含一个或多个PS包
+  - 以`Video I frame`起始，多帧集合
+  - GOP之间的信息没有相互依赖性，可以进行剪切拼接
 
-- 一个PS包内包含一个PSH(PS Header)和若干个PES包
+- `PS`包
 
-- 每个PS GOP的第一个PS包应当在包头PSH后立即跟随一个PSM包。
+  - 包含一个 `PS Header` 和 若干个`PES`包
 
-- PSM包是一种特殊的PES包，含有对其他PES负载数据类型的描述。
+  - `PS GOP`的首个`PS`的`PSH`后立即跟随`PSM`包
 
-- PS包内的其他PES的出现顺序和内容没有特殊约束，即一个PS包内可以包含交错出现的视频、音频和私有流等PES包，各PES包根据PSM的描述进行拆分。
+    - 首个`PS`的`PSH`可能含有名为`PS System Header`的扩展
 
-  
+  - `PS`包内的其他PES的出现顺序和内容没有特殊约束
+
+    > 即PS包内可以包含交错出现的视频、音频和私有流等PES包，各PES包根据PSM的描述进行拆分
+
+- `PS`流有一个结束码，占位32bit，其值为`0x000001B9`
+
+  - PS流总是以`0x000001BA`开始，以`0x000001B9`结束
+    - `0x000001BA`是`PSH`的起始码
+  - 对于一个`PS`文件，有且只有一个结束码`0x000001B9`
+  - 对于直播的`PS`流，应该是没有结束码的
+
+> - `PS System Header`是`PSH`的扩展
+> - `PSM`包是一种特殊的PES包，含有对其他`PES`负载数据类型的描述
+
+
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/1343107-20220524143245043-389558396.png)
 
@@ -41,26 +56,53 @@
 
 
 
-## PS Header
+## `PS Header`
 
-​		`PSH `(Program Stream pack Header)是PS包的包头，主要包含系统时间信息。
+​		`PSH `(Program Stream pack Header)是PS包的包头，主要包含系统时间信息， 但`PSH`并不包含PS包负载数据的内容和长度信息，这些信息存在PS包负载的数据PES包内。
 
-​		`PSH`主要包含了系统同步时间，MPEG2 part 1并没有定义`PSH`与其后数据之间的必然关系。
+​		PS包中的PES包个数、类型和长度没有限制。但为系统同步，PSH以一定的频率在流中出现：`I`帧前必须有`PSH/PSM`，`P/B`帧前要有`PSH`。
 
-- PSH`是`一个PS包的包头，但PSH并不包含PS包负载数据的内容和长度信息
-- 这些信息存在PS包负载的PES包内
-  - 一个PS包内包含的PES包个数、类型和长度没有限制。
-  - 一个PS流文件只需要有头上一个PSH，后面的视频、音频和私有数据PES包可以交错排列
-  - 但是作为系统同步的需要，PSH应当以一定的频率在流中出现，I帧前必须有PSH，P/B帧前要有PSH。
+- `pack_start_code  `，`32 bit`，  标识PS包的开始，固定为`0x000001BA`
+- `01`，`2 bit`
+- `SCR`，system_clock_reference_base ，`46 bit`
+  - `system_clock_reference_base [32..30]`：占位3bit；
+  - `marker_bit`：占位1bit；
+  - `system_clock_reference_base [29..15]`：占位15bit；
+  - `marker_bit`：占位1bit；
+  - `system_clock_reference_base [14..0]`：占位15bit；
+  - `marker_bit`：占位1bit；
+  - `system_clock_reference_extension`：占位9bit；
+  - `marker_bit`：占位1bit；
+  - `program_mux_rate`字段：速率值字段，占位22bit，正整数
+    - 表示P-STD接收此字段所在包的PS流的速率；这个值以每秒50字节作为单位；禁止0值；
+  - `marker_bit`：标记字段，占位1bit，固定为 1；
+  - `marker_bit`：标记字段，占位1bit，固定为 1；
+- `reserved`，`5 bit`
+- `pack_stuffing_length`，`3 bit`，规定了此字段之后填充字段的长度
+- ---> loop
+- `stuffing_byte`， 每个填充字节为`0xFF`的`8 bit`
+  - 由编码器插入，例如满足信道的要求。由解码器丢弃。
+  - 在每个包头中，应存在不多于 7 个的填充字节
+- ----> loop end
 
-| 字段                                                         | bit  | 说明                                                         |
-| ------------------------------------------------------------ | :--: | ------------------------------------------------------------ |
-| marker_bit                                                   |  1   | 其值为‘ 1’ 。                                                |
-| pack_start_code                                              |  32  | 为0x000001BA，标识包的起始。                                 |
-| pack_stuffing_length                                         |  3   | 指示跟随此字段的填充字节数。                                 |
-| program_mux_rate                                             |  22  | 指示包期间 P-STD 接收节目流的速率，其中该节目流包含在包中。 program_mux_rate 值以 50 字节/秒为度量单位。0 值禁用。 |
-| stuffing_byte                                                |  8   | 此为等于0xFF的固定 8 比特值，可以由编码器插入，例如满足信道的要求。它由解码器丢弃。在每个包头中，应存在不多于 7 个的填充字节。 |
-| system_clock_reference_base system_clock_reference_extension | 33 9 | 系统时钟参考（ SCR）为分成两部分编码的 42 比特字段。第一部分，system_clock_reference_base 为 33 比特字段，其值由公式 5-1中给出的 SCR_base (i)给出。第二部分，system_clock_reference_extension，为 9 比特字段，其值由公式 5-2 中给出的 SCR_ext (i)给出。 SCR 指示在节目目标解码器的输入端包含system_clock_reference_base 最后比特的字节到达的预期时间。 SCR_base(i) = ((system_clock_frequency * t(i))DIV300)%2^33 (5-1) SCR_ext(i) = ((system_clock_frequency * t(i))DIV300)%300 (5-2) 我们精度要求没有这么高，system_clock_reference_extension设置为0即可。 |
+
+
+```c
+【00 00 01 ba】 7e 97 9f 18 24 01 04 d2 37 【fe】 ff ff
+00 8b 0a 43 00 00 01 bb 00 12 82 69 1b 04 e1 7f 
+....
+
+/*
+-  0x000001BA 代表 PS 包的开始（startcode）
+- 跳过 9 个字节，暂时不关心它的内容，看第 10 个字节 fe
+	- 对应着二进制数据的 1111 1110，它的后三位为 110 为十进制的 6
+	- 接下来的六个字节是扩展内容
+*/
+```
+
+
+
+
 
 ```c
 #define PS_HDR_LEN  14
@@ -94,26 +136,114 @@ static int gb28181_make_ps_header(char *pData, unsigned long long s64Scr)
 
 
 
-## PS system Header
+## `PS system Header`
 
-​		PS System Header，节目流系统标题，一般属于PSH头部后携带的扩展。
+​		PS System Header，节目流系统标题，一般属于`PSH`头部后携带的扩展，作为一个单独PES分组出现。
 
-| 字段                         | bit  | 说明                                                         |
-| ---------------------------- | :--: | ------------------------------------------------------------ |
-| system_header_start_code     |  32  | 为0x000001 BB，标识系统头的起始。                            |
-| header_length                |  16  | 指示跟随 header_length 字段后的系统头的长度，以字节为单位。  |
-| rate_bound                   |  22  | rate_bound 为大于或等于在任意节目流包中编码的 program_mux_rate 字段的最大值的整数值。它可供解码器使用来评估它是否有能力解码该完整流。 |
-| audio_bound                  |  6   | audio_bound 为 0 到 32 闭区间内的一个整数，在解码过程同时被激活的节目流中，它被设置为大于或等于 ISO/IEC 13818-3 和 ISO/IEC 11172-3 音频流最大数的整数值。出于本子节的目的， 规定只要 STD 缓冲器非空或者只要显示单元正在 P-STD 模型中显示， ISO/IEC 13818-3 或 ISO/IEC11172-3 音频流的解码处理就被激活。 |
-| fixed_flag                   |  1   | 置于‘ 1’时指示固定的比特速率操作。置于‘ 0’时指示可变比特速率操作。固定的比特速率操作期间，在该多路复用的 ITU-T H.222.0 建议书 ISO/IEC 13818-1 流中，所有 system_clock_reference 字段中的编码值应依从以下线性方程： SCR_base(i) = ((c1 × i + c2) DIV 300) % 2^33 (5-3) SCR_ext(i) = ((c1 × i + c2) DIV 300) % 300 (5-4) 其中： c1 为对所有 i 有效的实值常量, c2 为对所有 i 有效的实值常量, i 为该流中包含任意 system_clock_reference 字段最后比特的字节在 ITU-T H.222.0 建议书 ISO/IEC 13818-1 多路复用流中的索引号。 |
-| CSPS_flag                    |  1   | 其值置于‘ 1’ ，则节目流满足 2.7.9 中规定的限制。             |
-| system_audio_lock_flag       |  1   | 指示音频采样速率和系统目标解码器的 system_clock_frequency 之间存在特定的常量比率关系。 system_clock_frequency 在子节 2.5.2.1 中定义，音频采样速率在 ISO/IEC 13818-3 中指定。 system_audio_lock_flag 可以设置为‘ 1’ ，仅当对于节目流的所有音频基本流的所有显示单元而言， system_clock_frequency 与实际音频采样速率的比例 SCASR，为常量并等于下表中音频流所指示的标准采样速率所规定的值。![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524144942189-1937113685.png) ![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524154315813-1595460249.png) |
-| system_video_lock_flag       |  1   | 指示视频时间基和系统目标解码器的系统时钟频率之间存在特定的常量比率关系。 system_video_lock_flag 可以设置为‘ 1’ ，仅当对于 ITU-TH.222.0 建议书 ISO/IEC 13818-1 节目的所有视频基本流的所有显示单元而言， system_clock_frequency 与实际视频时间基的比例为常量值。 对于 ISO/IEC 11172-2 和 ITU-T H.262 建议书 ISO/IEC 13818-2 视频流，如果 system_video_lock_flag 设置为 '1'， system_clock_frequency 与实际视频帧速率的比例 SCFR，为常量并等于下表中对视频流所指示的标准帧速率所规定的值。 对于 ISO/IEC 14496-2 视频流，如果 system_video_lock_flag 设置为 '1'， ISO/IEC 14496-2 视频流的时间基， 由 vop_time_increment_resolution 规定， 锁定为 STC 并精确地等于 N 倍的 system_clock_frequency 除以 K，其中整数 N 和 K 在每个可视目标序列中有固定的值， K 大于或等于 N。 对于 ITU-T H.264 建议书 ISO/IEC 14496-10 视频流， AVC 时间基的频率由 AVC 参数 time_scale 规定。如果对于 AVC 视频流， system_video_lock_flag 设置为 '1' ，则 AVC 时间基的频率锁定为 STC 并精确地等于N 倍的 system_clock_frequency 除以 K，其中整数 N 和 K 在每个可视目标序列中有固定的值， K 大于或等于 N。 ![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524150131274-292613267.png) ![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524154412834-1884380689.png) 该比例 SCFR 的值是精确的。在标准速率为每秒 23.976、 29.97、 59.94 帧的情况中，实际帧速率与标准速率略有差别。 |
-| video_bound                  |  5   | 在 0 到 16 的闭区间内取值，在解码过程同时被激活的节目流中，它被设置为大于或等于视流的最大数的整数值。对于本小节来说，规定只要 P-STD 模型中的一个缓冲器非空，或者只要显示单元正在 P-STD 模型中显示，视频流的解码处理就被激活。 |
-| packet_rate_restriction_flag |  1   | 若 CSPS 标志设置为‘ 1’ ，则 packet_rate_restriction_flag 指示适用于该包速率的那些限制。若 CSPS 标志置于‘ 0’值，则 packet_rate_restriction_flag 的含义未确定。 |
-| reserved_bits                |  7   | 此 7 比特字段由 ISO/IEC 保留供未来使用。除非由 ITU-T         |
-| stream_id                    |  8   | 指示以下P-STD_buffer_bound_scale 和 P-STDP-STD_buffer_size_bound 字段所涉及的流的编码与基本流编号。 若 stream_id 等 于 ‘ 1011 1000 ’， 则 跟 随 stream_id 的 P-STD_buffer_bound_scale 和P-STD_buffer_size_bound 字段涉及节目流中的所有音频流。 若 stream_id 等 于 ‘ 1011 1001 ’， 则 跟 随 stream_id 的 P-STD_buffer_bound_scale 和P-STD_buffer_size_bound 字段涉及节目流中的所有视频流。 若 stream_id 取任何其他值，则它将是大于或等于‘ 1011 1100’的字节值并将解释为涉及依照表 2-22的流编码和基本流编号。 节目流中存在的每个基本流应有其 P-STD_buffer_bound_scale 和 P-STD_buffer_size_bound， 在每个系统头中通过此机制确切地一次指定。 |
-| P-STD_buffer_bound_scale     |  1   | 指 示 用 于 解 释 后 续P-STD_buffer_size_bound 字段的标度因子。若前导 stream_id 指示音频流，则 P-STD_buffer_bound_scale 必有‘ 0’值。若前导 stream_id 指示视频流，则 P-STD_buffer_bound_scale 必有‘ 1’值。对所有其他流类型，P-STD_buffer_bound_scale 的值可以为‘ 1’或为‘ 0’ 。 |
-| P-STD_buffer_size_bound      |  13  | P-STD_buffer_size_bound 为 13 比特无符号整数，规定该值大于或等于节目流中流 n 的所有包上的最大 P-STD 输入缓冲器尺寸 BSn。若 P-STD_buffer_bound_scale 有‘0’值，那么 P-STD_buffer_size_bound 以 128 字节为单位度量该缓冲器尺寸限制。 若 P-STD_buffer_bound_scale 有‘ 1’值，那么 P-STD_buffer_size_bound 以 1024 字节为单位度量该缓冲器尺寸限制。 |
+- `system_header_start_code`，`32 bit`，标识系统头的起始，`0x00 00 01 BB`
+
+- `header_length`，`16 bit`，表示此字段之后的系统首部字节长度
+
+- `maker_bit`，`1 bit`，固定值为1
+
+- `rate_bound`，`22 bit`，为一个大于或等于PS流所有PS包中的最大program_mux_rate值的整数；可以被解码器用来判断是否可以对整个流进行解码；
+
+- `maker_bit`，`1 bit`，固定值为1
+
+- `audio_bound`，`6 bit`，取值范围0到32间整数；大于或等于同时进行解码处理的PS流中的音频流的最大数目；
+
+  >   6  audio_bound 为 0 到 32 闭区间内的一个整数，在解码过程同时被激活的节目流中，它被设置为大于或等于 ISO/IEC 13818-3 和 ISO/IEC 11172-3 音频流最大数的整数值。出于本子节的目的， 规定只要 STD 缓冲器非空或者只要显示单元正在 P-STD 模型中显示， ISO/IEC 13818-3 或 ISO/IEC11172-3 音频流的解码处理就被激活。
+
+- `fixed_flag`，`1 bit`，置位1表示固定比特率操作，置位0则为可变比特率操作
+
+- `CSPS_flag`，`1 bit`，置位1表示此PS流满足标准 2.7.9 中规定的限制
+
+- `system_audio_lock_flag`，`1 bit`，表示音频采样率和 STD 的 system_clock_frequency 之间有一特定常数比例关系
+
+  - ![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524144942189-1937113685.png) 
+  - ![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524154315813-1595460249.png)
+
+- `system_video_lock_flag`，`1 bit`，表示在系统目标解码器system_clock_frequency和视频帧速率之间存在一特定常数比例关系
+
+  - ​    ![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524150131274-292613267.png) 
+  - ![img](https://img2022.cnblogs.com/blog/1343107/202205/1343107-20220524154412834-1884380689.png)
+
+- `maker_bit`，`1 bit`，固定值为1
+
+- `video_bound`，`5 bit`，取值范围0到16；大于或等于同时进行解码处理的PS流中的视频流的最大数目；
+
+- `packet_rate_restriction_flag`，`1 bit`，分组速率限制标志字段
+
+  - 若CSPS_flag == 1，则此字段表示哪种限制适用于分组速率；若CSPS_flag == 0，则此字段无意义；
+
+- `reserved_bits`，`7 bit`，`1111 111`
+
+- -----> loop，前面共6个字节
+
+- `stream_id`，`8 bit`，表示其后的 P-STD_buffer_bound_scale 和 P-STD_buffer_size_bound 字段所涉及的流的编码和基本流的号码
+
+  - 若 stream_id == 1011 1000，则其后的 P-STD_buffer_bound_scale 和 P-STD_buffer_size_bound 字段对应PS流中的所有音频流；
+  - 若stream_id == 1011 1001，则其后的P-STD_buffer_bound_scale和P-STD_buffer_size_bound字段对应PS流中的所有视频流；
+  - 若取其他值，则应大于 1011 1100 ，且按照标准对应Stream id(详见附录1)；
+  - PS流中的每个原始流都应在每个系统首部中通过这种机制精确地规定一次它的 P-STD_buffer_bound_scale 和 P-STD_buffer_size_bound；
+
+- `11`，`2 bit`
+
+- `P-STD_buffer_bound_scale`，`1 bit`，表示用来解释后面P-STD_buffer_size_bound字段的比例因子
+
+  - 如果之前的stream_id表示音频流，则此值应为0
+  - 若之前的stream_id表示视频流，则此值应为1
+  - 对于其他stream类型，此值可以0或1；
+
+- `P-STD_buffer_size_bound`，`13 bit`，大于或等于所有PS流分组的P-STD输入缓冲区大小BSn的最大值
+
+  - 若P-STD_buffer_bound_scale == 0，则P-STD_buffer_size_bound以128字节为单位
+  - 若P-STD_buffer_bound_scale == 1，则P-STD_buffer_size_bound以1024字节为单位
+
+- -----> loop end
+
+```c
+【00 00 01 ba】 7e 97 9f 18 24 01 04 d2 37 【fe】 ff ff
+00 8b 0a 43 【00 00 01 bb】 00 12 【82 69 1b 04 e1 7f |
+e0 e0 80 c0 c0 08 bd e0 80 bf e0 80】 00 00 01 bc
+00 5e fa ff 00 24 40 0e 48 4b 01 00 10 15 83 bc
+
+/*
+- 00 00 01 bb 系统头起始码
+- 00 12 2字节的header length，即18个字节的system header
+- 82 69 1b 04 e1 7f , loop 前的各个字段
+- e0 e0 80 c0 c0 08 bd e0 80 bf e0 80， loop，每3个字节表示一次loop中各个字段
+	- e0 e0 80
+	- c0 c0 08 
+	- bd e0 80 
+	- bf e0 80
+*/
+```
+
+> - 视频流ID：`0XE0`
+>
+> - 音频流 ID：`0xc0`
+>
+> - 在海康的协议说明中：`0xBD`表示海康私有流
+>   - 可能是海康摄像头中对画面的附加信息，比如移动侦测的红框
+>
+> - PS 包中的流类型（stream type）的取值如下：
+>   - MPEG-4 视频流： 0x10；
+>
+>   - H.264 视频流： 0x1B；
+>
+>   - SVAC 视频流： 0x80；
+>
+>   - G.711 音频流： 0x90；
+>
+>   - G.722.1 音频流： 0x92；
+>
+>   - G.723.1 音频流： 0x93；
+>
+>   - G.729 音频流： 0x99；
+>
+>   - SVAC音频流： 0x9B。
+>
 
 ```c
 #define SYS_HDR_LEN 18
@@ -156,28 +286,60 @@ static int gb28181_make_sys_header(char *pData)
 
 
 
-## PSM
+## `PSM`
 
-​		program stream Map，节目流映射 ，提供节目流中基本流的描述及其相互关系。作为一个PES分组出现。
+​		`program stream Map`，节目流映射 ，提供节目流中基本流的描述及其相互关系。作为一个单独PES分组出现。
 
-​		节目流映射中字段的语义定义
+> `0x 00 00 01 BC`
 
-| 字段                          | bit  | 说明                                                         |
-| ----------------------------- | :--: | ------------------------------------------------------------ |
-| packet_start_code_prefix      |  24  | 同跟随它的 map_stream_id 一起组成包起始码标识包的始端。 packet_start_code_prefix 为 0x000001。 |
-| map_stream_id                 |  8   | 值为 0xBC。                                                  |
-| program_stream_map_length     |  16  | 指示紧随此字段的program_stream_map 中的字节总数。此字段的最大值为 1018（ 0x3FA）。 |
-| current_next_indicator        |  1   | 置‘ 1’时指示发送的节目流映射为当前有效。该比特置‘ 0’时，它指示发送的节目流映射尚未有效并且下一个节目流映射表将生效。建议设置为'1'。 |
-| program_stream_map_version    |  5   | 整个节目流映射的版本号。每当节目流映射的定义改变时，该版本号必须增 1 模 32。 current_next_indicator 置为‘ 1’时， program_stream_map_version 应是当前有效的节目流映射的版本。 current_next_indicator 设置为‘ 0’时， program_stream_map_version 应是下一个有效的节目流映射的版本。 |
-| program_stream_info_length    |  16  | 指示紧随此字段的描述符的总长。                               |
-| marker_bit                    |  1   | 1                                                            |
-| elementary_stream_map_length  |  16  | 指示在此节目流映射中所有基本流信息的以字节为单位的总长度。它包括stream_type、 elementary_stream_id 以及elementary_stream_info_length 字段。 |
-| stream_type                   |  8   | 指示依照下表的流类型。 stream_type 字段仅标识 PES 包中包含的基本流。 0x05 赋值被禁用。 |
-| elementary_stream_id          |  8   | 指示存储此基本流的 PES 包的 PES 包头内的 stream_id 字段的赋值。 |
-| elementary_stream_info_length |  16  | 指示紧随此字段的描述符长度，以字节为单位。                   |
-| CRC_32                        |  32  | 包含整个节目流映射处理后附件 A 定义的解码器中给出寄存器零输出的 CRC值。 |
+- `packet_start_code_prefix`，`24 bit`，包头起始码，固定为`0x000001`
+  - 与后面的字段`map_stream_id`一起组成分组开始码，标志着分组的开始；
+- `map_stream_id`，`8 bit`， 类型字段，标志此分组是什么类型
+  - 值为`0xBC`，则说明此`PES`包为`PSM`
+- `program_stream_map_length`，`16 bit`，表示此字段之后PSM的总长度
+  - 最大值为`1018(0x3FA)`
+- `current_next_indicator`，`1 bit`
+  - 置位1表示当前PSM是可用的
+  - 置位0则表示当前PSM不可以，下一个可用；
+- `reserved`，`2 bit`，固定为1
+- `program_stream_map_version`，`5 bit`，表示PSM的版本号，取值范围1到32
+  - 随着PSM定义的改变循环累加
+  - 若`current_next_indicator == 1`，表示当前PSM的版本号
+  - 若`current_next_indicator == 0`，表示下一个PSM的版本号
+- `reserved`，`7 bit`
+- `marker_bit`，`1 bit`，固定为1
+- `program_stream_info_length`，`16 bit`，表示此字段后面的`descriptor`字段的长度
+- ----------> loop
+- `descriptor`，program Stream信息描述字段，长度由前个字段确定
+- ----------> loop end
+- `elementary_stream_map_length`，`16 bit`，表示在这个PSM中所有ES流信息的总长度
+  - 包括`stream_type`, `elementary_stream_id`, `elementary_stream_info_length`的长度，即`N*32bit`
+  - 是不包括具体ES流描述信息`descriptor`的长度的
+- ----------> loop
+- `stream_type`，`8 bit`，表示原始流ES的类型
+  - 这个类型只能标志包含在PES包中的ES流类型
+  - 值`0x05`是被禁止的
+  - 常见取值类型有
+    - MPEG-4 视频流：`0x10`；
+    - H.264 视频流：`0x1B`；
+    - G.711 音频流：`0x90`；
+  - 因为`PSM`只有在关键帧打包的时候才会存在，所以如果要判断`PS`打包的流编码类型，就根据这个字段来判断
+- `elementary_stream_id`，`8 bit`，表示此`ES`流所在`PES`分组包头中的`stream_id`字段的值
+  - `0x(C0~DF)`指音频
+  - `0x(E0~EF)`为视频
+- `elementary_stream_info_length`，`16 bit`，表示此字段之后的，`ES`流描述信息的长度
+- `descriptor`，长度由前个字段确定，表示此类型的`ES`流的描述信息
+  - 这个描述信息的长度是不包含在`elementary_stream_map_length`字段里面的；
+- `CRC_32`，`32 bit`，CRC校验值
+- ----------> loop end
 
-流类型表：
+​	
+
+- 流ID表
+
+![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/v2-7083f76e4dcd20227735f8224f47c174_1440w.webp)
+
+- 流类型表：
 
 |    值     | 描述                                                         |
 | :-------: | ------------------------------------------------------------ |
@@ -212,7 +374,52 @@ static int gb28181_make_sys_header(char *pData)
 | 0x1C-0x7E | ITU-T H.222.0 建议书 ISO/IEC 13818-1 保留 (H265->0x24)       |
 |   0x7F    | IPMP 流                                                      |
 
-注：H265的值定义为 0x24
+>  注：H265的值定义为 0x24
+
+
+
+```c
+【00 00 01 ba】 7e 97 9f 18 24 01 04 d2 37 【fe】 ff ff
+00 8b 0a 43 【00 00 01 bb】 00 12 【82 69 1b 04 e1 7f |
+e0 e0 80 c0 c0 08 bd e0 80 bf e0 80】 【00 00 01 bc】
+00 5e 【fa ff 00 24 40 0e 48 4b 01 00 10 15 83 bc
+ed a7 00 ff ff ff 41 12 48 4b 00 01 02 03 04 05
+06 07 08 09 0a 0b 0c 0d 0e 0f | 00 30 | 1b e0 00 1c
+42 0e 07 10 10 ea 07 80 04 38 11 30 00 00 3a 99
+2a 0a 7f ff 00 00 0e a6 1f fe f0 87 90 c0 00 0c
+43 0a 01 40 fe 00 7d 03 03 e8 03 ff d3 af 06 38】
+...
+    
+/*
+- 00 00 01 bc， PSM起始码 + map_stream_id(二进制的 1011 1100)
+	-  program_stream_map，即 PSM
+- 00 5e ， program_stream_map_length，0x005E 即 94
+	- 接下来的 94 个字节也是属于 PSM 段的
+- fa ff， 两个字节的固定若干字段
+	- current_next_indicator，1 bit
+	- reserved，2 bit，固定为1
+	- program_stream_map_version，5 bit
+    - reserved，7 bit
+    - marker_bit，1 bit，固定为1
+- 00 24，program_stream_info_length, 后跟着的 descriptor 共占 36 字节.
+- 40 0e 48 4b 01 00 10 15 83 bc ed a7 00 ff ff ff 41 12 48 4b 00 01 02 03 04 0506 07 08 09 0a 0b 0c 0d 0e 0f, descriptor
+- 00 30，element_stream_map_length（基本流映射长度），表示接下来的 48 字节都是用来描述原始流信息的
+- 1b e0 00 1c 42 0e 07 10 10 ea 07 80 04 38 11 30 00 00 3a 99 2a 0a 7f ff 00 00 0e a6 1f fe f0 87 90 c0 00 0c 43 0a 01 40 fe 00 7d 03 03 e8 03 ff， 描述原始流信息
+	- 1b e0 00 1c 42 0e 07 10 10 ea 07 80 04 38 11 30 00 00 3a 99 2a 0a 7f ff 00 00 0e a6 1f fe f0 87
+        - 1b，stream_type， 根据 GB28181 的定义可知为 H.264 编码
+        - e0，表示其为视频流
+        - 00 1c，接下来描述占用 28 字节
+     - 90 c0 00 0c 43 0a 01 40 fe 00 7d 03 03 e8 03 ff
+     	- 90，stream_type， 根据 GB28181 的定义可知为 G.711 编码
+     	- c0，音频流
+     	- 00 0c，接下来描述占用 12 字节
+- d3 af 06 38，CRC_32，4 Byte
+*/
+```
+
+
+
+
 
 ```c
 static int gb28181_make_psm_header(char *pData)
@@ -251,6 +458,17 @@ static int gb28181_make_psm_header(char *pData)
 ```
 
 
+
+## 解析PS流思路
+
+- 先找到`PSH`的起始码`0x00 00 01 BA`
+- 解析`PS System header`，判断是否有`PSM`
+  - `PSM`只有在关键帧打包的时候，才会存在
+  - `IDR`包含了`SPS`、`PPS`、`SEI`和` I `帧
+  - 因此将`SPS`、`PPS`、`SEI`、`I frame`的NALU 封装为一个PS 包，包括`PSH`、`PS system header`、`PSM`、各个`NALU`的`PES`
+- 根据`PSM`确定`payload`中各`PES`包所负载的`ES`类型
+- 根据各个`ES`流类型和`ID`从`PES`包中解析出具体的`ES`流
+- 要从`PS`流中找出帧类型，必须将`PS`包解析成`ES`并组成完整的帧，然后再帧数据开始处根据`NALU`头部来判断帧类型
 
 
 

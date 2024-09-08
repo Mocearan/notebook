@@ -550,39 +550,33 @@ static void nal_send(AVFormatContext *s1, const uint8_t *buf, int size, int last
 
 ## 荷载ps 流
 
-[流媒体基础-RTP封装PS流 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/595923734)
-
-[RTP协议全解析（H264码流和PS流） - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/5570286.html)
-
 ​		针对H264 做如下PS 封装：
 
 - 每个`IDR NALU `前一般都会包含`SPS`、`PPS `、`SEI`等`NALU`
-  - 这几个包各自打包为PES后，加在IDR PES之前，共同封装为一个PS
+  - 这几个包各自打包为PES后，加在`IDR PES`之前，共同封装为一个`PS` 包
   
   - 一般情况下IDR帧很大，超过了RTP的负载长度限制（1400字节），所以上面这一个I帧要拆分成若干包RTP分多次发送
   
-  - 所以一个`IDR PS` 包的首包由外到内顺序是：
+    - 所以一个`IDR PS` 包的首包由外到内顺序是：
   
-    ​	`PS header | PS system header | PS system Map| PES SPS | PES PPS | PES SEI | PES I Frame`
+      ​	`RTP header | PS header | PS system header | PS system Map | PES SPS | PES PPS | PES SEI | PES I Frame`
   
-    - `PES SPS` ：`PES header | SPS nalu`
-    - `PES PPS`：`PES header | PPS nalu`
-    - `PES SEI`：`PES header | SEI nalu`
-    - `PES I Frame`：`PES header | h264 nalu`
+      - `PES SPS` ：`PES header | SPS nalu`
+      - `PES PPS`：`PES header | PPS nalu`
+      - `PES SEI`：`PES header | SEI nalu`
+      - `PES I Frame`：`PES header | h264 nalu`
   
-  - 后续包没有PS相关结构，有传输协议直接负载剩余数据
+    - 后续包没有PS相关结构，有传输协议直接负载剩余数据
   
-    - `h264 nalu`
-    - 其中`h264 nalu`是指接上一包中的`h264 nalu`数据
+      - `RTP header | h264 nalu`
+      - 其中`h264 nalu`是指接上一包中的`h264 nalu`数据
   
 - 对于其它非关键帧的`PS `包，直接加上`PS`头和`PES `头就可以了
-  - 顺序为：`PS header | PES header | h264 nalu`
+  - 顺序为：`RTP header | PS header | PES header | h264 nalu`
   - P/B帧大小一般不超过1400字节，如果超过1400字节，也需分成多包进行传输，同IDR分包
   
 - 当有音频数据时，将数据加上`PES header` 放到视频`PES `后就可以了
-  - 顺序如下：`PS header  | PES header(video) | h264 raw data | PES header(audio) | aac raw data`
-  
-- 再用`RTP header `封装发送就可以了
+  - 顺序如下：`RTP header | PS header  | PES header(video) | h264 raw data | PES header(audio) | aac raw data`
 
 > - GB28181 对RTP 传输的数据负载类型有规定（参考GB28181 附录B），负载类型中96-127
 >
@@ -593,23 +587,8 @@ static void nal_send(AVFormatContext *s1, const uint8_t *buf, int size, int last
 >    - 若负载类型为96，则采用PS 解复用，将音视频分开解码。
 >    - 若负载类型为98，直接按照H264 的解码类型解码。
 >
->    PS 包中的流类型（stream type）的取值如下：
+>    
 >
-> -  MPEG-4 视频流： 0x10；
->
-> -  H.264 视频流： 0x1B；
->
-> -   SVAC 视频流： 0x80；
->
-> -   G.711 音频流： 0x90；
->
-> -  G.722.1 音频流： 0x92；
->
-> - G.723.1 音频流： 0x93；
->
-> -  G.729 音频流： 0x99；
->
-> - SVAC音频流： 0x9B。
 
 ​    注：此方法不一定准确，取决于打包格式是否标准
 
