@@ -45,3 +45,5 @@ MediaStream （又称getUserMedia）
 [一文看懂WebRTC流媒体服务器 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/663832662)
 
 [使用级联SFU改善媒体质量和规模-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1871182)
+
+[WebRTC_椛茶的博客-CSDN博客](https://blog.csdn.net/weixin_38102771/category_12369537.html)
