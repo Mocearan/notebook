@@ -8,22 +8,9 @@
 
 ​		定义了一对多应用程序如何有效地通过IP网络传送多媒体数据。RTSP在体系结构上位于RTP和RTCP之上, 它使用TCP或RTP完成数据传输。
 
-- 遵循规范IETF RFC 2326,4567,6064，是基于文本的协议，语法和操作方法参考了HTTP/1.1
-- 采用ISO10646字符集，使用UTF-8编码
-- 提供一 种可扩展的框架，使能够提供可控制的，按需传输实时数据，比如音频和视频文件
-- 源数据可以包括现场数据的反馈和存贮的文件
-- rtsp对流媒体提供了诸如暂停，快进等控制，本身并不负责传输数据
-  - rtsp作用相当于流媒体服务器的远程控制
-- 允许同时多个串流需求控制(Multicast)
-  - 时间上同步
-- 选择发送通道,，传输数据可以通过传输层的tcp，udp协议
-  - rtsp也提供了基于rtp传输机制的一些有效的方法
-  - 承载RTSP的信令传输层协议
-    - 可以为`TCP`，默认端口554
-    - 也可以是`RTSP-over-HTTP tunneling`，则默认TCP端口为`8080`
-  - 实时流数据由不同的协议传输，比如`RTP/RTCP完`成数据流和控制命令的传输
-- 可以缓存，可以重定向
-- 基于文本的实时流协商协议
+​		遵循规范IETF RFC 2326,4567,6064，是基于文本的协议，语法和操作方法参考了HTTP/1.1，采用ISO10646字符集，使用UTF-8编码。提供一 种可扩展的框架，使能够提供可控制的，按需传输实时数据，比如音频和视频文件。
+
+​		rtsp是专门为流媒体制定的协议，在多个媒体流的时间同步方面比sip强大。rtsp还提供网络负载均衡的功能，减轻服务器压力和网络带宽要求。sip一般用来创建一次音频、视频通话（双向），而rtsp一般用来做视频点播、视频监控等（单向）。当然，从原理上讲，rtsp也可以做双向的视频通话。
 
 
 
@@ -35,12 +22,36 @@
 
 [RFC 2326 - Real Time Streaming Protocol (RTSP) (ietf.org)](https://datatracker.ietf.org/doc/html/rfc2326)
 
-
+[RTSP传输协议之Methods总结 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/6553235.html)
 
 ## 协议特点
 
-- 可扩展性: 新方法和参数很容易加入RTSP.
+​		TSP 控制的流可能用到 RTP，但 RTSP 操作并不依赖用于传输连续媒体的传输机制。RTSP 在语法和操作上与 HTTP/1.1 类似，因此 HTTP 的扩展机制在多数情况下可加入 RTSP。然而，在很多重要方面 RTSP 仍不同于 HTTP ：
+
+- RTSP 引入了大量新方法并具有一个不同的协议标识符：
+- 在大多数情况下，RTSP 服务器需要保持缺省状态，与 HTTP 的无状态相对；
+- RTSP 中客户端和服务器都可以发出请求；
+- 在多数情况下，数据由不同的协议传输；
+- RTSP 使用 ISO 10646 （UTF-8）而并非 ISO 8859-1，与当前的国际标准 HTML 相一致；
+- URI 请求总是包含绝对 URI。为了与过去的错误相互兼容，HTTP/1.1 只在请求过程中传送绝对路径并将主机名置于另外的头字段。
+
+
+
+- 源数据可以包括现场数据的反馈和存贮的文件
+- HTTP友好:  RTSP采用HTTP观念, 使现在结构都可重用. 基于文本的实时流协商协议
 - 易解析: RTSP可由标准HTTP或MIME解析器解析.
+- rtsp对流媒体提供了诸如暂停，快进等控制，本身并不负责传输数据
+  - rtsp作用相当于流媒体服务器的远程控制
+- 允许同时多个串流需求控制(Multicast)
+  - 时间上同步
+- 选择发送通道,，传输数据可以通过传输层的tcp，udp协议
+  - rtsp也提供了基于rtp传输机制的一些有效的方法
+  - 承载RTSP的信令传输层协议
+    - 可以为`TCP`，默认端口554
+    - 也可以是`RTSP-over-HTTP tunneling`，则默认TCP端口为`8080`
+  - 实时流数据由不同的协议传输，比如`RTP/RTCP完`成数据流和控制命令的传输
+- 可以缓存，可以重定向
+
 - 安全: RTSP使用网页安全机制.
 - 独立于传输: RTSP可使用不可靠数据报协议(EDP), 可靠数据报协议(RDP); 如要实现应用级可靠, 可使用可靠流协议.
 - 多服务器支持: 每个流可放在不同服务器上, 用户端自动与不同服务器建立几个并发控制连接, 媒体同步在传输层执行.
@@ -49,7 +60,6 @@
 - 适合专业应用: 通过SMPTE时标, RTSP支持帧级精度, 允许远程数字编辑.
 - 演示描述中立: 协议没强加特殊演示或元文件, 可传送所用格式类型; 然而, 演示描述至少必须包括一个RTSP URL.
 - 代理与防火墙友好: 协议可由应用和传输层防火墙处理. 防火墙需要理解SETUP方法, 为UDP媒体流打开一个“缺口”.
-- HTTP友好: 此处, RTSP明智地采用HTTP观念, 使现在结构都可重用. 结构包括Internet内容选择平台(PICS). 由于在大多数情况下控制连续媒体需要服务器状态, RTSP不仅仅向HTFP添加方法.
 - 适当的服务器控制: 如用户启动一个流, 必须也可以停止一个流.
 - 传输协调: 实际处理连续媒体流前, 用户可协调传输方法.
 - 性能协调: 如基本特征无效, 必须有一些清理机制让用户决定哪种方法没生效. 这允许用户提出适合的用户界面.
@@ -287,6 +297,32 @@ Transport: RTP/AVP/TCP;unicast;interleaved=0-1;ssrc=6B8B4567
   - 可选增加`ssrc`表示
 - 服务器端回复时增加`Session`ID，后续消息必须带上`Session`字段
 
+```c++
+string msg;  
+msg.append("SETUP ");  
+msg.append(trackurl);  
+msg.append(" RTSP/1.0\r\n");  
+msg.append("Transport: RTP/AVP/UDP;unicast;client_port=");  
+msg.append(rtpPort);  
+msg.append("-");  
+msg.append(rtpPort + 1);  
+msg.append("\r\n");  
+if (trackindex > 0) {  // 如果客户端收到的Response中有Session ID，那么，在之后的请求中都会用这个Session ID，相应的Response也会用同一个Session ID，而不会重新创建一个。
+    msg->append("Session: ");  
+    msg->append(mSessionID);  
+    msg->append("\r\n");  
+}  
+msg.append("CSeq: ");  
+msg.append(CSeq);  
+msg.append("\r\n");  
+msg.append("\r\n");  
+
+// 如果这里每次都不设置Session ID，那么服务器都会针对SETUP创建一个新的Session ID，从而就会影响后面的PLAY请求，从而影响整个播放过程。
+// 当然了，如果只要求播放某个Stream，比如Audio或者Video，那么在创建SETUP请求的时候就可以不用设置Session ID，服务器会针对每个SETUP创建一个新的Session ID。后面发送PLAY请求的时候，设置哪个Session ID，就会播放相应的Stream。
+```
+
+
+
 #### `PLAY`
 
 ​		客户端应该在所有的`setup`消息被成功解析后发送`PLAY`请求。
@@ -294,7 +330,12 @@ Transport: RTP/AVP/TCP;unicast;interleaved=0-1;ssrc=6B8B4567
 - 在`range`中指定媒体的播放时间
   - 服务器在接到`PLAY`消息后会由`range`中指定的开始点开始发送媒体数据直到`range`中指定的结束点
   - 对于实时流`range`一般为`Range: npt=0.000-`
-- `PLAY`可带有scale和speed字段用于点播速度控制。
+    - 以`UTC`格式指定了播放开始的时间
+  - 不含 `Range `首部域的 `PLAY `请求也是合法的
+    - 它从媒体流开头开始播放,直到媒体流被暂停
+      - 如果媒体流通过 `PAUSE `暂停,媒体流传输将在暂停点重新开始
+      - 如果媒体流正在播放，那么这样一个 `PLAY `请求将不起更多的作用，只是客户端可以用此来测试服务器是否存活
+- `PLAY`可带有`scale`和`speed`字段用于点播速度控制。
 
 ```http
 PLAY rtsp://192.168.20.136:5000/xxx666 RTSP/1.0 
@@ -310,6 +351,8 @@ User-Agent: VLC media player (LIVE555 Streaming Media v2005.11.10)
 
 - `seq`和`rtptime`都是rtp包中的信息 
 
+​		`PLAY `请求会被放入队列中，服务器必须将 `PLAY `请求放到队列中有序执行。也就是说，后一个 PLAY` `请求需要等待前一个`PLAY `请求完成才能得到执行。
+
 ```http
 RTSP/1.0 200 OK 
 Server: UServer 0.9.7_rc1 
@@ -319,6 +362,28 @@ Range: npt=0.000000-
 RTP-Info: url=trackID=0;seq=17040;rtptime=1467265309  
 		
 ```
+
+```c
+// 在尚未收到SETUP 请求的成功应答之前,客户端不可以发出 PLAY 请求。PLAY 请求将正常播放时间定位到指定范围的起始处，并且传输数据流直到播放范围结束。
+string msg;  
+msg.append("PLAY ");  
+msg.append(mSessionURL);  
+msg.append(" RTSP/1.0\r\n");  
+msg.append("Session: ");  
+msg.append(mSessionID);  
+msg.append("\r\n");  
+msg.append("Range: npt=");  
+msg.append(start);  
+msg.append("-");  
+msg.append(end);  
+msg.append("\r\n");  
+msg.append("CSeq: ");  
+msg.append(CSeq);  
+msg.append("\r\n");  
+msg.append("\r\n");
+```
+
+
 
 #### `PAUSE`
 
@@ -339,6 +404,40 @@ Cseq: 5
 Session: 6310936469860791894
 ```
 
+- 如果请求 URL 中指定了具体的媒体流，那么只有该媒体流的播放和记录被暂停
+
+- 如果请求 URL 指定了一个表示或者媒体流已成组,那么在该表示或组中的所有当前活动流的传输将被暂停
+
+- 在重启播放或记录后,必须维护不同track的同步。尽管服务器可能在暂停后,在timeout 的时间内关闭会话,释放资源，但是任何资源都必须保存
+
+  `Session = "Session" ":" session-id [ ";" "timeout" "=" delta-seconds ]`
+
+- PAUSE 请求中可能包含一个 Range 首部域，包含一个精确的值，指定何时暂停
+
+  - 如果 Range 首部域指定的时间超出了任何一个当前挂起的 PLAY 请求，则会返回错误 "457 InvalidRange"
+
+  - 如果服务器在 Range 首部域指定的时间外已发送数据，后续的 PLAY 请求还是会在暂停点开始
+
+    > 因为它认为客户端会丢弃在暂停点之后收到的数据
+    >
+    > 确保连续、无缝的暂停/播放循环
+
+-  PAUSE 请求可以忽略所有排队的 PLAY 请求，但必须保持媒体流中的暂停点
+
+```c
+string msg;  
+msg.append("PAUSE ");  
+msg.append(mSessionURL);  
+msg.append(" RTSP/1.0\r\n");  
+msg.append("Session: ");  
+msg.append(mSessionID);  
+msg.append("\r\n");  
+msg.append("CSeq: ");  
+msg.append(CSeq);  
+msg.append("\r\n");  
+msg.append("\r\n");  
+```
+
 
 
 #### `RECORD`
@@ -351,7 +450,9 @@ Session: 6310936469860791894
 
 #### `TEARDOWN`
 
-​		客户端发起关闭请求，停止媒体占用，并释放相关资源
+​		客户端发起关闭请求，停止媒体占用，并释放相关资源。
+
+​		如果该 URI 是此演示的演示 URI，那么与此会话相关的任何 RTSP 会话标识符将失效。除非所有传输参数由会话描述符定义，否则必须在会话能够再次播放之前发送 SETUP 请求。
 
 ```http
 TEARDOWN rtsp://192.168.20.136:5000/xxx666 RTSP/1.0 
@@ -370,14 +471,66 @@ Session: 6310936469860791894
 Connection: Close 
 ```
 
+```c
+string msg;  
+msg.append("TEARDOWN ");  
+msg.append(mSessionURL);  
+msg.append(" RTSP/1.0\r\n");  
+msg.append("Session: ");  
+msg.append(mSessionID);  
+msg.append("\r\n");  
+msg.append("CSeq: ");  
+msg.append(CSeq);  
+msg.append("\r\n");  
+msg.append("\r\n");
+```
+
 
 
 #### `ANNOUNCE`
 
 ​		`C->S/S->C`。
 
-- 当从用户发往服务器时, ANNOUNCE将请求URL识别的演示或媒体对象描述发送给服务器
-- 反之, ANNOUNCE实时更新连接描述. 如新媒体流加入演示, 整个演示描述再次发送, 而不仅仅是附加组件, 使组件能被删除 
+- 当从用户发往服务器时, `ANNOUNCE` 将通过请求 `URL `识别的表示描述或者媒体对象提交给服务器
+- 当服务器相客户端发送时，ANNOUNCE 实时更新会话描述。
+
+​		ANNOUNCE请求包括两个部分，一部分是RTSP标准请求内容，另一部分是按照SDP格式描述的内容。
+
+```c
+//Client到Server的ANNOUNCE请求
+string msg;  
+msg.append("ANNOUNCE ");  
+msg.append(mSessionURL);  
+msg.append(" RTSP/1.0\r\n");  
+msg.append("Session: ");  
+msg.append(mSessionID);  
+msg.append("\r\n");  
+msg.append("CSeq: ");  
+msg.append(CSeq);  
+msg.append("\r\n");  
+msg.append("Content-Type: application/sdp\r\n");  
+msg.append("Content-Length: ");  
+msg.append(SDPSize);  
+msg.append("\r\n");  
+msg.append("\r\n");  
+msg.append(SDPContent); 
+// SDPContent:
+// v=0  
+// o=mhandley 2890844526 2890845468 IN IP4 126.16.64.4  
+// s=SDP Seminar  
+// i=A Seminar on the session description protocol  
+// u=http://www.cs.ucl.ac.uk/staff/M.Handley/sdp.03.ps  
+// e=mjh@isi.edu (Mark Handley)  
+// c=IN IP4 224.2.17.12/127  
+// t=2873397496 2873404696  
+// a=recvonly  
+// m=audio 3456 RTP/AVP 0  
+// m=video 2232 RTP/AVP 31 
+msg.append("\r\n");  
+msg.append("\r\n"); 
+```
+
+
 
 
 
@@ -570,7 +723,7 @@ S->C
 
 - 1XX: Informational – 请求被接收到，继续处理
 - 2XX: Success – 请求被成功的接收，解析并接受
-- 3XX: Redirection – 为完成请求需要更多的操作
+- 3XX: Redirection –重定向， 要完成操作必须进行进一步操作
 - 4XX: Client Error – 请求消息中包含语法错误或是不能够被有效执行
 - 5XX: Server Error – 服务器响应失败，无法处理正确的有效的请求消息
 
@@ -774,6 +927,505 @@ Session: 3
 RTP-Info: url=rtsp://192.168.1.109/1.mpg/track1;seq=9200;rtptime=214793785,url=rtsp://192.168.1.109/1.mpg/track2;seq=12770;rtptime=31721
 
 (开始传输流媒体…)
+```
+
+
+
+```java
+package com.amigo.rtsp;  
+  
+import java.io.IOException;  
+import java.nio.channels.SelectionKey;  
+  
+/** *//** 
+* IEvent.java 网络事件处理器，当Selector可以进行操作时，调用这个接口中的方法. 
+* 2007-3-22 下午03:35:51 
+* @author sycheng 
+* @version 1.0 
+*/  
+public interface IEvent {  
+    /** *//** 
+    * 当channel得到connect事件时调用这个方法. 
+    * @param key 
+    * @throws IOException 
+    */  
+    void connect(SelectionKey key) throws IOException;  
+  
+    /** *//** 
+    * 当channel可读时调用这个方法. 
+    * @param key 
+    * @throws IOException 
+    */  
+    void read(SelectionKey key) throws IOException;  
+  
+    /** *//** 
+    * 当channel可写时调用这个方法. 
+    * @throws IOException 
+    */  
+    void write() throws IOException;  
+  
+    /** *//** 
+    * 当channel发生错误时调用. 
+    * @param e 
+    */  
+    void error(Exception e);  
+}  
+```
+
+
+
+```java
+package com.amigo.rtsp;  
+  
+import java.io.IOException;  
+import java.net.InetSocketAddress;  
+import java.nio.ByteBuffer;  
+import java.nio.channels.SelectionKey;  
+import java.nio.channels.Selector;  
+import java.nio.channels.SocketChannel;  
+import java.util.Iterator;  
+import java.util.concurrent.atomic.AtomicBoolean;  
+  
+public class RTSPClient extends Thread implements IEvent {  
+  
+    private static final String VERSION = " RTSP/1.0/r/n";  
+    private static final String RTSP_OK = "RTSP/1.0 200 OK";  
+  
+    /** *//** 远程地址 */  
+    private final InetSocketAddress remoteAddress;  
+  
+    /** *//** * 本地地址 */  
+    private final InetSocketAddress localAddress;  
+  
+    /** *//** * 连接通道 */  
+    private SocketChannel socketChannel;  
+  
+    /** *//** 发送缓冲区 */  
+    private final ByteBuffer sendBuf;  
+  
+    /** *//** 接收缓冲区 */  
+    private final ByteBuffer receiveBuf;  
+  
+    private static final int BUFFER_SIZE = 8192;  
+  
+    /** *//** 端口选择器 */  
+    private Selector selector;  
+  
+    private String address;  
+  
+    private Status sysStatus;  
+  
+    private String sessionid;  
+  
+    /** *//** 线程是否结束的标志 */  
+    private AtomicBoolean shutdown;  
+      
+    private int seq=1;  
+      
+    private boolean isSended;  
+      
+    private String trackInfo;  
+      
+  
+    private enum Status {  
+        init, options, describe, setup, play, pause, teardown  
+    }  
+  
+    public RTSPClient(InetSocketAddress remoteAddress,  
+            InetSocketAddress localAddress, String address) {  
+        this.remoteAddress = remoteAddress;  
+        this.localAddress = localAddress;  
+        this.address = address;  
+  
+        // 初始化缓冲区  
+        sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);  
+        receiveBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);  
+        if (selector == null) {  
+            // 创建新的Selector  
+            try {  
+                selector = Selector.open();  
+            } catch (final IOException e) {  
+                e.printStackTrace();  
+            }  
+        }  
+  
+        startup();  
+        sysStatus = Status.init;  
+        shutdown=new AtomicBoolean(false);  
+        isSended=false;  
+    }  
+  
+    public void startup() {  
+        try {  
+            // 打开通道  
+            socketChannel = SocketChannel.open();  
+            // 绑定到本地端口  
+            socketChannel.socket().setSoTimeout(30000);  
+            socketChannel.configureBlocking(false);  
+            socketChannel.socket().bind(localAddress);  
+            if (socketChannel.connect(remoteAddress)) {  
+                System.out.println("开始建立连接:" + remoteAddress);  
+            }  
+            socketChannel.register(selector, SelectionKey.OP_CONNECT  
+                    | SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);  
+            System.out.println("端口打开成功");  
+  
+        } catch (final IOException e1) {  
+            e1.printStackTrace();  
+        }  
+    }  
+  
+    public void send(byte[] out) {  
+        if (out == null || out.length < 1) {  
+            return;  
+        }  
+        synchronized (sendBuf) {  
+            sendBuf.clear();  
+            sendBuf.put(out);  
+            sendBuf.flip();  
+        }  
+  
+        // 发送出去  
+        try {  
+            write();  
+            isSended=true;  
+        } catch (final IOException e) {  
+            e.printStackTrace();  
+        }  
+    }  
+  
+    public void write() throws IOException {  
+        if (isConnected()) {  
+            try {  
+                socketChannel.write(sendBuf);  
+            } catch (final IOException e) {  
+            }  
+        } else {  
+            System.out.println("通道为空或者没有连接上");  
+        }  
+    }  
+  
+    public byte[] recieve() {  
+        if (isConnected()) {  
+            try {  
+                int len = 0;  
+                int readBytes = 0;  
+  
+                synchronized (receiveBuf) {  
+                    receiveBuf.clear();  
+                    try {  
+                        while ((len = socketChannel.read(receiveBuf)) > 0) {  
+                            readBytes += len;  
+                        }  
+                    } finally {  
+                        receiveBuf.flip();  
+                    }  
+                    if (readBytes > 0) {  
+                        final byte[] tmp = new byte[readBytes];  
+                        receiveBuf.get(tmp);  
+                        return tmp;  
+                    } else {  
+                        System.out.println("接收到数据为空,重新启动连接");  
+                        return null;  
+                    }  
+                }  
+            } catch (final IOException e) {  
+                System.out.println("接收消息错误:");  
+            }  
+        } else {  
+            System.out.println("端口没有连接");  
+        }  
+        return null;  
+    }  
+  
+    public boolean isConnected() {  
+        return socketChannel != null && socketChannel.isConnected();  
+    }  
+  
+    private void select() {  
+        int n = 0;  
+        try {  
+            if (selector == null) {  
+                return;  
+            }  
+            n = selector.select(1000);  
+  
+        } catch (final Exception e) {  
+            e.printStackTrace();  
+        }  
+  
+        // 如果select返回大于0，处理事件  
+        if (n > 0) {  
+            for (final Iterator<SelectionKey> i = selector.selectedKeys()  
+                    .iterator(); i.hasNext();) {  
+                // 得到下一个Key  
+                final SelectionKey sk = i.next();  
+                i.remove();  
+                // 检查其是否还有效  
+                if (!sk.isValid()) {  
+                    continue;  
+                }  
+  
+                // 处理事件  
+                final IEvent handler = (IEvent) sk.attachment();  
+                try {  
+                    if (sk.isConnectable()) {  
+                        handler.connect(sk);  
+                    } else if (sk.isReadable()) {  
+                        handler.read(sk);  
+                    } else {  
+                        // System.err.println("Ooops");  
+                    }  
+                } catch (final Exception e) {  
+                    handler.error(e);  
+                    sk.cancel();  
+                }  
+            }  
+        }  
+    }  
+  
+    public void shutdown() {  
+        if (isConnected()) {  
+            try {  
+                socketChannel.close();  
+                System.out.println("端口关闭成功");  
+            } catch (final IOException e) {  
+                System.out.println("端口关闭错误:");  
+            } finally {  
+                socketChannel = null;  
+            }  
+        } else {  
+            System.out.println("通道为空或者没有连接");  
+        }  
+    }  
+  
+    @Override  
+    public void run() {  
+        // 启动主循环流程  
+        while (!shutdown.get()) {  
+            try {  
+                if (isConnected()&&(!isSended)) {  
+                    switch (sysStatus) {  
+                    case init:  
+                        doOption();  
+                        break;  
+                    case options:  
+                        doDescribe();  
+                        break;  
+                    case describe:  
+                        doSetup();  
+                        break;  
+                    case setup:  
+                        if(sessionid==null&&sessionid.length()>0){  
+                            System.out.println("setup还没有正常返回");  
+                        }else{  
+                            doPlay();  
+                        }  
+                        break;  
+                    case play:  
+                        doPause();  
+                        break;  
+                          
+                    case pause:  
+                        doTeardown();  
+                        break;  
+                    default:  
+                        break;  
+                    }  
+                }  
+                // do select  
+                select();  
+                try {  
+                    Thread.sleep(1000);  
+                } catch (final Exception e) {  
+                }  
+            } catch (final Exception e) {  
+                e.printStackTrace();  
+            }  
+        }  
+          
+        shutdown();  
+    }  
+  
+    public void connect(SelectionKey key) throws IOException {  
+        if (isConnected()) {  
+            return;  
+        }  
+        // 完成SocketChannel的连接  
+        socketChannel.finishConnect();  
+        while (!socketChannel.isConnected()) {  
+            try {  
+                Thread.sleep(300);  
+            } catch (final InterruptedException e) {  
+                e.printStackTrace();  
+            }  
+            socketChannel.finishConnect();  
+        }  
+  
+    }  
+  
+    public void error(Exception e) {  
+        e.printStackTrace();  
+    }  
+  
+    public void read(SelectionKey key) throws IOException {  
+        // 接收消息  
+        final byte[] msg = recieve();  
+        if (msg != null) {  
+            handle(msg);  
+        } else {  
+            key.cancel();  
+        }  
+    }  
+  
+    private void handle(byte[] msg) {  
+        String tmp = new String(msg);  
+        System.out.println("返回内容：");  
+        System.out.println(tmp);  
+        if (tmp.startsWith(RTSP_OK)) {  
+            switch (sysStatus) {  
+            case init:  
+                sysStatus = Status.options;  
+                break;  
+            case options:  
+                sysStatus = Status.describe;  
+                trackInfo=tmp.substring(tmp.indexOf("trackID"));  
+                break;  
+            case describe:  
+                sessionid = tmp.substring(tmp.indexOf("Session: ") + 9, tmp  
+                        .indexOf("Date:"));  
+                if(sessionid!=null&&sessionid.length()>0){  
+                    sysStatus = Status.setup;  
+                }  
+                break;  
+            case setup:  
+                sysStatus = Status.play;  
+                break;  
+            case play:  
+                sysStatus = Status.pause;  
+                break;  
+            case pause:  
+                sysStatus = Status.teardown;  
+                shutdown.set(true);  
+                break;  
+            case teardown:  
+                sysStatus = Status.init;  
+                break;  
+            default:  
+                break;  
+            }  
+            isSended=false;  
+        } else {  
+            System.out.println("返回错误：" + tmp);  
+        }  
+  
+    }  
+  
+    private void doTeardown() {  
+        StringBuilder sb = new StringBuilder();  
+        sb.append("TEARDOWN ");  
+        sb.append(this.address);  
+        sb.append("/");  
+        sb.append(VERSION);  
+        sb.append("Cseq: ");  
+        sb.append(seq++);  
+        sb.append("/r/n");  
+        sb.append("User-Agent: RealMedia Player HelixDNAClient/10.0.0.11279 (win32)/r/n");  
+        sb.append("Session: ");  
+        sb.append(sessionid);  
+        sb.append("/r/n");  
+        send(sb.toString().getBytes());  
+        System.out.println(sb.toString());  
+    }  
+  
+    private void doPlay() {  
+        StringBuilder sb = new StringBuilder();  
+        sb.append("PLAY ");  
+        sb.append(this.address);  
+        sb.append(VERSION);  
+        sb.append("Session: ");  
+        sb.append(sessionid);  
+        sb.append("Cseq: ");  
+        sb.append(seq++);  
+        sb.append("/r/n");  
+        sb.append("/r/n");  
+        System.out.println(sb.toString());  
+        send(sb.toString().getBytes());  
+  
+    }  
+  
+    private void doSetup() {  
+        StringBuilder sb = new StringBuilder();  
+        sb.append("SETUP ");  
+        sb.append(this.address);  
+        sb.append("/");  
+        sb.append(trackInfo);  
+        sb.append(VERSION);  
+        sb.append("Cseq: ");  
+        sb.append(seq++);  
+        sb.append("/r/n");  
+        sb.append("Transport: RTP/AVP;UNICAST;client_port=16264-16265;mode=play/r/n");  
+        sb.append("/r/n");  
+        System.out.println(sb.toString());  
+        send(sb.toString().getBytes());  
+    }  
+  
+    private void doOption() {  
+        StringBuilder sb = new StringBuilder();  
+        sb.append("OPTIONS ");  
+        sb.append(this.address.substring(0, address.lastIndexOf("/")));  
+        sb.append(VERSION);  
+        sb.append("Cseq: ");  
+        sb.append(seq++);  
+        sb.append("/r/n");  
+        sb.append("/r/n");  
+        System.out.println(sb.toString());  
+        send(sb.toString().getBytes());  
+    }  
+  
+    private void doDescribe() {  
+        StringBuilder sb = new StringBuilder();  
+        sb.append("DESCRIBE ");  
+        sb.append(this.address);  
+        sb.append(VERSION);  
+        sb.append("Cseq: ");  
+        sb.append(seq++);  
+        sb.append("/r/n");  
+        sb.append("/r/n");  
+        System.out.println(sb.toString());  
+        send(sb.toString().getBytes());  
+    }  
+      
+    private void doPause() {  
+        StringBuilder sb = new StringBuilder();  
+        sb.append("PAUSE ");  
+        sb.append(this.address);  
+        sb.append("/");  
+        sb.append(VERSION);  
+        sb.append("Cseq: ");  
+        sb.append(seq++);  
+        sb.append("/r/n");  
+        sb.append("Session: ");  
+        sb.append(sessionid);  
+        sb.append("/r/n");  
+        send(sb.toString().getBytes());  
+        System.out.println(sb.toString());  
+    }  
+      
+    public static void main(String[] args) {  
+        try {  
+            // RTSPClient(InetSocketAddress remoteAddress,  
+            // InetSocketAddress localAddress, String address)  
+            RTSPClient client = new RTSPClient(  
+                    new InetSocketAddress("218.207.101.236", 554),  
+                    new InetSocketAddress("192.168.2.28", 0),  
+                    "rtsp://218.207.101.236:554/mobile/3/67A451E937422331/8jH5QPU5GWS07Ugn.sdp");  
+            client.start();  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        }  
+    }  
+}  
 ```
 
 

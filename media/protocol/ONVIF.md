@@ -5,3 +5,5 @@
 [推荐开源项目：ONVIF设备服务服务器(onvif_srvd)——打造你的IP摄像机服务-CSDN博客](https://blog.csdn.net/gitblog_00002/article/details/141414768)
 
 [技术解码｜Onvif协议 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/552989716)
+
+[ONVIF、RTSP/RTP、FFMPEG的开发实录 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/6605170.html)
