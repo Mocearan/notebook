@@ -411,9 +411,67 @@ kRtpExtensionNumberOfExtensions  // Must be the last entity in the enum.
 
 
 
+```c
+static int parsingRTPPacket(uint8_t *data, size_t size) 
+{  
+    if (size < 12) {  
+        //Too short to be a valid RTP header.  
+        return -1;  
+    }  
+  
+    if ((data[0] >> 6) != 2) {  
+        //Currently, the version is 2, if is not 2, unsupported.  
+        return -1;  
+    }  
+  
+    if (data[0] & 0x20) {  
+        // Padding present.  
+        size_t paddingLength = data[size - 1];  
+        if (paddingLength + 12 > size) {  
+            return -1;  
+        }  
+        size -= paddingLength;  
+    }  
+  
+    int numCSRCs = data[0] & 0x0f;  
+    size_t payloadOffset = 12 + 4 * numCSRCs;  
+  
+    if (size < payloadOffset) {  
+        // Not enough data to fit the basic header and all the CSRC entries.  
+        return -1;  
+    }  
+  
+    if (data[0] & 0x10) {  
+        // Header extension present.  
+        if (size < payloadOffset + 4) {  
+            // Not enough data to fit the basic header, all CSRC entries and the first 4 bytes of the extension header.  
+            return -1;  
+        }  
+  
+        const uint8_t *extensionData = &data[payloadOffset];  
+        size_t extensionLength = 4 * (extensionData[2] << 8 | extensionData[3]);  
+  
+        if (size < payloadOffset + 4 + extensionLength) {  
+            return -1;  
+        }  
+        payloadOffset += (4 + extensionLength);  
+    }  
+  
+    uint32_t rtpTime = data[4] << 24 | data[5] << 16 | data[6] << 8 | data[7];  
+    uint32_t srcId = data[8] << 24 | data[9] << 16 | data[10] << 8 | data[11];  
+    uint32_t seqNum = data[2] << 8 | data[3];  
+  
+    return 0;  
+}  
+```
+
 
 
 #### RTP over TCP
+
+​		[RTSP - RTP over TCP - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/4483497.html)
+
+
 
 ​		RTP 默认是采用 UDP 发送的，格式为 RTP 头+RTP 载荷，**如果是使用 TCP，那么需要在 RTP 头之前再加上四个字节**
 
@@ -578,12 +636,6 @@ kRtpExtensionNumberOfExtensions  // Must be the last entity in the enum.
   - 可以阻止恶意流量和拒绝服务攻击
 - 使用安全的信令协议：如SIPS和SDPS，以保护会话参数和防止信令劫持
 - 监控网络流量：及时发现异常行为和潜在攻击。
-
-
-
-## RTP over tcp
-
-[RTSP - RTP over TCP - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/4483497.html)
 
 
 
