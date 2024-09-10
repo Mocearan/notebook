@@ -138,7 +138,7 @@ void printSize(int array[5])
 - Any additional setup costs.
 
 >  				Some class types do additional setup when they are instantiated (e.g. such as opening a file or database, or allocating a certain amount of dynamic memory to hold an object of a variable size). 
->  			
+>  				
 >  				It’s best to assume that most standard library classes have setup costs, unless you know otherwise that they don’t.
 
 ​		accessing an object through a reference is slightly more expensive than accessing an object through a normal variable identifier. 
@@ -577,5 +577,52 @@ decltype(arr)* func(int i);
 
 ```c++
 auto func(int i) -> int(*)[10]; // 返回一个数组指针
+```
+
+
+
+
+
+## 函数指针
+
+​		函数指针指向的是函数而非对象。
+
+- 和其他指针一样，函数指针指向某种特定类型。
+- 函数的类型由它的返回类型和形参类型共同决定，与函数名无关。
+
+​		要想声明一个可以指向该函数的指针，只需要用指针替换函数名即可：
+
+```c++
+return_type (*fname)(params_list);
+```
+
+- pf前面有个＊，因此pf是指针；右侧是形参列表，表示pf指向的是函数
+
+```c++
+pf = lcompare;
+pf = &lcompare;
+// 二者等价，因为c语言的设计原因
+// 因此能直接使用指向函数的指针调用该函数，无须提前解引用指针
+pf("hello");
+(*pf)("hello");
+```
+
+​		常作为函数形参来使用：
+
+```c
+void ub(const std::string& s1, bool (*pf)(const std::string& x));
+```
+
+​		还可以使用尾置返回类型的方式声明一个返回函数指针的函数：
+
+```c++
+auto f1(int) -> int (*)(int*, int);
+```
+
+​		或者使用`decltype`从一个已知的函数上获取函数类型
+
+```c++
+std::string::size_type largetLength(const std::string&, const std::string&);
+decltype(largetLength)* getF(const std::string&);
 ```
 
