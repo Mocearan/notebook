@@ -992,72 +992,69 @@ int main() {
 
 ## nat
 
- rtp/rtcp传输数据的时候，需要两个端口支持。即rtp端口用于传输rtp数据，即传输的多媒体数据；rtcp端口用于传输rtcp控制协议信息。 rtp/rtcp协议默认的端口是rtcp port = rtp port + 1 。详细的说，比如A终端和B终端之间通过rtp/rtcp进行通信，
-
   ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/1263be13f2eg214.jpg)
 
-  
 
-如上图，
 
-​                             本地IP:PORT                            NAT映射后IP:PORT
+|                                   | 本地IP:PORT        | NAT映射后IP:PORT    |
+| --------------------------------- | ------------------ | ------------------- |
+| UAC A RTP的发送和接收`IP：PORT `  | 192.168.1.100:8000 | 61.144.174.230:1597 |
+| UAC A RTCP的发送和接收`IP ：PORT` | 192.168.1.100:8001 | 61.144.174.230:1602 |
+| UAC B RTP的发送和接收`IP ：PORT`  | 192.168.1.10:8000  | 61.144.174.12:8357  |
+| UAC B RTCP的发送和接收`IP PORT `  | 192.168.1.10:8001  | 61.144.174.12:8420  |
 
-UACA RTP的发送和接收IP:PORT ： 192.168.1.100:8000                       61.144.174.230:1597
+- 经过NAT映射之后不一定`RTCP port = RTP port + 1`
+- NAT设备后的终端的本地`IP:PORT`并不被`NAT`外的设置可知，必须通过`NAT`映射之后的公网`IP:PORT`作为目的地址进行通信
+- `NAT IP:PORT`转换和穿孔（`puncture`）得到自己的外网`IP:PORT`，何得到对方的外网`IP:PORT`
 
-UACA RTCP的发送和接收IP:PORT：192.168.1.100:8001                       61.144.174.230:1602
+> ​		如上图的终端A如果要发送RTP数据到终端B，UACA发送的目的地址只能是：61.144.174.12:8357。
+>
+> ​		同理，UACB发送RTP数据给UACA，目的地址只能是： 61.144.174.230:1597 。
 
-UACB RTP的发送和接收IP:PORT ： 192.168.1.10:8000                         61.144.174.12:8357
 
-UACB RTCP的发送和接收IP:PORT：192.168.1.10:8001                        61.144.174.12:8420
-
-  
-
-上图可以得到一下一些信息：
-
-   (一) 本地端口 RTCP PORT = RTP PORT + 1;但是经过NAT映射之后也有可能满足这个等式，但是并不一定有这个关系。
-
-  （二）在NAT设备后面的终端的本地IP:PORT并不被NAT外的设置可知，也就无法通过终端的本地IP:PORT与之通信。而必须通过NAT映射之后的公网IP:PORT作为目的地址进行通信。
-
-  如上图的终端A如果要发送RTP数据到终端B，UACA发送的目的地址只能是：61.144.174.12:8357。同理，UACB发送RTP数据给UACA，目的地址只能是： 61.144.174.230:1597 。
-
-  （三）也许看到这里，如何得到自己的外网IP:PORT呢？如何得到对方的外网IP:PORT呢？这就是NAT IP:PORT转换和穿孔（puncture），下回分解。
 
  
 
-NAT 地址转换
+### NAT 地址转换
 
- 如上所述，终端需要知道自己的外网IP：port，可以通过STUN、STUNT、TURN、Full Proxy等方式。这里介绍通过STUN方式实现NAT穿透。
+​		终端要知道自己的外网`IP：port`，可以通过`STUN`、`STUNT`、`TURN`、`Full Proxy`等方式。
 
- STUN: Simple Traversal of UDP Through NAT。即通过UDP对NAT进行穿透。
+​		这里介绍通过STUN方式实现NAT穿透。
 
-STUNT:Simple Traversal of UDP Through NATs and TCP too.可以通过TCP对NAT进行穿透。
+- `STUN`：Simple Traversal of UDP Through NAT。即通过UDP对NAT进行穿透。
+- `STUNT`：Simple Traversal of UDP Through NATs and TCP too. 可以通过TCP对NAT进行穿透。
 
-STUN是一个标准协议，具体的协议内容网络上很多。在此不累述了。
+​		`STUN`是一个标准协议，具体的协议内容网络上很多。在此不累述了。
 
-为 了通过STUN实现NAT穿透，得到自己的公网IP:PORT，必须有一个公网STUN服务器，以及我们的客户端必须支持STUN Client功能。STUN Client 通过UDP发送一个request到STUN服务器，该请求通过NAT设备的时候会把数据报头中的本地IP:PORT换成该本地IP:PORT对应的公网 IP:PORT，STUN服务器接收到该数据包后就可以把该公网IP:PORT 发送给STUN Client。这样我们就得到了自己的公网IP:PORT。这样别的终端就可以把该公网IP:PORT最为发送UDP数据的目的地址发送UDP数据。
+​		为 了通过`STUN`实现`NAT`穿透，得到自己的公网`IP:PORT`：
 
- 
+- 必须有一个公网`STUN`服务器，客户端必须支持`STUN Client`功能
+- `STUN Client` 通过`UDP`发送一个`request`到`STUN`服务器
+  - 该请求通过`NAT`设备的时候会把数据报头中的本地`IP:PORT`换成该本地`IP:PORT`对应的公网 `IP:PORT`
+  - `STUN`服务器接收到该数据包后就可以把该公网`IP:PORT` 发送给`STUN Client`
+- 得到自己的公网`IP:PORT`
+- 别的终端可以把该公网`IP:PORT`作为发送`UDP`数据的目的地址发送`UDP`数据
 
-推荐一款STUN client/server 程序代码，[http://sourceforge.net/projects/stun/files/ ](http://sourceforge.net/projects/stun/files/)
+> 推荐一款STUN client/server 程序代码，[http://sourceforge.net/projects/stun/files/ ](http://sourceforge.net/projects/stun/files/)
+>
+> 这是一款开源软件。在客户端中的主要函数是下面这个：
+>
+> ```c
+> NatType stunNatType( 
+>     StunAddress4& dest, //in 公网STUN服务器地址，如stun.xten.net
+> 	bool verbose,               //in 调试时是否输出调试信息
+> 	bool* preservePort=0,        //out if set, is return for if NAT preservers ports or not
+> 	bool* hairpin=0 ,            //out if set, is the return for if NAT will hairpin packetsNAT设备是否支持回环
+> 	int port=0,                // in 本地测试端口port to use for the test, 0 to choose random port
+> 	StunAddress4* sAddr=0    // out NIC to use ，返回STUN返回的本地地址的公网IP:PORT
+> );
+> ```
+>
+>  输入`StunAddress`和测试端口`port`,得到本地`IP:PORT`对应的公网`IP:PORT`.
 
-这是一款开源软件。在客户端中的主要函数是下面这个：
-
-```c++
-NatType stunNatType( 
-    StunAddress4& dest, //in 公网STUN服务器地址，如stun.xten.net
-	bool verbose,               //in 调试时是否输出调试信息
-	bool* preservePort=0,        //out if set, is return for if NAT preservers ports or not
-	bool* hairpin=0 ,            //out if set, is the return for if NAT will hairpin packetsNAT设备是否支持回环
-	int port=0,                // in 本地测试端口port to use for the test, 0 to choose random port
-	StunAddress4* sAddr=0    // out NIC to use ，返回STUN返回的本地地址的公网IP:PORT
-  );
-```
 
 
-
-​       输入StunAddress和测试端口port,得到本地IP:PORT对应的公网IP:PORT.
-
-### 改造
+## 改造
 
 ​		jrtplib中对rtp rtcp端口的处理关系是：rtcp port = rtp port + 1 。这就有问题，本地端口可以按照这个等式来设置端口，但是经过NAT映射之后的公网端口是随机的，有可能并不满足上述等式。
 
@@ -1100,8 +1097,8 @@ NatType stunNatType(
 ​    为了实现：可以自定义目的IP地址和目的rtp port和rtcp port。为了实现这么目标，自己动手改造下面几个函数：构造函数RTPIPv4Destination() 、RTPSession::AddDestination()，思路是在目的地址设置相关函数中增加一个rtcp ip 和port参数。
 
 ```c++
-    RTPIPv4Destination(uint32_t ip,uint16_t rtpportbase,uint32_t rtcpip,uint16_t rtcpport)          
-  {
+RTPIPv4Destination(uint32_t ip,uint16_t rtpportbase,uint32_t rtcpip,uint16_t rtcpport)          
+{
     memset(&rtpaddr,0,sizeof(struct sockaddr_in));
     memset(&rtcpaddr,0,sizeof(struct sockaddr_in));
     
@@ -1125,7 +1122,7 @@ NatType stunNatType(
     RTPIPv4Destination::ip = ip;
   }
 
-    int RTPSession::AddDestination(const RTPAddress &addr,const RTPIPv4Address &rtcpaddr)
+int RTPSession::AddDestination(const RTPAddress &addr,const RTPIPv4Address &rtcpaddr)
 {
   if (!created)
     return ERR_RTP_SESSION_NOTCREATED;
@@ -1139,7 +1136,7 @@ NatType stunNatType(
 
 
 
-### 移植
+## 移植
 
 ​		把jrtplib移植到arm11平台，遇到一些问题，如下。
 5.1 字节序的问题
