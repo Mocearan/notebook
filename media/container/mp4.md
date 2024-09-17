@@ -28,9 +28,21 @@ https://b.goeswhere.com/ISO_IEC_14496-12_2015.pdf
 
 [Introduction to QuickTime File Format Specification](https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/QTFFPreface/qtffPreface.html#//apple_ref/doc/uid/TP40000939-CH202-TPXREF101)
 
-
+[媒体文件格式分析之MP4 - 懒人李冰 (lazybing.github.io)](https://lazybing.github.io/blog/2016/07/26/mp4-parse-format/)
 
 [MP4格式详解_mp4格式解析-CSDN博客](https://blog.csdn.net/weixin_39399492/article/details/127837222?spm=1001.2101.3001.6650.1&utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~Ctr-1-127837222-blog-137641428.235^v43^pc_blog_bottom_relevance_base7&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~Ctr-1-127837222-blog-137641428.235^v43^pc_blog_bottom_relevance_base7&utm_relevant_index=2)
+
+[     NGINX 添加MP4、FLV视频支持模块       ](https://www.cnblogs.com/lidabo/p/9121637.html)
+
+[     nginx 点播mp4方法       ](https://www.cnblogs.com/lidabo/p/9121659.html)
+
+[     视频支持拖动进度条播放的实现（基于nginx）       ](https://www.cnblogs.com/lidabo/p/9121685.html)
+
+
+
+
+
+
 
 ## 概念与术语
 
@@ -705,7 +717,7 @@ stz2
 
 ## 场景
 
-使用场景：主要是点播场景。
+​		使用场景：主要是点播场景。
 
 优点：
 
@@ -742,6 +754,10 @@ stz2
 当然要解码，还需要找到视频的解码数据如sps、pps。
 
 
+
+## http播放mp4
+
+[http协议的MP4文件播放问题的分析 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/7279452.html)
 
 
 

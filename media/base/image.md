@@ -207,6 +207,45 @@ B = 1.164*(Y-16)+2.017*(Cb-128)
 
 
 
+##### 分离YUV
+
+```c
+int split_yuv(char *str, uint height, uint width)
+{
+
+    FILE *fp;
+    FILE *fpy;
+    FILE *fpu;
+    FILE *fpv;
+
+    unsigned char  *buf = (unsigned char *)malloc(height * width * 3 / 2);
+
+    fp = fopen(str, "r");
+    fpy = fopen("y.bin", "wa");
+    fpu = fopen("u.bin", "wa");
+    fpv = fopen("v.bin", "wa");
+    if(!fpv || !fpu || !fpy || !fp){
+         fprintf(stderr, "line %d open file error.\n", __LINE__);
+        return FALSE;
+    }
+
+    fread(buf, 1, height * width * 3 / 2, fp);
+    fwrite(buf, 1, height * width , fpy);
+    fwrite(buf + height * width, 1, height * width >> 2, fpu);
+    fwrite(buf + (uint)(height * width * 5 / 4), 1, height * width >> 2, fpv);
+
+    fclose(fpv);
+    fclose(fpu);
+    fclose(fpy);
+    fclose(fp);
+    free(buf);
+
+    return TRUE;
+}
+```
+
+
+
 
 
 ![`I420`](https://raw.githubusercontent.com/Mocearan/picgo-server/main/v2-ab9144880c191266bb26dda9445538d6_1440w.webp)

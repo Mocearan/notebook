@@ -192,7 +192,7 @@ ii. 加密后数据量的影响. 所以，才会出现那么多的安全认证�
 
 
 
-## rtp/rtsp/rtmp
+## rtp/rtsp /rtmp
 
 1. RTP 通常用于 VoIP 和视频会议等实时应用。
 2. RTSP 用于流媒体服务，允许客户端控制媒体流的播放、暂停和停止等操作。
@@ -202,3 +202,8 @@ ii. 加密后数据量的影响. 所以，才会出现那么多的安全认证�
    4. 虽然RTSP服务器同样也使用标识符来区别每一流连接会话（Session），但RTSP连接并没有被绑定到传输层连接（如TCP等），也就是说在 整个 RTSP连接期间，RTSP用户可打开或者关闭多个对RTSP服务器的可靠传输连接以发出RTSP 请求。此外，RTSP连接也可以基于面向无连接的传输协议（如UDP等）。
 3. RTMP 通常用于实时广播和 Flash 视频流传输。
 
+
+
+## rtmp/hls/http
+
+[RTMP HLS HTTP 直播协议一次看个够 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/7279817.html)

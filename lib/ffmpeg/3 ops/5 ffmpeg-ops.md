@@ -140,5 +140,6 @@ static bool isH264iFrame(byte[] paket)
 
 
 
+## 读取rtsp 流 av_read_frame阻塞卡死
 
-
+[ffmpeg 读取RTSP流 av_read_frame 阻塞 卡死 的问题 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/17225678.html)

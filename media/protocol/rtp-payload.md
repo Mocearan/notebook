@@ -121,7 +121,7 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
 
 ​		[H.264视频的RTP荷载格式 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/4245439.html)
 
-
+![H.264RTP封包原理](https://raw.githubusercontent.com/Mocearan/picgo-server/main/135853195.jpg)
 
 ### H264
 

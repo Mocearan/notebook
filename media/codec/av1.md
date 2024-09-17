@@ -14,6 +14,10 @@
 
 [你知道h.265吧？但关于AV1编码格式你也来了解一下吗？-CSDN博客](https://blog.csdn.net/cybozu/article/details/136641316)
 
+[分类:av1 - 懒人李冰 (lazybing.github.io)](https://lazybing.github.io/blog/categories/av1/)
+
+[媒体文件格式分析之AVI - 懒人李冰 (lazybing.github.io)](https://lazybing.github.io/blog/2016/07/24/avi-parse-format/)
+
 ## 特点
 
 - 高效压缩

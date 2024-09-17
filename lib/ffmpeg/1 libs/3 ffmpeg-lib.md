@@ -48,6 +48,12 @@
 
 
 
+## 参考
+
+[分类:ffmpeg源码分析 - 懒人李冰 (lazybing.github.io)](https://lazybing.github.io/blog/categories/ffmpegyuan-ma-fen-xi/)
+
+
+
 ## 重要结构
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130914204051125)

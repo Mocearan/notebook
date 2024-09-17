@@ -1434,6 +1434,8 @@ public class RTSPClient extends Thread implements IEvent {
 
 ​		RTSP-over-HTTP tunneling，通过HTTP隧道来传输RTSP协议和媒体流
 
+[rtsp/rtp over http - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/8408653.html)
+
 - 需要RTSP服务器支持此种方式，开启HTTP隧道监听端口
 - 客户端
   - 首先建立一个链接通过HTTP-GET方法来获取协议响应消息和媒体流
@@ -1443,6 +1445,8 @@ public class RTSPClient extends Thread implements IEvent {
     - POST 连接中发送RTSP请求消息，一般要进行BASE64编码，来隐藏RTSP信息
 
 ![rtsp/http](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a4ae82046984a60dc07bf463bae575de.png)
+
+
 
 ### Rtsp over Websocket
 
