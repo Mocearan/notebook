@@ -40,17 +40,7 @@
 
 
 
-[RTMP协议详解及Wiresahrk抓包分析（一）-阿里云开发者社区 (aliyun.com)](https://developer.aliyun.com/article/1472344)
-
-[RTMP协议详解及Wiresahrk抓包分析（二）-阿里云开发者社区 (aliyun.com)](https://developer.aliyun.com/article/1472345?spm=a2c6h.12873639.article-detail.12.65ab75a9p6NGyB)
-
-[RTMP协议详解及Wiresahrk抓包分析（三）-阿里云开发者社区 (aliyun.com)](https://developer.aliyun.com/article/1472346?spm=a2c6h.12873639.article-detail.8.6e5a10232mKe3e)
-
-
-
 [抛开flash，自己开发实现C++ RTMP直播流播放器 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/7324205.html)
-
-[【基于libRTMP的流媒体直播之 AAC、H264 解析】 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/7324298.html)
 
 
 
@@ -250,8 +240,7 @@
 ```
 
 - ##### 版本(8比特)
-
-  - RTMP的版本，一般为3
+- RTMP的版本，一般为3
 
 #### `c1 / s1`
 

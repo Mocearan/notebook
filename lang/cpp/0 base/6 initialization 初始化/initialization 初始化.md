@@ -160,11 +160,17 @@ public:
 
 
 
-### Default initialization
+### Default initialization 默认初始化
 
-​		If no initializer is provided, the rules of [default initialization](https://en.cppreference.com/w/cpp/language/default_initialization) apply.
+​		没有提供初始值则应用默认初始化规则。在大多数情况下，默认初始化会留下一个不确定值的变量。
 
-> In most cases, default initialization leaves a variable with an indeterminate value.
+- 块作用域内不使用任何初始值定义一个非静态变量或者数组时
+
+- 当类有类类型的成员，且使用合成的默认构造函数时
+
+- 类成员没有被类内初始化，或在所调用的构造函数初始值列表中被初始化
+
+  
 
 ```c++
 T object ;	(1)			// automatic, static, or thread-local storage duration, declared with no initializer;
@@ -175,13 +181,13 @@ new T ( ) 	( before C++03 )  // (3) constructor is called, but base class or a n
 
 ```c++
 Fraction frac; // Default-initialization, calls default constructor
+Fraction frac {}; // Value initialization using empty set of braces
+Fraction frac(); // error, 定义了一个返回Fraction类型，名为frac的无参函数
 ```
 
-> ```cpp
-> Fraction frac {}; // Value initialization using empty set of braces
-> ```
 
-- structs and classes can self-initialize even when no explicit initializers are provided!
+
+- 类和结构体在默认初始化发生时自动执行默认构造函数
 
   ```c++
   struct Something
@@ -215,13 +221,10 @@ Fraction frac; // Default-initialization, calls default constructor
 
 ### Direct initialization
 
-​		Initializes an object from explicit set of constructor arguments.
+​		通过显式构造函数参数集初始化对象。当在括号/大括号内提供初始化器时，称为直接初始化
 
-​		When an initializer is provided inside parenthesis / brace, this is called **direct initialization**.
-
-​		直接初始化是相对拷贝初始化而言的，形式上是不需要等号参与到初始化的语法表达上。
-
-​		当括号为空时，以默认值进行初始化。
+- 直接初始化是相对拷贝初始化而言的，形式上是不需要等号参与到初始化的语法表达上
+- 当括号为空时，以默认值进行初始化
 
 ```c++
 T object ( arg );
@@ -248,11 +251,10 @@ Class::Class() : member(args, ...) { ... }	//(6) a base / a non-static member, b
 
 ```c++
 Fraction threeQuarters(3, 4); // Direct initialization, also calls Fraction(int, int)
+Fraction fiveThirds{ 5, 3 }; // List initialization, calls Fraction(int, int)
 ```
 
-> ```cpp
-> Fraction fiveThirds{ 5, 3 }; // List initialization, calls Fraction(int, int)
-> ```
+
 
 > 
 >
@@ -447,13 +449,22 @@ char buf[1024 * 1024];
 
 ### object initialization
 
-​		single object initialization like above。
+​		单个对相爱那个的初始化。包括：
+
+- 默认初始化
+- 直接初始化
+- 拷贝初始化
+- 列表初始化（统一初始化）
 
 ### value initialization
 
 ​		This is the initialization performed when an object is constructed with an empty initializer.
 
 > ​	值初始化通常用以初始化临时的值语义对象。
+
+- 数组初始化的过程中提供的初始值数量少于数组的大小时
+- 不使用初始值定义一个局部静态变量时
+- 通过书写形如`T() / T{}`的表达式显式地请求值初始化时
 
 ```c++
 T()	//(1) nameless temporary object , initializer consisting of an empty pair of parentheses 

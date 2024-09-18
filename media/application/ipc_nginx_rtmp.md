@@ -22,7 +22,7 @@
 - 在IPC同一局域网下使用ffmpeg以rtsp方式拉流，以rtmp方式推流
 
   ```shell
-  ffmpeg -thread_queue_size 128 -rtsp_trasport tcp -i rtsp://admin:w12345@192.168.7.118:554/Streaming/Channels/101 -f flv -an -b 20000000 rtmp://124.222.73.231:1935/live/room
+  ffmpeg -thread_queue_size 128 -rtsp_transport tcp -i rtsp://admin:w12345678@192.168.7.118:554/Streaming/Channels/101 -f flv -an -b 20000000 rtmp://124.222.73.231:1935/live/room
   ```
 
 - 通过vlc用上述rtmp地址拉流播放
