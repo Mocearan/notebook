@@ -10,6 +10,8 @@
 
 ![image-20240918215552605](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240918215552605.png)
 
+
+
 - `c0 + c1`
 
   ```shell
@@ -164,7 +166,7 @@
             Chunk size: 4096
     ```
 
-  - ` _result('NetConnection.Connect.Success`
+  - ` _result('NetConnection.Connect.Success')`
 
     ```shell
     #0000   03 00 00 00 00 00 be 14 00 00 00 00 02 00 07 5f
@@ -264,7 +266,7 @@
             00.. .... = Format: 0
             ..00 0010 = Chunk Stream ID: 2
             Timestamp: 0
-            Body size: 4
+            Body size: 4 
             Type ID: Set Chunk Size (0x01)
             Stream ID: 0
         RTMP Body
@@ -628,8 +630,402 @@
               .... 0010 = Format: Sorensen H.263 (2)
   			Video data [truncated]: 000084008280016811a6fcfcfcfdffff37e7e7e7effff9bf3f3f3f7fffcdf9f...
   ```
-  
+
   - 这个好像不太对，不知道是不是因为H263没有SPS、PPS
+
+
+
+
+
+## 拉取
+
+- `c0 + c1`
+
+  ```shell
+  # 0000   03 | 00 00 00 00 09 00 7c 02 f7 78 55 1e ce ab 8e
+  
+  Handshake C0+C1
+      Protocol version: 03
+      Handshake data: 0000000009007c02f778551eceab8e1e362f07c5868a70b266d40220e5086118a22e3697…
+  ```
+
+- `s0 + s1 + s2`
+
+  ```shell
+  # 0000   03 c1 6a df 73 0d 0e 0a 0d 05 fc 99 66 22 30 2c
+  
+  Handshake S0+S1+S2
+      Protocol version: 03
+      Handshake data: c16adf730d0e0a0d05fc996622302c685a9dc195f65bbae1f3ee270a91adf8ad0d521918…
+      Handshake data: 44a5e2c474fb49cecb06a23f6bd6b01579b01afd7cf26fb3d51da01651b629955b0c59cf…
+  ```
+
+- `c2`
+
+  ```shell
+  # 0000   70 ba ef d6 59 5c e0 cb 1d 00 03 18 08 00 45 00
+  
+  Handshake C2
+      Handshake data: e25c15c22caf72d0986fbd3eda0d7151973e19083e0abbefa76e17d8a5fa9570ed547a97…
+  ```
+
+- `connect('live')`
+
+  ```shell
+  #0000   70 ba ef d6 59 5c e0 cb 1d 00 03 18 08 00 45 00
+  
+  Real Time Messaging Protocol (AMF0 Command connect('live'))
+      Response to this call in frame: 4999
+      RTMP Header
+      RTMP Body
+          String 'connect'
+          Number 1
+          Object (8 items)
+  ```
+
+- `Window Acknowledgement Size`
+
+  ```shell
+  # 0000   02 00 00 00 00 00 04 05 00 00 00 00 00 4c 4b 40
+  
+  Real Time Messaging Protocol (Window Acknowledgement Size 5000000)
+      RTMP Header
+      RTMP Body
+          Window acknowledgement size: 5000000
+  ```
+
+- `Set Peer Bandwidth 5000000,Dynamic|Set Chunk Size 4096|_result('NetConnection.Connect.Success')`
+
+  - `Set Peer Bandwidth`
+
+    ```shell
+    # 0000   02 00 00 00 00 00 05 06 00 00 00 00 00 4c 4b 40
+    # 0010   02
+    
+    Real Time Messaging Protocol (Set Peer Bandwidth 5000000,Dynamic)
+        RTMP Header
+        RTMP Body
+            Window acknowledgement size: 5000000
+            Limit type: Dynamic (2)
+    ```
+
+  - `Set Chunk Size`
+
+    ```shell
+    # 0000   02 00 00 00 00 00 04 01 00 00 00 00 00 00 10 00
+    
+    Real Time Messaging Protocol (Set Chunk Size 4096)
+        RTMP Header
+        RTMP Body
+            Chunk size: 4096
+    
+    ```
+
+  - `_result('NetConnection.Connect.Success')`
+
+    ```shell
+    # 0000   03 00 00 00 00 00 be 14 00 00 00 00 02 00 07 5f
+    
+    Real Time Messaging Protocol (AMF0 Command _result('NetConnection.Connect.Success'))
+        Call for this response in frame: 4798
+        RTMP Header
+        RTMP Body
+            String '_result'
+            Number 1
+            Object (2 items)
+            Object (4 items)
+    ```
+
+- `Window Acknowledgement Size 5000000|createStream()`
+
+  - `Window Acknowledgement Size`	
+
+    ```shell
+    # 0000   02 00 00 00 00 00 04 05 00 00 00 00 00 4c 4b 40
+    Real Time Messaging Protocol (Window Acknowledgement Size 5000000)
+        RTMP Header
+        RTMP Body
+            Window acknowledgement size: 5000000
+    ```
+
+  - `createStream()`
+
+    ```shell
+    #0000   43 00 00 00 00 00 19 14 02 00 0c 63 72 65 61 74
+    #0010   65 53 74 72 65 61 6d 00 40 00 00 00 00 00 00 00
+    #0020   05
+    Real Time Messaging Protocol (AMF0 Command createStream())
+        Response to this call in frame: 5045
+        RTMP Header
+        RTMP Body
+            String 'createStream'
+            Number 2
+            Null
+    ```
+
+- `_result()`
+
+  ```shell
+  #0000   03 00 00 00 00 00 1d 14 00 00 00 00 02 00 07 5f
+  #0010   72 65 73 75 6c 74 00 40 00 00 00 00 00 00 00 05
+  #0020   00 3f f0 00 00 00 00 00 00
+  
+  Real Time Messaging Protocol (AMF0 Command _result())
+      Call for this response in frame: 5035
+      RTMP Header
+      RTMP Body
+          String '_result'
+          Number 2
+          Null
+          Number 1
+  ```
+
+- `getStreamLength()|play('room')|Set Buffer Length 1,3000ms`
+
+  - `getStreamLength()`
+
+    ```shell
+    0000   08 00 00 00 00 00 23 14 00 00 00 00 02 00 0f 67
+    0010   65 74 53 74 72 65 61 6d 4c 65 6e 67 74 68 00 40
+    0020   08 00 00 00 00 00 00 05 02 00 04 72 6f 6f 6d
+    
+    Real Time Messaging Protocol (AMF0 Command getStreamLength())
+        RTMP Header
+        RTMP Body
+            String 'getStreamLength'
+            Number 3
+            Null
+            String 'room'
+    ```
+
+  - `play('room')`
+
+    ```shell
+    0000   08 00 00 00 00 00 21 14 01 00 00 00 02 00 04 70
+    0010   6c 61 79 00 40 10 00 00 00 00 00 00 05 02 00 04
+    0020   72 6f 6f 6d 00 c0 9f 40 00 00 00 00 00
+    
+    Real Time Messaging Protocol (AMF0 Command play('room'))
+        RTMP Header
+        RTMP Body
+            String 'play'
+            Number 4
+            Null
+            String 'room'
+            Number -2000
+    ```
+
+  - `Set Buffer Length`
+
+    ```shell
+    0000   42 00 00 01 00 00 0a 04 00 03 00 00 00 01 00 00
+    0010   0b b8
+    
+    Real Time Messaging Protocol (User Control Message Set Buffer Length 1,3000ms)
+        RTMP Header
+        RTMP Body
+            Event type: Set Buffer Length (3)
+    ```
+
+- `Stream Begin`
+
+  ```shell
+  0000   02 00 00 00 00 00 06 04 00 00 00 00 00 00 00 00
+  0010   00 01
+  
+  Real Time Messaging Protocol (User Control Message Stream Begin 1)
+      RTMP Header
+      RTMP Body
+          Event type: Stream Begin (0)
+  ```
+
+- `onStatus('NetStream.Play.Start')||RtmpSampleAccess()`
+
+  - `onStatus('NetStream.Play.Start')`
+
+    ```shell
+    0000   05 00 00 00 00 00 60 14 01 00 00 00 02 00 08 6f
+    0010   6e 53 74 61 74 75 73 00 00 00 00 00 00 00 00 00
+    0020   05 03 00 05 6c 65 76 65 6c 02 00 06 73 74 61 74
+    0030   75 73 00 04 63 6f 64 65 02 00 14 4e 65 74 53 74
+    0040   72 65 61 6d 2e 50 6c 61 79 2e 53 74 61 72 74 00
+    0050   0b 64 65 73 63 72 69 70 74 69 6f 6e 02 00 0a 53
+    0060   74 61 72 74 20 6c 69 76 65 00 00 09
+    
+    Real Time Messaging Protocol (AMF0 Command onStatus('NetStream.Play.Start'))
+        RTMP Header
+        RTMP Body
+            String 'onStatus'
+            Number 0
+            Null
+            Object (3 items)
+    ```
+
+  - `AMF0 Data |RtmpSampleAccess())`
+
+    ```shell
+    0000   05 00 00 00 00 00 18 12 01 00 00 00 02 00 11 7c
+    0010   52 74 6d 70 53 61 6d 70 6c 65 41 63 63 65 73 73
+    0020   01 01 01 01
+    
+    Real Time Messaging Protocol (AMF0 Data |RtmpSampleAccess())
+        RTMP Header
+        RTMP Body
+            String '|RtmpSampleAccess'
+            Boolean true
+            Boolean true
+    ```
+
+- `onMetaData()`
+
+  ```shell
+  0000   05 00 00 00 00 01 83 12 01 00 00 00 02 00 0a 6f
+  0010   6e 4d 65 74 61 44 61 74 61 03 00 06 53 65 72 76
+  0020   65 72 02 00 2e 4e 47 49 4e 58 20 52 54 4d 50 20
+  0030   28 67 69 74 68 75 62 2e 63 6f 6d 2f 61 72 75 74
+  0040   2f 6e 67 69 6e 78 2d 72 74 6d 70 2d 6d 6f 64 75
+  0050   6c 65 29 00 05 77 69 64 74 68 00 40 94 00 00 00
+  0060   00 00 00 00 06 68 65 69 67 68 74 00 40 86 80 00
+  0070   00 00 00 00 00 0c 64 69 73 70 6c 61 79 57 69 64
+  0080   74 68 00 40 94 00 00 00 00 00 00 00 0d 64 69 73
+  0090   70 6c 61 79 48 65 69 67 68 74 00 40 86 80 00 00
+  00a0   00 00 00 00 08 64 75 72 61 74 69 6f 6e 00 00 00
+  00b0   00 00 00 00 00 00 00 09 66 72 61 6d 65 72 61 74
+  00c0   65 00 40 2e 00 00 00 00 00 00 00 03 66 70 73 00
+  00d0   40 2e 00 00 00 00 00 00 00 0d 76 69 64 65 6f 64
+  00e0   61 74 61 72 61 74 65 00 40 d3 12 c0 00 00 00 00
+  00f0   00 0c 76 69 64 65 6f 63 6f 64 65 63 69 64 00 40
+  0100   00 00 00 00 00 00 00 00 0d 61 75 64 69 6f 64 61
+  0110   74 61 72 61 74 65 00 00 00 00 00 00 00 00 00 00
+  0120   0c 61 75 64 69 6f 63 6f 64 65 63 69 64 00 00 00
+  0130   00 00 00 00 00 00 00 07 70 72 6f 66 69 6c 65 02
+  0140   00 20 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0150   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0160   00 00 00 05 6c 65 76 65 6c 02 00 20 00 00 00 00
+  0170   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0180   00 00 00 00 00 00 00 00 00 00 00 00 00 00 09
+  
+  Real Time Messaging Protocol (AMF0 Data onMetaData())
+      RTMP Header
+          00.. .... = Format: 0
+          ..00 0101 = Chunk Stream ID: 5
+          Timestamp: 0
+          Body size: 387
+          Type ID: AMF0 Data (0x12)
+          Stream ID: 1
+      RTMP Body
+          String 'onMetaData'
+              AMF0 type: String (0x02)
+              String length: 10
+              String: onMetaData
+          Object (14 items)
+              AMF0 type: Object (0x03)
+              Property 'Server' String 'NGINX RTMP (github.com/arut/nginx-rtmp-module)'
+                  Name: Server
+                      String length: 6
+                      String: Server
+                  String 'NGINX RTMP (github.com/arut/nginx-rtmp-module)'
+                      AMF0 type: String (0x02)
+                      String length: 46
+                      String: NGINX RTMP (github.com/arut/nginx-rtmp-module)
+              Property 'width' Number 1280
+                  Name: width
+                      String length: 5
+                      String: width
+                  Number 1280
+                      AMF0 type: Number (0x00)
+                      Number: 1280
+              Property 'height' Number 720
+                  Name: height
+                      String length: 6
+                      String: height
+                  Number 720
+                      AMF0 type: Number (0x00)
+                      Number: 720
+              Property 'displayWidth' Number 1280
+                  Name: displayWidth
+                      String length: 12
+                      String: displayWidth
+                  Number 1280
+                      AMF0 type: Number (0x00)
+                      Number: 1280
+              Property 'displayHeight' Number 720
+                  Name: displayHeight
+                      String length: 13
+                      String: displayHeight
+                  Number 720
+                      AMF0 type: Number (0x00)
+                      Number: 720
+              Property 'duration' Number 0
+                  Name: duration
+                      String length: 8
+                      String: duration
+                  Number 0
+                      AMF0 type: Number (0x00)
+                      Number: 0
+              Property 'framerate' Number 15
+                  Name: framerate
+                      String length: 9
+                      String: framerate
+                  Number 15
+                      AMF0 type: Number (0x00)
+                      Number: 15
+              Property 'fps' Number 15
+                  Name: fps
+                      String length: 3
+                      String: fps
+                  Number 15
+                      AMF0 type: Number (0x00)
+                      Number: 15
+              Property 'videodatarate' Number 19531
+                  Name: videodatarate
+                      String length: 13
+                      String: videodatarate
+                  Number 19531
+                      AMF0 type: Number (0x00)
+                      Number: 19531
+              Property 'videocodecid' Number 2
+                  Name: videocodecid
+                      String length: 12
+                      String: videocodecid
+                  Number 2
+                      AMF0 type: Number (0x00)
+                      Number: 2
+              Property 'audiodatarate' Number 0
+                  Name: audiodatarate
+                      String length: 13
+                      String: audiodatarate
+                  Number 0
+                      AMF0 type: Number (0x00)
+                      Number: 0
+              Property 'audiocodecid' Number 0
+                  Name: audiocodecid
+                      String length: 12
+                      String: audiocodecid
+                  Number 0
+                      AMF0 type: Number (0x00)
+                      Number: 0
+              Property 'profile' String ''
+                  Name: profile
+                      String length: 7
+                      String: profile
+                  String ''
+                      AMF0 type: String (0x02)
+                      String length: 32
+                      String: 
+              Property 'level' String ''
+                  Name: level
+                      String length: 5
+                      String: level
+                  String ''
+                      AMF0 type: String (0x02)
+                      String length: 32
+                      String: 
+              End Of Object Marker
+  
+  ```
+
+  
 
 
 

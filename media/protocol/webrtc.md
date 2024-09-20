@@ -47,3 +47,5 @@ MediaStream （又称getUserMedia）
 [使用级联SFU改善媒体质量和规模-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1871182)
 
 [WebRTC_椛茶的博客-CSDN博客](https://blog.csdn.net/weixin_38102771/category_12369537.html)
+
+[椛茶-CSDN博客](https://blog.csdn.net/weixin_38102771?type=blog)

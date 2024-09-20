@@ -92,6 +92,19 @@ vector<int> read_ints(istream& is)
 
 ​		一般来说，I/O状态保存了读或写所需的所有信息，例如格式化信息，错误状态，以及使用哪种类型的缓冲。特别是，用户可以设置状态来反映错误发生，并在错误不严重时清除状态。
 
+- `ios_base::badbit`，系统级错误，如不可恢复的覆写。
+- `ios_base::failbit`，可恢复错误
+- `ios_base::eofbit`，到达文件结尾后，`eofbit`和`failbit`都会被置位
+- `ios_base::goodbit`，为`0`表示流没错误
+- `s.eof()`
+- `s.fail()`
+- `s.good()`
+- `s.bad()`
+- `s.clear()`
+- `s.clear(flag)`
+- `s.setstate(flag)`
+- `s.rdstate()`
+
 ```c++
 vector<int> read_ints(istream& is, const string& terminator)
 {
@@ -447,6 +460,14 @@ template<typename _CharT, typename _Traits>
 inline basic_ostream<_CharT, _Traits>&
 endl(basic_ostream<_CharT, _Traits>& __os)
 { return flush(__os.put(__os.widen('\n'))); }
+```
+
+​		IO库中还有两个类似的操纵符：flush和ends。flush刷新缓冲区，但不输出任何额外的字符；ends向缓冲区插入一个空字符，然后刷新缓冲区：
+
+```c
+cout << "hi!" << endl; // hi + '\n'，刷新缓冲区
+cout << "hi!" << flush;// hi ，刷新缓冲区
+cout << "hi!" << ends;// hi + '\0'，刷新缓冲区
 ```
 
 

@@ -33,6 +33,14 @@ www.sipforum.org
 
 ​		SIP是一个C/S协议，客户和服务器之间的操作从第一个请求到最终响应为止的所有消息构成一个SIP事务。
 
+
+
+## 参考
+
+[beixiaocai/BXC_SipServer: C++开发的国标GB28181流媒体Sip信令服务器 (github.com)](https://github.com/beixiaocai/BXC_SipServer/tree/main)
+
+
+
 ## SIP 网络基本结构
 
 ![image-20240516203853704](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240516203853704.png)
