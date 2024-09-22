@@ -24,6 +24,8 @@
 
 [RTSP传输协议之Methods总结 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/6553235.html)
 
+[Rtsp 的认证 - 简书 (jianshu.com)](https://www.jianshu.com/p/df107df10196)
+
 ## 协议特点
 
 ​		TSP 控制的流可能用到 RTP，但 RTSP 操作并不依赖用于传输连续媒体的传输机制。RTSP 在语法和操作上与 HTTP/1.1 类似，因此 HTTP 的扩展机制在多数情况下可加入 RTSP。然而，在很多重要方面 RTSP 仍不同于 HTTP ：

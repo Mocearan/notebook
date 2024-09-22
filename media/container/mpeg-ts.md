@@ -32,33 +32,65 @@
 
 
 
+## TS流
+
+​		TS包有可能是音视频数据，也有可能是表格(PAT/PMT/…)：`PAT,PMT,DATA,DATA,,,,,,,,PAT,PMT,DATA,DATA,,,,,,`
+
+- 每隔一段时间，发送一张PAT表，紧接着发送DATA数据
+
+- PAT表格里面包含所有PMT表格的信息
+
+  - 一个PMT表格对应一个频道，例如中央电视台综合频道
+
+  - 一个PMT里面包含所有节目的信息，例如CCTV-1到CCTV-14
+
+  - 在实际情况中有很多频道，所以PMT表格不止一张
+
+    - `PAT、PMT、PMT、PMT,,,DATA,DATA，DATA,,,,`
+
+  - 每个频道或节目都有自己的标识符（PID）
+
+    - 当得到一个DATA，解出里面的PID就知道是什么节目了,也知道节目所属频道
+
+    - > 在看电视时，会收到所有节目的DATA，当选择某个节目时，机顶盒会把这个节目的DATA单独过滤出来，其他舍弃。
+
 ##  封装结构
 
 ​		TS流是基于`TS Packet`的流格式。`TS Packet`中的荷载可以是AAC、H264、 PAT、PMT等。每个TS都有PID。
 
 ​		每个包是固定的188个字节或204个字节（在188个字节后加16字节的CRC校验数据，其他格式一样）。
 
-​				`Packet`结构是包头+`adaptation field`+`payload`
+​		`TS header`+`adaptation field`+`payload`
 
 - `header`固定四字节
-
-  - 提供关于传输方面的信息
-
+- 提供关于传输方面的信息
 - `adaptation`可能不存在，主要作用是给不足188字节的数据包做填充
-- `payload`是`pes`数据，`188 - 4 - adaptation_feild_size`就是`payload`大小
+  -  PES包 <= 184字节，则一个TS包就可以放下，如果还有空余的地方，就填充无实际用处的字节，使其满足184字节
 
-  - ts文件分为三个层次：ts层、pes层、es层。
+- `payload`是`pes`数据
+  - `188 - 4 - adaptation_feild_size`就是`payload`大小
+  - 如果 PES包 > 184字节，则需要多个TS包封装
+    - 分包时，实际上是将一个PES包切片，所以`PES Header`只需要首个TS包封装即可
 
-    - es层就是音视频数据
 
-    - pes层是在音视频数据上加了时间戳等数据帧的说明信息
+> ​		ts文件分为三个层次：ts层、pes层、es层。
+>
+> - es层就是音视频数据
+>
+> - pes层是在音视频数据上加了时间戳等数据帧的说明信息
+>
+> - ts层是在pes层上加入了数据流识别和传输的必要信息
 
-    - ts层是在pes层上加入了数据流识别和传输的必要信息
+​		**ts 层的内容是通过 PID 值来标识的，主要内容包括：PAT 表、PMT 表、音频流、视频流。**
 
-      > **ts 层的内容是通过 PID 值来标识的，主要内容包括：PAT 表、PMT 表、音频流、视频流。**解析 ts 流要先找到 PAT 表，只要找到 PAT 就可以找到 PMT，然后就可以找到音视频流了。PAT 表的和 PMT 表需要定期插入 ts 流，因为用户随时可能加入 ts 流，这个间隔比较小，通常每隔几个视频帧就要加入 PAT 和 PMT。PAT 和 PMT 表是必须的，还可以加入其它表如 SDT（业务描述表）等。不过 HLS 流只要有 PAT 和 PMT 就可以播放了。
-      >
-      > - PAT 表：主要的作用就是指明了 PMT 表的 PID 值。
-      > - PMT 表：主要的作用就是指明了音视频流的 PID 值。
+- 解析 ts 流要先找到 PAT 表，只要找到 PAT 就可以找到 PMT，然后就可以找到音视频流了
+- PAT 表的和 PMT 表需要定期插入 ts 流
+  - 因为用户随时可能加入 ts 流，这个间隔比较小，通常每隔几个视频帧就要加入 PAT 和 PMT
+- PAT 和 PMT 表是必须的，还可以加入其它表如 SDT（业务描述表）等
+- 不过 HLS 流只要有 PAT 和 PMT 就可以播放了
+
+> - PAT 表：主要的作用就是指明了 PMT 表的 PID 值。
+> - PMT 表：主要的作用就是指明了音视频流的 PID 值。
 
 
 ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a1a7238bf4fe0132fbe9be6dc7d85715.png)
@@ -73,23 +105,27 @@
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/70e9597779db9cca5e499a5a6e339ac5.png#pic_center)
 
-| Packet Header 字段序号 |                              |       |                                                              |
-| ---------------------- | ---------------------------- | ----- | ------------------------------------------------------------ |
-| 1                      | sync_byte                    | 8bits | 同步字节                                                     |
-| 2                      | transport_error_indicator    | 1bit  | 错误指示信息                                                 |
-| 3                      | payload_unit_start_indicator | 1bit  | 负载单元开始标志（packet不满188字节时需填充）<br />多个ts包组成一个视频帧时，第一个为1，后续为0 |
-| 4                      | transport_priority           | 1bit  | 传输优先级标志（1：优先级高）                                |
-| 5                      | PID                          | 13bit | Packet ID号码，唯一的号码对应不同的包                        |
-| 6                      | transport_scrambling_control | 2bits | 加密标志（00：未加密；其他表示已加密）                       |
-| 7                      | adaptation_field_control     | 2bits | 附加区域控制                                                 |
-| 8                      | continuity_counter           | 4bits | 包递增计数器                                                 |
+
+
+| 字段名称                     | 字节位置                | 描述                                                         |
+| ---------------------------- | ----------------------- | ------------------------------------------------------------ |
+| 同步字节（Sync Byte）        | 第1个字节               | 固定为0x47，用于标识TS包的开始。                             |
+| 传输错误指示（TEI）          | 第2个字节，第1位        | 当设置为1时，表示当前包中至少有一个不可纠正的错误位。        |
+| 有效负载单元起始指示（PUSI） | 第2个字节，第2位        | 当设置为1时，表示当前包的有效负载部分以一个PES包或PSI/SI表的第一个字节开始。 |
+| 传输优先级（Priority）       | 第2个字节，第3位        | 用于传输机制，但在解码时通常不被使用。                       |
+| 包标识符（PID）              | 占13位                  | 用于标识TS包属于哪个特定的流或服务。                         |
+| 传输加扰控制（Scrambling）   | 第4个字节，第1位和第2位 | 用于指示TS包是否被加扰以及加扰的方式。                       |
+| 自适应字段控制（Adaptation） | 第4个字节，第3位和第4位 | 用于指示TS包是否包含自适应字段，以及自适应字段的位置和长度。 |
+| 连续计数器（Counter）        | 第4个字节，第5位到第8位 | 用于检测包的丢失或重复，范围从0到15，每发送一个TS包，计数器加1。 |
+
+
 
 - `sync_byte`  
 
   - 一般以 0x47 开始，方便在某些场景下进行同步操作
     - 后面包中的数据不会出现 0x47 
   - 是包中的第一个字节，固定为 0x47，表示后面是一个 TS 分组，用于建立发送端和接收端包的同步<br /
-  
+
   ```c
   MPEG_transport_stream()
   {
@@ -254,7 +290,7 @@ adaptation field 层次图：
 - TS 包是对 PES 包的封装，但是不只是 PES，TS 还可以是对 PSI 数据的封装
 -  PSI 不是一个表，PSI 是 PAT，PMT，CAT，NIT...这些表的统称。
 
-PSI信息由四种类型的表组成，包括
+​		PSI信息由四种类型的表组成，包括
 
 - 节目关联表（PAT，Program Association Table）
   - 0x0000  解析 .ts 文件的第一步就是找到 PAT 表，然后获取 PMT 表的 PID 值
@@ -277,11 +313,18 @@ PSI信息由四种类型的表组成，包括
 
 ​		PAT表描述了当前流的NIT（Network Information Table，网络信息表）中的PID、当前流中有多少不同类型的PMT表及每个PMT表对应的频道号。
 
+​		作用是：
+
+- 定义了当前TS流中所有的节目和节目编号
+- 以及对应节目的PMT的位置，既PMT的TS包的PID值
+- 同时还提供NIT的位置，即NIT的TS包的PID值
+
 #### PAT表描述
 
-​		定义了当前TS流中所有的节目，其PID为0x0000，它是PSI的根节点，要查寻找节目必须从PAT表开始查找。
+​		定义了当前TS流中所有的节目
 
-​		PAT表主要包含频道号码和每一个频道对应的PMT的PID号码，以流ID唯一标识一个TS流：
+- PID为0x0000，它是PSI的根节点，要查寻找节目必须从PAT表开始查找
+- PAT表主要包含频道号码和每一个频道对应的PMT的PID号码，以流ID唯一标识一个TS流：
 
 | 字段名                                                       | 位   | 具体值                      | 次序                                                         | 说明                    |
 | ------------------------------------------------------------ | ---- | --------------------------- | ------------------------------------------------------------ | ----------------------- |
@@ -355,7 +398,12 @@ continuity_counte 			“0000” 		包递增计数器
 typedef struct TS_PAT_Program  
 {  
     unsigned program_number   :  16;  //节目号  
-    unsigned program_map_PID :  13; // 节目映射表的PID，节目号大于0时对应的PID，每个节目对应一个  
+    unsigned Reserved		 :3;   //保留位
+    union map_or_net {
+        unsigned program_map_PID :  13; // 节目映射表的PID，节目号大于0时对应的PID，每个节目对应一个  
+        unsigned network_PID : 13; //网络信息表（NIT）的PID,节目号为0时对应的PID为network_PID 
+    };
+    
 }TS_PAT_Program;
 
 // PAT表的结构
@@ -374,8 +422,9 @@ typedef struct TS_PAT
     unsigned last_section_number          : 8;  //最后一个分段的号码  
    
     std::vector<TS_PAT_Program> program;  
-    unsigned reserved_3                    : 3; // 保留位  
-    unsigned network_PID                    : 13; //网络信息表（NIT）的PID,节目号为0时对应的PID为network_PID  
+    //unsigned program_map_PID			:16
+    //unsigned reserved_3                    : 3; // 保留位  
+    //unsigned network_PID or program_map_PID : 13; //网络信息表（NIT）的PID,节目号为0时对应的PID为network_PID  
     unsigned CRC_32                        : 32;  //CRC32校验码  
 } TS_PAT;   
 ```
@@ -439,11 +488,12 @@ HRESULT CTS_Stream_Parse::adjust_PAT_table( TS_PAT * packet, unsigned char * buf
 // 过滤PAT表信息的伪代码
 int Video_PID=0x07e5,Audio_PID=0x07e6;
 void Process_Packet(unsigned char*buff)
-{ int I; int PID=GETPID(buff);
-  if(PID==0x0000) { Process_PAT(buff+4); }  // 如果PID为0x0000,则该Packet Data为PAT信息，因此调用处理PAT表的函数
-  else{                                     // 这里buff+4 意味着从Packet Header之后进行解析（包头占4个字节）
-    ……
-  }
+{
+    int I; int PID=GETPID(buff);
+    if(PID==0x0000) { Process_PAT(buff+4); }  // 如果PID为0x0000,则该Packet Data为PAT信息，因此调用处理PAT表的函数
+    else{                                     // 这里buff+4 意味着从Packet Header之后进行解析（包头占4个字节）
+        ……
+    }
 }
 ```
 
@@ -453,11 +503,20 @@ void Process_Packet(unsigned char*buff)
 
 ​		Program Map Table，节目映射表。如果一个TS流中含有多个频道，那么就会包含多个PID不同的PMT表。
 
-  PMT表中包含的数据如下：
+​		用于:
+
+- 指示组成某一套节目的视频、声频和数据在传送流中的位置，即对应的TS包的PID值
+- 以及每路节目的节目时钟参考（PCR）字段的位置
+
+ 		 PMT表中包含的数据如下：
 
 - 当前频道中包含的所有Video数据的PID
 - 当前频道中包含的所有Audio数据的PID
 - 和当前频道关联在一起的其他数据的PID(如数字广播,数据通讯等使用的PID)
+
+
+
+#### PMT表描述
 
 | 字段名                   | 位数 | 具体值               | 次序                                                         | 说明                                    |
 | ------------------------ | ---- | -------------------- | ------------------------------------------------------------ | --------------------------------------- |
@@ -526,9 +585,11 @@ continuity_counte 			“0010” 		包递增计数器
 typedef struct TS_PMT_Stream
 {
      unsigned stream_type                       : 8; //指示特定PID的节目元素包的类型。该处PID由elementary PID指定
+     unsigned reserved						  : 3;
      unsigned elementary_PID                    : 13; //该域指示TS包的PID值。这些TS包含有相关的节目元素
+    unsigned reserved						  : 4;
      unsigned ES_info_length                    : 12; //前两位bit为00。该域指示跟随其后的描述相关节目元素的byte数
-     unsigned descriptor;
+     unsigned descriptor; 	// for : descriptor
 }TS_PMT_Stream; 
 
 
@@ -554,9 +615,12 @@ typedef struct TS_PMT
      unsigned reserved_4                        : 4; //预留为0x0F
     unsigned program_info_length            : 12; //前两位bit为00。该域指出跟随其后对节目信息的描述的byte数。
     
+    // for : descript
+    
      std::vector<TS_PMT_Stream> PMT_Stream;  //每个元素包含8位, 指示特定PID的节目元素包的类型。该处PID由elementary PID指定
-     unsigned reserved_5                        : 3; //0x07
-    unsigned reserved_6                        : 4; //0x0F
+//    unsigned reserved_5                        : 3; //0x07
+//    unsigned reserved_6                        : 4; //0x0F
+    
     unsigned CRC_32                            : 32; 
 } TS_PMT;
 ```
@@ -580,19 +644,19 @@ HRESULT CTS_Stream_Parse::adjust_PMT_table ( TS_PMT * packet, unsigned char * bu
     packet->reserved_3                            = buffer[8] >> 5;
     packet->PCR_PID                                = ((buffer[8] << 8) | buffer[9]) & 0x1FFF;
  
- PCRID = packet->PCR_PID;
+ 	PCRID = packet->PCR_PID;
  
     packet->reserved_4                            = buffer[10] >> 4;
     packet->program_info_length                    = (buffer[10] & 0x0F) << 8 | buffer[11]; 
     // Get CRC_32
- int len = 0;
+	int len = 0;
     len = packet->section_length + 3;    
     packet->CRC_32                = (buffer[len-4] & 0x000000FF) << 24
                                       | (buffer[len-3] & 0x000000FF) << 16
                                       | (buffer[len-2] & 0x000000FF) << 8
                                       | (buffer[len-1] & 0x000000FF); 
 
- int pos = 12;
+ 	int pos = 12;
     // program info descriptor
     if ( packet->program_info_length != 0 )
         pos += packet->program_info_length;    

@@ -49,3 +49,5 @@ MediaStream （又称getUserMedia）
 [WebRTC_椛茶的博客-CSDN博客](https://blog.csdn.net/weixin_38102771/category_12369537.html)
 
 [椛茶-CSDN博客](https://blog.csdn.net/weixin_38102771?type=blog)
+
+[实现WebRTC P2P连接 - 简书 (jianshu.com)](https://www.jianshu.com/p/f383fcaf0604)

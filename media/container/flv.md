@@ -36,6 +36,18 @@ https://blog.csdn.net/ProgramNovice/article/details/137507298
 
 [rtmp直播推流（一）－－flv格式解析与封装 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/9018490.html)
 
+
+
+## 优缺点
+
+​		MP4、MKV 等封装格式将音视频数据和音视频元数据、索引、时间戳等分开存放，必须拿到完整的音视频文件才能播放，因为里面的单个音视频数据块不带有时间戳信息，播放器不能将这些没有时间戳信息的数据块连续起来，因此不能实时的解码播放。（当然 MP4 后来扩展了 FMP4 用于流媒体）
+
+​		FLV 格式的 FLV Tag Header 中携带时间戳，FLV 将每一帧音视频数据（Tag Body）封装成包含时间戳等音视频元数据（Tag Header）的数据包（Tag）。当播放器拿到 Tag 后，可根据时间戳等音视频元数据进行解码和播放。
+
+
+
+
+
 ## 结构
 
 ​		FLV 是一个二进制文件，由一个文件头（`FLV header`）和很多 `tag `和`Previous Tag Size`组成（`FLV body`）
@@ -102,7 +114,7 @@ typedef struct avc_video_tag {
 
 ### FLV Header
 
- 		9 个字节，用来标识文件类型为 FLV 类型，以及后续的音视频标识。
+​		9 个字节，用来标识文件类型为 FLV 类型，以及后续的音视频标识。
 
 ​		`flv`文件最多只有一个音频流，一个视频流，不存在多个独立的音视频流在一个文件的情况。每种`tag`都属于一个流。
 
@@ -220,9 +232,33 @@ typedef struct {
 
   - `4 bit`，音频格式
 
+    - `0`，按创建文件的平台的字节序顺序存储 16 位 PCM 样本
+
     - `2`，MP3
+
+    - `3`， Linear PCM little endian，存储原始 PCM 样本。
+
+      - 如果数据为 8 位，则样本为无符号字节。
+      - 如果数据是 16 位，则样本存储为小端、有符号数字。
+      - 如果数据是立体声，则左右样本交错存储：左-右-左-右-等等。
+
+    - `4`，Nellymoser 16 kHz 
+
+    - `5`，Nellymoser 8 kHz
+
+    - `6`，Nellymoser
+
+      >  SoundRate 字段不能表示 8 kHz 和 16 kHz 采样率。当在 SoundFormat 中指定 Nellymoser 8 kHz  或 Nellymoser 16 kHz 时，Flash Player 将忽略 SoundRate 和 SoundType 字段。对于其他 Nellymoser 采样率，请指定正常的 Nellymoser SoundFormat 并照常使用 SoundRate 和 SoundType 字段。
+
     - `7/8`，G711
+
     - `10`，AAC
+
+      > SoundType 应为 1 （立体声），SoundRate 应为 3（44kHz）。这并不意味着 FLV 中的 AAC 音频总是立体声、44kHz。
+      >
+      > Flash Player会忽略 SoundType 和 SoundRate，而是根据 AAC Audio Data 中的 AAC sequence header 提取通道（单/双通道）和采样率。
+
+    - `11`，Speex，音频是以 16 kHz 采样的压缩单声道，SoundRate 应为 0，SoundSize 应为 1，SoundType 应为 0 
 
   - `2 bit`，采样率
 
@@ -307,17 +343,39 @@ typedef struct {
 - `video tag header`
 
   - `FrameType`：`4 bit`，帧类型
+
+    > FrameType == 5时，是视频信息或指令帧，否则是编码数据帧，按`CodecID`解析具体编码
+
   - `CodecID`：`4 bit`， 编码类型
-    - `7`：AVC
-  - CodecID = 7，视频的格式是 AVC（H.264）的话，VideoTagHeader 会多出 4 个字节的信息
-    - AVCPacketType，1 byte 
-      - 0， AVC sequence header
-      - 1， AVC NALU
-      - 2，AVC end of sequence 
-    - CompositionTime，3 byte，CTS
-      - AVCPacketType == 0，时间戳偏移
-      - AVCPacketType == 1， 0
-    - 所以 H.264 编码的情况下 VideoHeader 长度是 5 个字节
+    - 2，则 VideoTagBody 为 H263 Video Packet
+    -  3，则 VideoTagBody 为 Screen Video Packet
+    - 4，则 VideoTagBody 为 VP6 FLV Video Packet
+    -  5，则 VideoTagBody 为 VP6 FLV Alpha Video Packet
+    - 6，则 VideoTagBody 为 Screen V2 Video Packet
+    - 7，则 VideoTagBody 为 AVC Video Packet
+
+  > CodecID = 7，视频的格式是 AVC（H.264）的话，VideoTagHeader 会多出 4 个字节的信息
+  >
+  > 如下
+
+  - AVCPacketType，1 byte 
+    - 0， AVC sequence header
+
+    - 1， AVC NALU
+
+      - AVCPacket 包含 1个 或 多个 NALU
+
+        > 一个 AVCPacket 应该包含一个 frame，但是在 H.264 的 VCL （视频编码层）中可能会将 frame 分成 slice，每个 slice 作为 RBSP 被封装在单独的 NALU 中
+        >
+        > 因此一个 AVCPacket 包含一个 frame 时可能需要包含多个 NALU （即多个 slice）
+
+    - 2，AVC end of sequence 
+
+  - CompositionTime，3 byte，CTS
+    - AVCPacketType == 0，时间戳偏移
+    - AVCPacketType == 1， 0
+
+  > 所以 H.264 编码的情况下 VideoHeader 长度是 5 个字节
 
 - `video tag body`
 
@@ -374,7 +432,7 @@ typedef struct {
 
 
 
-#### script tag
+##### script tag
 
 ​		又通常被称为 metadata tag，会放一些关于FLV视频和音频的元数据信息如：duration、width、height等。
 
@@ -384,8 +442,6 @@ typedef struct {
 - 没有 script tag header，只有script tag body。一般来说，script tag 包含两个 AMF 包
 
 ​	
-
-- - 
 
 ```c
 typedef struct {
@@ -485,6 +541,81 @@ typedef struct {
 ![在这里插入图片描述](https://i-blog.csdnimg.cn/blog_migrate/a7171fb50347e81696c2d214fc7d3534.png#pic_center)
 
 > AMF：Action Message Format，是 Adobe 设计的一种通用数据封装格式，在 Adobe 的很多产品中应用，简单来说，AMF 将不同类型的数据用统一的格式来描述。
+>
+> ​	[winshining](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fwinshining)/**[nginx-http-flv-module](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fwinshining%2Fnginx-http-flv-module)** 的 meta 
+>
+> ```cpp
+> 
+> static ngx_rtmp_amf_elt_t       out_inf[] = {
+> 
+>     { NGX_RTMP_AMF_STRING,
+>      ngx_string("Server"),
+>      "NGINX HTTP-FLV (https://github.com/winshining/nginx-http-flv-module)", 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("width"),
+>      &v.width, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("height"),
+>      &v.height, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("displayWidth"),
+>      &v.width, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("displayHeight"),
+>      &v.height, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("duration"),
+>      &v.duration, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("framerate"),
+>      &v.frame_rate, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("fps"),
+>      &v.frame_rate, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("videodatarate"),
+>      &v.video_data_rate, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("videocodecid"),
+>      &v.video_codec_id, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("audiodatarate"),
+>      &v.audio_data_rate, 0 },
+> 
+>     { NGX_RTMP_AMF_NUMBER,
+>      ngx_string("audiocodecid"),
+>      &v.audio_codec_id, 0 },
+> 
+>     { NGX_RTMP_AMF_STRING,
+>      ngx_string("profile"),
+>      &v.profile, sizeof(v.profile) },
+> 
+>     { NGX_RTMP_AMF_STRING,
+>      ngx_string("level"),
+>      &v.level, sizeof(v.level) },
+> };
+> 
+> static ngx_rtmp_amf_elt_t       out_elts[] = {
+> 
+>     { NGX_RTMP_AMF_STRING,
+>      ngx_null_string,
+>      "onMetaData", 0 },
+> 
+>     { NGX_RTMP_AMF_OBJECT,
+>      ngx_null_string,
+>      out_inf, sizeof(out_inf) },
+> };
+> ```
 
 
 

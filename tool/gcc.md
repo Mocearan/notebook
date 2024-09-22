@@ -9,3 +9,5 @@
 [gcc详解_gcc csdn-CSDN博客](https://blog.csdn.net/fuhanghang/article/details/84404487)
 
 [gcc的原理及使用-CSDN博客](https://blog.csdn.net/m0_62332997/article/details/128727591)
+
+[让内存错误无所遁形 | GCC -fsanitize=address 实战解析 (qq.com)](https://mp.weixin.qq.com/s/8fg_xA5ZzixyjFbZvdjvBw)

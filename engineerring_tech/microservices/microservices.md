@@ -1,0 +1,1 @@
+[5分钟了解微服务架构通信模式 (qq.com)](https://mp.weixin.qq.com/s/F1xdWfsLP-Jb8xkCjBeK5w)
