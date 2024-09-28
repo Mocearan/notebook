@@ -2,6 +2,8 @@
 
 ​		会话启动协议SIP（Session Initiation Protocol）是一个在IP网络上基于文本进行多媒体通信的应用层控制协议，用于创建、修改和终结一个或多个参与者加入的会话进行。
 
+- SIP标准文档为[**RFC3261**](https://link.juejin.cn/?target=https%3A%2F%2Ftools.ietf.org%2Fhtml%2Frfc3261)。
+
 www.sipforum.org
 
 ![image-20240516203738231](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240516203738231.png)
@@ -39,7 +41,7 @@ www.sipforum.org
 
 [beixiaocai/BXC_SipServer: C++开发的国标GB28181流媒体Sip信令服务器 (github.com)](https://github.com/beixiaocai/BXC_SipServer/tree/main)
 
-
+[VoIP与SIP - 知乎 (zhihu.com)](https://www.zhihu.com/column/c_1446432274048393216)
 
 ## SIP 网络基本结构
 
@@ -47,7 +49,7 @@ www.sipforum.org
 
 ​		SIP基于分布式架构，网络中包含多个服务：
 
-- UA
+- SIPUA
   - 是一个软终端或者是一个支持ISP协议的电话
   - 对接收到的行为进行代理，发送到SIP网络中 
   - 是发起和终止会话的实体
@@ -116,22 +118,26 @@ www.sipforum.org
 
 ### 响应消息
 
-| 消息 | 功能                                                         | 举例                             |
-| ---- | ------------------------------------------------------------ | -------------------------------- |
-| 1xx  | 临时响应                                                     | 100 Trying                       |
-|      | 表示已经接收到请求消息，正在对其进行处理                     | 180 Ringing（Processed Locally） |
-|      |                                                              | 181 Call Is Being Forward        |
-| 2xx  | 成功                                                         | 200 OK                           |
-|      | 表示请求已经被成功接受，处理                                 |                                  |
-| 3xx  | 重定向                                                       | 300 Multiple Choices             |
-|      | 表示需要采取进一步动作                                       | 301 Moved PerManently            |
-|      |                                                              | 302 Moved Temporarily            |
-| 4xx  | 客户端错误                                                   | 401 Unauthorized                 |
-|      | 表示请求消息中包含语法错误或者SIP服务器不能完成对改请求消息的处理 | 408 Request Timeout              |
-| 5xx  | 服务端错误                                                   | 503 Service Unavailable          |
-|      | 表示SIP服务器故障，不能完成对正确消息的处理                  | 505 Version Not Supported        |
-| 6xx  | 全局错误                                                     | 600 Busy Everywhere              |
-|      | 表示请求不能在当前任何SIP服务器上实现                        | 603 Decline                      |
+| 消息 | 功能                                                         | 举例                             | 备注                                                         |
+| ---- | ------------------------------------------------------------ | -------------------------------- | ------------------------------------------------------------ |
+| 1xx  | 临时响应                                                     | 100 Trying                       | 呼叫方正在呼叫，但尚未联系到被呼叫方。                       |
+|      | 表示已经接收到请求消息，正在对其进行处理                     | 180 Ringing（Processed Locally） | 被呼叫方已被联系到，其铃声正在响。收到此信息后，通常等待200 OK。 |
+|      |                                                              | 181 Call Is Being Forward        | 呼叫正在被转发到另一个目的地。                               |
+|      |                                                              | 183 Session progress             | 用于警告呼叫方频段（inband）错误。当从PSTN收到一个ISDN消息时，SIP网关会产生此响应。 |
+| 2xx  | 成功                                                         | 200 OK                           |                                                              |
+|      | 表示请求已经被成功接受，处理                                 |                                  |                                                              |
+| 3xx  | 重定向                                                       | 300 Multiple Choices             | 有多个选项可用于处理请求。                                   |
+|      | 表示需要采取进一步动作                                       | 301 Moved PerManently            | 请求的资源已永久移动到新的URI。                              |
+|      |                                                              | 302 Moved Temporarily            | 请求的资源临时移动到新的URI。                                |
+| 4xx  | 客户端错误                                                   | 400  Bad Request                 | 请求无法理解，因为语法有误。                                 |
+|      | 表示请求消息中包含语法错误或者SIP服务器不能完成对改请求消息的处理 | 401 Unauthorized                 | 请求需要用户验证。                                           |
+|      |                                                              | 404 Not Found                    | 服务器上未找到请求的资源。                                   |
+|      |                                                              | 408 Request Timeout              |                                                              |
+| 5xx  | 服务端错误                                                   | 500 Server Internal Error        | 服务器遇到意外情况，导致其无法完成请求。                     |
+|      | 表示SIP服务器故障，不能完成对正确消息的处理                  | 503 Service Unavailable          | 临时的服务器维护或过载，服务器当前无法处理请求。             |
+|      |                                                              | 505 Version Not Supported        |                                                              |
+| 6xx  | 全局错误                                                     | 600 Busy Everywhere              |                                                              |
+|      | 表示请求不能在当前任何SIP服务器上实现                        | 603 Decline                      |                                                              |
 
 
 
@@ -274,3 +280,44 @@ Max-Forward: value
 
 ![image-20240516205657967](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240516205657967.png)
 
+
+
+## NAT rport
+
+> 调试asterisk时发现从公网发来的INVITE的响应都不能正常返回到客户端，抓包发现响应都发到via头域中写明的那个port上去了，而实际asterisk是从NAT转换后的地址和端口接收的INVITE请求。
+>
+> 最终发现需要在via中加入rport字段，使得asterisk使用rport机制路由响应。
+
+1. 客户端需要在`top most via`上带上`rport`参数
+2. 服务端发现`via`中有`rport`参数时，将此`via`中加入`received`参数和`rport`参数
+   1. 参数带的值分别是服务端看到的消息来源地址和端口（如果有NAT等地址转换设备，则即为转换后的IP和port）。
+3. 当有需要发送的响应时，按照`rport`中的端口发送`SIP `响应。
+   1. 也就是说IP和端口均完全遵照从哪里来的，发回哪里去的原则。
+   2. 如果没有`rport`字段时，服务端的策略是IP使用`UDP`包中的地址，即从哪里来回哪里去，但是端口使用的`via`中的端口
+
+### RFC文档中的例子：
+
+- 客户端发送INVITE形如：
+
+  ```http
+  INVITE sip:user@example.com SIP/2.0
+  Via: SIP/2.0/UDP 10.1.1.1:4540;rport;branch=z9hG4bKkjshdyff
+  ```
+
+- 服务端收到后根据自己所得到的源地址和端口，重写via，如有必要添加自己的`via`转发
+  ```http
+  INVITE sip:user@example.com SIP/2.0
+  Via: SIP/2.0/UDP proxy.example.com;branch=z9hG4bKkjsh77
+  Via: SIP/2.0/UDP 10.1.1.1:4540;received=192.0.2.1;rport=9988;branch=z9hG4bKkjshdyff
+  ```
+
+- 当需要给此请求发送响应时，发往`received,rport`两个参数记录的`IP`和`PORT`。
+
+  - NAT设备再把发往转换后地址`192.0.2.1`的包发往`10.1.1.1`地址
+
+  ```http
+  SIP/2.0 200 OK
+  Via: SIP/2.0/UDP 10.1.1.1:4540;received=192.0.2.1;rport=9988;branch=z9hG4bKkjshdyff
+  ```
+
+  
