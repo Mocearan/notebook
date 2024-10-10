@@ -8,6 +8,8 @@
 
 ​		TCP/IP协议族是一个四层协议系统，自底向上提供不同的服务。
 
+![image.png](https://p3-xtjj-sign.byteimg.com/tos-cn-i-73owjymdk6/3cdf7ead5559496caf6c61d98438494a~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAgSGFuYm94:q75.awebp?rk3s=f64ab15b&x-expires=1728457249&x-signature=qZwnuyPVW8n%2BZTEya0qM1mOSJVI%3D)
+
 ## TCP协议栈传输过程
 
 ![image-20230420211517215](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20230420211517215.png)
