@@ -165,7 +165,7 @@ $ sudo make prefix=/usr/local install
 - [GitHub for Mac (OSX, 免费)](http://mac.github.com/)
 - [GitBox (OSX, App Store)](https://itunes.apple.com/gb/app/gitbox/id403388357?mt=12)
 
-
+https://mp.weixin.qq.com/s/UGCeUrrOR3c70nc0XdAOeA
 
 ## 仓库结构
 
