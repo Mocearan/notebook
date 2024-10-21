@@ -1,24 +1,24 @@
 # SIP
 
-​		会话启动协议SIP（Session Initiation Protocol）是一个在IP网络上基于文本进行多媒体通信的应用层控制协议，用于创建、修改和终结一个或多个参与者加入的会话进行。
-
-- SIP标准文档为[**RFC3261**](https://link.juejin.cn/?target=https%3A%2F%2Ftools.ietf.org%2Fhtml%2Frfc3261)。
-
-www.sipforum.org
+​		会话初始协议（Session Initiation Protocol）基于文本进行多媒体通信的应用层控制协议，用于创建、修改和终结一个或多个参与者加入的会话进行。
 
 ![image-20240516203738231](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240516203738231.png)
 
 ---
 
-​		SIP协议的引入是为了实现IP电话功能（VoIP）（通过IP网络进行语音通话）。主要借鉴了HTTP协议和SMTP协议 
+​		SIP协议的引入是为了实现IP电话功能（VoIP）（通过IP网络进行语音通话）。主要借鉴了HTTP协议和SMTP协议 。
 
-​		功能：
+​		通过与RTP/RTCP、SDP、RTSP等协议及DNS配合，SIP支持语音、视频、数据、E-mail、状态、IM、聊天、游戏等。SIP协议可在TCP或UDP之上传送，由于SIP本身具有握手机制，可首选UDP。
 
-- 用户定位：确定参加通信的终端用户的位置
-- 用户通信能力协商：确定通信的媒体类型和参数
-- 用户意愿交互：确定被叫是否同意加入某个会话
-- 建立呼叫：包括向被叫方振铃，确定主叫和被叫的呼叫参数
-- 呼叫处理和控制：包括呼叫重定向，呼叫转移（转发），终止呼叫等
+​		如果要完成一个视频通话或视频会议，首先SIP用于初始化一个Session，并负责传输SDP包；而SDP包中描述了一个Session中包含哪些媒体数据，邀请的人等等；当需要被邀请的人都通过各自的终端设备被通知到后，就可以使用RTSP来控制特定Media的通信，比如RTSP控制信息要求开始Video的播放，那么就开始使用RTP（或者TCP）实时传输数据，在传输过程中，RTCP要负责QoS等。
+
+​		SIP功能：
+
+- User location（用户定位）：确定参加通信的终端用户的位置
+- User capabilities（用户能力）：确定通信的媒体类型和参数
+- User availability（用户的可用性）：决定被叫方是否愿意参加通信
+- Call setup（呼叫建立）：振铃，在主叫和被叫直接建立呼叫的参数
+- Call handling（呼叫处理）：包括呼叫转移和终止
 
 ![image-20240516185959772](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240516185959772.png)
 
@@ -31,25 +31,46 @@ www.sipforum.org
 - IETF提出的在IP网上提供多媒体业务的标准
   - 具有更加简单易于实现，更容易支持智能终端和实现一些高级功能
 
-​		
 
-​		SIP是一个C/S协议，客户和服务器之间的操作从第一个请求到最终响应为止的所有消息构成一个SIP事务。
 
 
 
 ## 参考
 
+www.sipforum.org
+
 [beixiaocai/BXC_SipServer: C++开发的国标GB28181流媒体Sip信令服务器 (github.com)](https://github.com/beixiaocai/BXC_SipServer/tree/main)
 
 [VoIP与SIP - 知乎 (zhihu.com)](https://www.zhihu.com/column/c_1446432274048393216)
+
+
+
+## 标准
+
+- RFC3261：SIP的基本协议，定义了SIP的基本功能，特性等。要搞SIP的话，这个协议是不能不看的。网上有人已经将它翻译成中文，再结合英文原版协议看，应该比较好理解。
+- RFC3262：SIP中，如何定位服务器。这个没过多研究，一般的SIP协议栈都可以很好的支持，让它们去做就可以了。
+- RFC3265：事件通知机制，可通过此协议进行一些事件监控。
+- RFC3515：呼叫的转接。
+- RFC3666：与PSTN连接时的一些特性的说明。
+- RFC3911：通过Join的方式进行会议。
 
 ## SIP 网络基本结构
 
 ![image-20240516203853704](https://raw.githubusercontent.com/Mocearan/picgo-server/main/image-20240516203853704.png)
 
+- SIP的最低层是其语法和编码。其编码使用扩充的背景 – 诺尔表单语法(BNF)指定。
+- 第二层是传输层。它定义了客户端如何发送请求和接收响应，以及服务器如何通过网络接收请求和发送响应。所有SIP元素都包含传输层。
+- 接下来是事务层。
+  - 事务是由客户机事务(使用传输层)发送到服务器事务的请求，以及从服务器事务发送回客户机的对该请求的所有响应。
+  - 用户代理客户端(UAC)完成的任何任务都使用一系列事务进行。
+  - 无状态代理不包含事务层。
+- 交易层上方的图层称为交易使用者。除了无状态代理，每个SIP实体都是事务用户。
+
+​		SIP是一个C/S协议，客户和服务器之间的操作从第一个请求到最终响应为止的所有消息构成一个SIP事务。
+
 ​		SIP基于分布式架构，网络中包含多个服务：
 
-- SIPUA
+- SIP UA
   - 是一个软终端或者是一个支持ISP协议的电话
   - 对接收到的行为进行代理，发送到SIP网络中 
   - 是发起和终止会话的实体
@@ -60,6 +81,11 @@ www.sipforum.org
     - UAS（User Agent Server）用户代理服务器
       - 接收SIP事务请求的功能实体
       - 将SIP网络协议转换为动作 （如终端上收到 180 Ringing进行振铃）
+  - 对于UAC或UAS来说，Sip协议是一种有状态的协议，同一个会话的前后相关的信令必须送到相同的UAC或UAS。
+    - Sip协议的via、record-route头域正是用于用来指示路由的字段
+    - via用于指示response返回的路径，不会影响后续request。
+    - record-route用于指示同一Call-ID后续请求的路径。
+    - rport是接收方收到via为内网的请求时，加上 自己看到的发送方的ip（received）和端口（rport），用于NAT。
 - Proxy Server 代理服务器
   - Proxy和Agent不同，一般指进行消息路由转发的功能组件
   - 为其他的客户机代理，进行SIP消息的转接和转发功能
@@ -79,7 +105,7 @@ www.sipforum.org
 
 
 
-​		SIP协议简单，只包括6个主要请求和6类响应，基于文本格式，便于跟踪和处理，抑郁扩展和伸缩
+
 
 
 
@@ -159,6 +185,15 @@ www.sipforum.org
 
 ### 一般格式
 
+```http
+start-line
+message-header
+CRLF
+[ message-body ]
+```
+
+
+
 #### 请求格式
 
 ```HTTP
@@ -197,29 +232,38 @@ Max-Forward: value
 
 
 
-#### 重要字段
+#### 消息头
 
 - `from / to ` 
+  - `显示名<接收者URI>；tag=n`
   - 所有请求和响应必须包含这两个字段
   - `from`， 请求的发起者，服务器将次字段从请求消息复制到响应消息
     - `From:name <SIP URL>; tag=xxx`
       - `From: "iwf" <sip:5136000@202.202.21.1>; tag=aab7090044b2-195254e9`
+    - `tag`是必选的
   - `to`， 请求的接收者
     - `To:<sip:613000@202.202.21.1>`
+    - 显示名和`tag`可选
 - `Call-ID`
-  - 包含一个全局的唯一标志，用来唯一确定一个呼叫
+  - 全局的唯一标志，用来唯一确定一个呼叫
   - 通过随机字符串和名字或者IP地址混合产生
-  - 在对话中的任一UA的所有请求和所有应答的Call-ID必须一直
-- `Cseq`  命令序号
-  - 客户在每个请求中应该如此字段，由请求方法和一个十进制序号组成
+  - 在对话中的任一UA的所有请求和所有应答的Call-ID必须一致
+- `Cseq`  命令序号、
+  - 标识同一会话中不同事务的序号
+    - 整个会话操作过程由不同的事务组成，每一事务所涉及的消息的CSeq序号必须相同
+  
+  - 通常由一个用作序号的整型数和消息类型组成
   - 序号的初始值可以为任意值，其后具有相同Call ID值，但不同请求方法、头部或消息体的请求，Cseq序号应该+1
   - 重发请求的序号保持不变
   - ACK和CANCEL请求的Cseq与对应的INVATE请求相同
   - BYE请求的Cseq值应大于INVATE请求，由代理服务器并行分发的请求，其Cseq值相同
-  - 服务器将请求中的Cseq值赋值到响应消息中去
+  - 服务器将请求中的Cseq赋值到响应消息中去
   - `Cseq: 101 INVATE`
+  
 - `Via`
   - 指示请求消息经历的路径
+    - 请求消息经过每一跳节点时，每一跳节点都把自身的IP地址信息放入顶层Via中
+    - 响应消息则沿着请求消息记录下的传输路径反向传输，首先移走指明自身IP地址信息的顶层消息头
   - 防止请求消息传送环路，确保响应和请求的消息选择同样的路径
   - `Via: 发送协议(proto_name/proto_version/trans-layer) 发送方(send_ip:send_port) 参数 `
   - `Via: SIP/2.0/UDP/ 202.202.41.3:5060`
@@ -252,7 +296,7 @@ Max-Forward: value
 
 ## 消息流程
 
-
+​		SIP协商中主叫方会带上自己支持的所有音频编码列表到被叫方，被叫方一般在回铃时从主叫支持的类型中选出一种或多种自己支持的编码，返回主叫后，双人按顺序选出第一个支持的编码。
 
 ### 会话建立
 
@@ -321,3 +365,55 @@ Max-Forward: value
   ```
 
   
+
+
+
+## SIP协议栈实现
+
+- PJSIP协议栈
+  - 开源的SIP协议栈
+  - 同时支持音频、视频并支持即时通讯
+  - 具有非常完善的文档，对开发者非常友好，是开发即时通讯系统的首选
+  - 具有非常好的移植性，几乎支持现今所有的操作系统系统：从桌面系统、嵌入式系统到智能手机
+- ReSIProcate协议栈
+  - SIPFoundry的开源项目
+  - 在VOCAL的基础上建立的
+    - 由于VOCAL开始只支持rfc3254，为了支持最新的rfc3261,ReSIProcate协议栈就这样诞生了
+    - 但现在，ReSIProcate已经成为一个独立SIP协议栈了，它性能较为稳定，并且很多商业的应用都使用它
+- OPAL协议栈
+  - OPAL（Open Phone Abstraction Library）的前身是Openh323开源项目
+    - 它包括几乎全部的Openh323全部代码
+    - 并加入了SIP协议栈，使到H.323和SIP协议能并存
+    - 开发者既可以使用功能全面的H.323协议，可以使用简单易用的SIP协议
+  - Openh323是视频会议厂商最青睐的开源的H.323的开源项目
+    - 很多免费视频会议系统的H.323协议栈都是采用Openh323
+    - OPAL的出现使系统能支持SIP协议
+- VOCAL协议栈
+  - VOCAL项目vovida.org开发的开源SIP系统
+  - VOCAL的SIP协议栈应该是目前功能最完善的SIP协议栈之一，其具有众多的使用者
+  - 不支持window平台，所以限制了它的普及和推广
+  - 在其他的linux操作系统上是最具有影响力的SIP协议栈
+- sipX协议栈
+  - 开源的SIP协议栈
+  - 它和ReSIProcate都是由SIPFoundry开发
+  - sipX是从reSIProcate分离出来的
+    - sipX除了包括SIP 协议外，还包括了sipXphone,sipXproxy,sipXregistry等
+    - 由它们构成了完整的SIP系统
+    - 而且sipx还支持嵌入式系统，各个模块可以按需取舍
+- oSIP协议栈
+  - 使用ANSI C编写的开源SIP协议栈
+  - 是体积最小的SIP协议栈
+    - oSIP体积较小，很容易在小的操作系统上运行
+    - 因此在实时操作系统 VxWorks当中，oSIP是使用最多的SIP协议栈
+
+
+
+## Sip测试工具
+
+SIPp是sip协议栈的一个免费开源的测试工具, 它模拟了一些基本的uac和uas功能，并建立和释放多个调用的INVITE和BYE的方法，可以读取xml和csv文件生成注册或呼叫流程，可以动态显示统计信息和动态调整呼叫速率。
+
+模拟UAS：./sipp -sn uas -i 192.168.1.249 -p 5077 //监听5077端口
+
+模拟UAC:./sipp -sn uac 192.168.1.249:5077 -i 192.168.1.249 -p 5078 -r 50 -rp 1000  //每1000ms发送50个呼叫
+
+SIPp还支持使用脚本文件来自定义模拟的UAC或UAS的行为，具体可参考官网文档：http://sipp.sourceforge.net/index.html
