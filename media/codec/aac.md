@@ -20,6 +20,8 @@
 
 [最简单的 AAC 音频码流解析程序_aac裸流结果-CSDN博客](https://blog.csdn.net/ProgramNovice/article/details/137225523)
 
+[音频格式之AAC：(3)AAC编解码原理详解_aac音频采样率-CSDN博客](https://blog.csdn.net/littlezls/article/details/135777833)
+
 ## 特点
 
 1. 更好的声音质量和更低的压缩比，减少了由于压缩而引入的失真和噪音。
