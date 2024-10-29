@@ -213,13 +213,33 @@
 
 #### PCM
 
-​		脉冲编码调制，是纯粹的数字音频数据，经过AudioRecord和MediaRecorder采集的数据就是PCM数据，只是模拟到数字的转换，没有压缩和封装。常用文件拓展为`.pcm / .raw`
+​		脉冲编码调制，是纯粹的数字音频数据，PCM是一种线性采样方法，它将音频信号在时间上均匀地分成小片段，并在每个时间片段内对信号的振幅进行采样。
+
+​		经过`AudioRecord`和`MediaRecorder`采集的数据就是PCM数据，只是模拟到数字的转换，没有压缩和封装。常用文件拓展为`.pcm / .raw`
 
 ​		PCM数据一般需要以下几个概念：
 
-- 量化格式（sampleFormat），位深
-- 采样率（sampleRate）
-- 声道数（channel）
+1. **采样率（Sample Rate）**：采样率是指每秒采样的样本数。它以赫兹（Hz）为单位表示，常见的采样率包括44.1 kHz（用于CD音频）、48 kHz（用于DVD和数字电视）、96 kHz（用于高分辨率音频）等。更高的采样率可以捕获更多音频细节，但也需要更多的存储空间和处理能力。
+2. **量化位深度（Bit Depth）**：量化位深度表示每个样本的振幅级别数。常见的位深度包括16位、24位和32位。较高的位深度能够提供更大的动态范围，使音频质量更高，但也需要更多的存储空间。
+3. **声道数（Channels）**：声道数表示音频信号中独立的音轨数。单声道通常用于单声源音频，如语音记录，而立体声和多声道音频用于音乐和电影等应用。常见的声道配置包括单声道、立体声（2声道）、5.1声道、7.1声道等。
+4. 样本（Sample）：样本是在特定时间点上对模拟音频信号的振幅进行的测量。采样率决定了样本的数量。
+5. 位宽（Bit Width）：位宽是每个样本的位数，通常与量化位深度相同。位宽决定了每个样本的数字表示精度。
+
+​		linux上可以使用`aplay`处理和播放PCM音频，`aplay` 是 ALSA (Advanced [Linux](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn) Sound Architecture) 的一部分，可以用于播放PCM格式的音频文件。
+
+> ### ALSA（Advanced [Linux](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn) Sound Architecture）：
+>
+> [Linux](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn)[操作系统](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn)上的音频架构，用于处理音频输入和输出。它是[Linux](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn)内核的一部分，并提供了一种标准的音频接口，用于访问计算机的音频硬件和驱动程序。ALSA的主要目标是提供高质量的音频支持，并在[Linux](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn)系统中实现低延迟和高性能的音频处理。
+>
+> 以下是ALSA的一些主要特点和组成部分：
+>
+> 1. **驱动程序**：ALSA包括一系列驱动程序，用于支持各种音频硬件设备，如声卡、USB音频接口等。这些驱动程序允许[Linux](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn)系统与音频设备进行通信。
+> 2. **音频库**：ALSA提供了音频应用程序开发所需的库，包括C库（libasound）和Python绑定。这些库允许开发人员创建和管理音频应用程序，包括音频播放器、录音应用、音频编辑工具等。
+> 3. **用户空间工具**：ALSA附带了一些实用的用户空间工具，用于配置和管理音频设置，例如`alsamixer`和`aplay`。
+> 4. **插件架构**：ALSA具有插件架构，允许开发人员创建和使用插件来执行各种音频处理任务，如混音、音频格式转换等。这增强了ALSA的灵活性和可扩展性。
+> 5. **低延迟性能**：ALSA旨在提供低延迟和高性能的音频处理，这对于音频专业人士、音频编程和音乐制作应用非常重要。
+> 6. **跨平台支持**：虽然ALSA最初是为[Linux](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn)设计的，但它也被移植到其他Unix-like[操作系统](https://link.csdn.net/?target=https%3A%2F%2Fgitcode.com%2Fopenharmony%2Fkernel_linux_config%2Foverview%3Flogin%3Dfrom_csdn)，因此可以在一些BSD系统上找到。
+> 7. **支持多声道音频**：ALSA支持多声道音频处理，使其适用于多媒体应用和音频制作工作流程。
 
 [adpcm编解码原理及其代码实现-CSDN博客](https://blog.csdn.net/littlezls/article/details/83501580)
 
