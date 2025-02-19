@@ -26,6 +26,22 @@
 
 [Rtsp 的认证 - 简书 (jianshu.com)](https://www.jianshu.com/p/df107df10196)
 
+
+
+[ietf.org/rfc/rfc2326.txt](https://www.ietf.org/rfc/rfc2326.txt)
+
+[RtspServer/RtspServer at master · jiaoyk/RtspServer](https://github.com/jiaoyk/RtspServer/tree/master/RtspServer)
+
+[RtspServer/src/xop/RtspConnection.cpp at master · PHZ76/RtspServer](https://github.com/PHZ76/RtspServer/blob/master/src/xop/RtspConnection.cpp)
+
+[RTSP协议详解-腾讯云开发者社区-腾讯云](https://cloud.tencent.com/developer/article/2020375)
+
+[RTSP协议详解-腾讯云开发者社区-腾讯云](https://cloud.tencent.com/developer/article/2020375)
+
+[RTSP协议详解-腾讯云开发者社区-腾讯云](https://cloud.tencent.com/developer/article/2020375)
+
+[流媒体传输协议详解之---RTSP认证-腾讯云开发者社区-腾讯云](https://cloud.tencent.com/developer/article/2020385)
+
 ## 协议特点
 
 ​		TSP 控制的流可能用到 RTP，但 RTSP 操作并不依赖用于传输连续媒体的传输机制。RTSP 在语法和操作上与 HTTP/1.1 类似，因此 HTTP 的扩展机制在多数情况下可加入 RTSP。然而，在很多重要方面 RTSP 仍不同于 HTTP ：

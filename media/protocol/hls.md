@@ -33,6 +33,10 @@
 
 - PC：video.js
 
+## 参考
+
+[原来爱优腾等视频网站都是用这个来播放流媒体的HLS (HTTP Live Streaming) 是苹果公司开发的流媒体传 - 掘金](https://juejin.cn/post/6954761121727250439)
+
 
 
 ## 优缺点

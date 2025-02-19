@@ -162,9 +162,29 @@ int main() {
 
 
 
+# 路线。
+
+《C++并发实战》纯语法相关知识，这本书看完，多查查cppreference应该就能应对大部分
+
+《现代[体系结构](https://zhida.zhihu.com/search?content_id=342789702&content_type=Answer&match_order=1&q=体系结构&zhida_source=entity)上的unix系统》第一部分，了解缓存的基本知识
+
+《A Primer on Memory Consistency and Cache Coherence》看到监听总线协议就足够了，前面的看了就能对宽松内存序，缓存协议，内存一致性模型有个基本的认识了。
+
+《[多处理器编程的艺术](https://zhida.zhihu.com/search?content_id=342789702&content_type=Answer&match_order=1&q=多处理器编程的艺术&zhida_source=entity)》修订版前半部分(12章之前)能够了解现代体系结构上[自旋锁](https://zhida.zhihu.com/search?content_id=342789702&content_type=Answer&match_order=1&q=自旋锁&zhida_source=entity)，乐观同步，等具体的设计，如果要在[用户态](https://zhida.zhihu.com/search?content_id=342789702&content_type=Answer&match_order=1&q=用户态&zhida_source=entity)做同步操作一些非常直接的锁设计方案都明白了。
+
+《Inter X86_64 Architectures software developer's manual》这个书属于查询手册了，我不知道推荐这个合不合适。不过我是在看一些底层锁的实现的时候别人推荐的，姑且放到这里吧。
+
 
 
 # concurrency
+
+## 参考
+
+[(256条消息) 《七周七并发模型》笔记_七天七并发_worthsen的博客-CSDN博客](https://blog.csdn.net/qq_38880380/article/details/123126074)
+
+[七周七并发模型-概述 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/432860006)
+
+[腾讯T8用七个精选模型带你了解并发领域轮廓，归纳这份并发文档 (betheme.net)](https://betheme.net/news/txtlist_i129302v.html?action=onClick)
 
 
 
