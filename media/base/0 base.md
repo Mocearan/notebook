@@ -64,7 +64,7 @@
 
 - 上述过程可以合并成
 
-  ![在这里插入图片描述](https://img-blog.csdnimg.cn/direct/a157887e5d934c2a88e81aa2a8f98d92.png)
+  ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a157887e5d934c2a88e81aa2a8f98d92.png)
 
 ​		上述的过程可以描述为一下几个方面：
 

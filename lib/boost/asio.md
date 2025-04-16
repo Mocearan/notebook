@@ -4,6 +4,24 @@
 
 
 
+## 参考
+
+[boost asio对于epoll的理解_epoll 关闭-CSDN博客](https://blog.csdn.net/xiexingshishu/article/details/135982929?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-3-135982929-blog-128870090.235^v43^pc_blog_bottom_relevance_base3&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~Rate-3-135982929-blog-128870090.235^v43^pc_blog_bottom_relevance_base3&utm_relevant_index=5)
+
+[boost::asio序列12: epoll_reactor_boost asio 全部注册epoll事件-CSDN博客](https://blog.csdn.net/hit1524468/article/details/105339969?spm=1001.2101.3001.6650.2&utm_medium=distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~PaidSort-2-105339969-blog-128870090.235^v43^pc_blog_bottom_relevance_base3&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~PaidSort-2-105339969-blog-128870090.235^v43^pc_blog_bottom_relevance_base3&utm_relevant_index=4)
+
+[BOOST_Hit_HSW的博客-CSDN博客](https://blog.csdn.net/hit1524468/category_8982422.html)
+
+[【C++ 常见的异步机制】探索现代异步编程：从 ASIO 到协程的底层机制解析_boost asio 协程-CSDN博客](https://blog.csdn.net/qq_21438461/article/details/135558436?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-1-135558436-blog-128870090.235^v43^pc_blog_bottom_relevance_base3&spm=1001.2101.3001.4242.2&utm_relevant_index=3)
+
+[Asio源码分析（3）：使用epoll实现Proactor模式（1）_asio epoll-CSDN博客](https://blog.csdn.net/weixin_43669941/article/details/119334217?spm=1001.2101.3001.6650.1&utm_medium=distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~PaidSort-1-119334217-blog-128870090.235^v43^pc_blog_bottom_relevance_base3&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2~default~BlogCommendFromBaidu~PaidSort-1-119334217-blog-128870090.235^v43^pc_blog_bottom_relevance_base3&utm_relevant_index=1)
+
+[asio中如何使用epoll实现proactor-CSDN博客](https://blog.csdn.net/weixin_35749545/article/details/128870090)
+
+[Linux下Boost.Asio Proactor模式实现分析 - 知乎](https://zhuanlan.zhihu.com/p/538853846)
+
+
+
 ## framework
 
 ​		1.66版本，boost.asio库重新设计了框架。新框架有几个核心概念：`Context`，`Scheduler`，`Service`，`Executor`，`Strand`。

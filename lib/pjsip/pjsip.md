@@ -31,16 +31,55 @@
 - `pjlib-util`：封装常用的算法(MD5、CRC32)、字符串、文件格式解析(XML，json）
 
 - `pjsip-core`：`SIP`协议栈的核心
-
+  
   - `SIP endpoint`
-
-  -  `SIP transaction module`
-
-  -  `SIP dialog module`
-
-  -  `transport layer`
-
--  `pjsip-simple`：`SIP事件与出席(``presentation``)框架，如果你程序中要实现出席制定，则该库是必备的。`
+  
+  - `SIP module`
+  
+    - `SIP transaction module`
+  
+    - `SIP UA module`
+  
+    - `SIP dialog module` ： 维护`sip`请求和响应之间关联关系的会话层表示
+  
+    - `application module`
+  
+    ```c
+    /**
+     * Module priority guidelines.
+     */
+    enum pjsip_module_priority
+    {
+        /** 
+         * This is the priority used by transport layer.
+         */
+        PJSIP_MOD_PRIORITY_TRANSPORT_LAYER	= 8,
+    
+        /**
+         * This is the priority used by transaction layer.
+         */
+        PJSIP_MOD_PRIORITY_TSX_LAYER	= 16,
+    
+        /**
+         * This is the priority used by the user agent and proxy layer.
+         */
+        PJSIP_MOD_PRIORITY_UA_PROXY_LAYER	= 32,
+    
+        /**
+         * This is the priority used by the dialog usages.
+         */
+        PJSIP_MOD_PRIORITY_DIALOG_USAGE	= 48,
+    
+        /**
+         * This is the recommended priority to be used by applications.
+         */
+        PJSIP_MOD_PRIORITY_APPLICATION	= 64
+    };
+    ```
+  
+  - `SIP transport`
+  
+- `pjsip-simple`：SIP事件与出席(`presentation`)框架，如果你程序中要实现出席制定，则该库是必备的。
 
 - `pjsip-ua`：`INVITE`会话的高层抽象，容易创建SIP会话。
 
@@ -73,12 +112,52 @@
 
 - `pjsip`中动态内存都是通过内存池分配的
 - 所有的`SIP`内存都需要在`endpoint`中完成分配
+- 
   - 为了保证线程的安全性以及在整个应用中策略强一致性
   - `pjsip_endpt_create_pool() / pjsip_endpt_release_pool()`
   - 当`endpoint`被`pjsip_endpt_create()`创建时，应用一定要指明由`endpoint`使用的内存池工厂
   - 在整个生命周期内`endpoint`持有内存池工厂的指针，将来备用创建和释放内存
 
+> ​		内存池和内存池工厂的关系如下：
+>
+> - 层次关系
+>   1. `pj_pool_factory` (内存池工厂)
+>      - 最顶层的内存管理组件
+>      - 在创建 SIP 终端时传入 (`pjsip_endpt_create` 函数)
+>      - 由 SIP 终端持续引用
+>
+>   2. `pjsip_endpoint` (SIP 终端)
+>      - 保存了对内存池工厂的引用
+>      - 作为内存分配的中间层
+>      - 确保所有相关组件使用同一个内存池工厂
+>   3. `pj_pool_t` (内存池)
+>      - 通过 `pjsip_endpt_create_pool` 创建
+>      - 实际由终端内部存储的内存池工厂创建
+>      - 用于具体的内存分配操作
+>
+>
+> - 工作流程
+>
+>   1. 创建 SIP 终端时传入内存池工厂
+>
+>   2. 终端保存工厂引用
+>
+>   3. 需要内存池时，通过终端的 `create_pool` 函数
+>
+>   4. 终端内部使用保存的工厂创建新的内存池
+>
+>
+> - 优势
+>
+>   - 统一管理：所有内存分配来自同一个工厂
+>
+>   - 线程安全：通过终端接口访问保证安全
+>
+>   - 资源追踪：便于内存管理和调试
+
 ##### 事件处理
+
+​		`pjsip`协议栈将事件作为`module`注册到`endpoint`中，以`endpoint`的事件循环驱动。以`module id`定义事件的处理顺序，越接近`transport`层`module id`越小。
 
 - `endpoint`接收来自传输层的消息
   - 单实例`pjlib ioqueue`，采用`proactor`模式分发事件（`pjsip`本身不含任何线程）
@@ -236,7 +315,6 @@
 -  `sound device `
   - 前四个需要自己在程序里创建，最后一个`sound device` 是与`sound device port`相关联的
   - 创建`sound device port`的时候便会关联到`sound device`
-
 
 
 

@@ -523,7 +523,7 @@ static int parsingRTPPacket(uint8_t *data, size_t size)
 //------------------------------------------			|
 //|Frac Lost|Cumulative number of pack lost |			|
 //------------------------------------------			|
-//|  Extended high est seq nunmber received |			|
+//|  Extended highest seq nunmber received  |			|
 //-------------------------------------------			|    ssrc_1
 //|			Interarrival jitter			  |			   |
 //------------------------------------------			|
@@ -551,11 +551,12 @@ static int parsingRTPPacket(uint8_t *data, size_t size)
 	- 与RTP数据包中的RTP时间戳具有相同的单位和随机初始值。
 - Sender’s packet count：从开始发送包到产生这个SR包这段时间里，发送者发送的RTP数据包的总数. SSRC改变时，这个域清零。
 - Sender`s octet count：从开始发送包到产生这个SR包这段时间里，发送者发送的净荷数据的总字节数（不包括头部和填充）。发送者改变其SSRC时，这个域要清零。
+
 - 同步源n的SSRC标识符：该报告块中包含的是从该源接收到的包的统计信息。
-- 丢失率（Fraction Lost）：表明从上一个SR或RR包发出以来从同步源n(SSRC_n)来的RTP数据包的丢失率。
-- 累计的包丢失数目：从开始接收到SSRC_n的包到发送SR,从SSRC_n传过来的RTP数据包的丢失总数。
+- 丢失率（Fraction Lost）：表明从上一个SR或RR包发出以来从同步源n(SSRC_n)来的RTP丢包率。
+- 累计的包丢失数目(Cumulative number of pack lost)：从开始接收到SSRC_n的包到发送SR,从SSRC_n传过来的RTP数据包的丢失总数。
 - 收到的扩展最大序列号：从SSRC_n收到的RTP数据包中最大的序列号，
-- 接收抖动（Interarrival jitter）：RTP数据包接受时间的统计方差估计
+- 接收抖动（Interarrival jitter）：RTP数据包接收时间的统计方差估计
 - 上次SR时间戳（Last SR,LSR）：取最近从SSRC_n收到的SR包中的NTP时间戳的中间32比特。如果目前还没收到SR包，则该域清零。
 - 上次SR以来的延时（Delay since last SR,DLSR）：上次从SSRC_n收到SR包到发送本报告的延时。
 */
