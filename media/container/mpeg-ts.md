@@ -1,109 +1,98 @@
 # MPEG-TS
 
-​		Transport Stream （传输流）
-
 ---
 
-​		MPEG-TS一种标准数据容器格式，传输与存储[音视频](https://so.csdn.net/so/search?q=音视频&spm=1001.2101.3001.7020)、节目与系统信息协议数据，应用于数字广播系统，譬如DVB,ATSC与IPTV。传输流在MPEG-2第1部分系统中规定，正式称为ISO / IEC标准13818-1或ITU-T建议书。
+​		`MPEG-TS`一种音视频容器格式，其中 TS 表示 `Transport Stream`。`MPEG2-TS` 定义于` MPEG-2 `第一部分：系统（即` ISO/IEC `标准 `13818-1` 或` ITU-T Rec. H.222.0`）。
 
-​		以 .ts 结尾的文件 就是 MPEG-TS 封装格式。主要用在容易发生传输误码的网络传输环境中。
+​		TS 主要是用于传输流，主要用在容易发生传输误码的网络传输环境中。以` .ts` 为文件后缀。
+
+​		它可以实时传输多层节目节目内容，这就要求从传输流的任一片段开始都是可以独立解码的，在直播中可以用到。
+
+> **也正是因为 `TS `任一切片开始都可以独立解码，所以它非常适合按切片的方式存储直播内容。**
+>
+> TS 流中不支持快进快退，这个需要从协议层来支持，比如 HLS 协议对相关的能力做了定义。
+>
+> 这些频道、节目、音视频码流如何在一个TS信道里面进行区分是 TS 封装格式复杂的主要原因。
+>
+> ​		互联网IP网络体系下传输的数字信号，和数字电视基站广播的数字信号没有本质区别：
+>
+> - 互联网使用`TS`封装，通常传一路视频和一路音频，`TS`中很多字段用不到
+>   - 单节目的`TS `封装 叫做` Single Program Transport Stream (SPTS)`。
+> - 机顶盒之类的开发，想深入理解数字电视的知识，可以看 《Video Demystified: A Handbook for The Digital Engineer》。
 
 ## 参考
 
 ​		[DVB-SI/PSI_Destiny青羽的博客-CSDN博客](https://blog.csdn.net/kkdestiny/category_1553561.html)
 
-## 特点
-
-​		MPEG2/DVB是一种多媒体传输、复用技术，在数字电视广播中可提供数百个节目频道。MPEG-TS 格式的特点就是要求从视频流的任一片段开始都是可以独立解码的。
-
-​		复用的含义是，可以同时传输多层节目。MPEG-TS 主要应用于实时传送的节目，比如实时广播的电视节目。简单地说，如果 DVD 上的 VOB 文件数据部分损坏了，就会导致整个文件无法解码，而电视节目是任何时候打开电视机都能解码的。
-
-> ​		DVB全称为Digital Video Broadcasting，包括不同的系统，如卫星数字电视广播系统，有线数字电视广播系统，地面开路数字电视广播系统，交互式数字电视广播系统以及数字电视加扰系统。
->
-> ​		DVB系统标准是一种全球数字电视技术的标准。如何定义广播中的比特流语法与句法，以实现在比特流中复用数字音频与视频，欧洲的DVB采用数字视频压缩MPEG-2标准，该标准是定义比特流的语法与句法的一个ISO/IEC标准，即13818-1标准。DVB系统的核心技术是采用MPEG-2技术进行视频、音频的编码，使用统一的MPEG-2传输流（TS流）。
-
-​		这些频道、节目、音视频码流如何在一个TS信道里面进行区分是 TS 封装格式复杂的主要原因。
-
-​		互联网IP网络体系下传输的数字信号，和数字电视基站广播的数字信号没有本质区别：
-
-- 互联网使用TS封装，通常传一路视频和一路音频，TS中很多字段用不到
-  - 单节目的TS 封装 叫做 Single Program Transport Stream (SPTS)。
-- 机顶盒之类的开发，想深入理解数字电视的知识，可以看 《Video Demystified: A Handbook for The Digital Engineer》。
 
 
 
-## TS流
 
-​		TS包有可能是音视频数据，也有可能是表格(PAT/PMT/…)：`PAT,PMT,DATA,DATA,,,,,,,,PAT,PMT,DATA,DATA,,,,,,`
+##  工具
 
-- 每隔一段时间，发送一张PAT表，紧接着发送DATA数据
+- elecard stream analyzer，支持 TS，FLV，MP4 等众多格式，可免费试用 30天
+- MPEG-2 TS packet analyser ，界面清晰简洁。
 
-- PAT表格里面包含所有PMT表格的信息
 
-  - 一个PMT表格对应一个频道，例如中央电视台综合频道
 
-  - 一个PMT里面包含所有节目的信息，例如CCTV-1到CCTV-14
+##  格式
 
-  - 在实际情况中有很多频道，所以PMT表格不止一张
+​		TS 流的结构整体可以分为几个层次：
 
-    - `PAT、PMT、PMT、PMT,,,DATA,DATA，DATA,,,,`
+- **TS（Transport Stream） 层，即传输流层。**对分组化基本流数据打包，加上了用于网络传输相关的信息。
+- **PES（Packetized Elementary Stream） 层，即分组化基本流。**主要在音视频数据的基础上带上了时间戳信息。
+- **ES（Elementary Stream） 层，基本流层。**主要包含实际的音视频数据，一般视频为 `H.264` 编码数据，音频为 `AAC `编码数据。
 
-  - 每个频道或节目都有自己的标识符（PID）
+<img src="https://raw.githubusercontent.com/Mocearan/picgo-server/main/a1a7238bf4fe0132fbe9be6dc7d85715.png" alt="在这里插入图片描述" style="zoom: 67%;" />
 
-    - 当得到一个DATA，解出里面的PID就知道是什么节目了,也知道节目所属频道
 
-    - > 在看电视时，会收到所有节目的DATA，当选择某个节目时，机顶盒会把这个节目的DATA单独过滤出来，其他舍弃。
 
-##  封装结构
+​		
 
-​		TS流是基于`TS Packet`的流格式。`TS Packet`中的荷载可以是AAC、H264、 PAT、PMT等。每个TS都有PID。
+### TS 层
 
-​		每个包是固定的188个字节或204个字节（在188个字节后加16字节的CRC校验数据，其他格式一样）。
+​		`TS`流是基于`TS Packet`的流格式。`TS `层的数据包大小固定，必须为 `188 `字节204个字节。其中包括：
 
-​		`TS header`+`adaptation field`+`payload`
+​		`TS header[ fixed header +adaptation field]`+`payload`
 
-- `header`固定四字节
-- 提供关于传输方面的信息
-- `adaptation`可能不存在，主要作用是给不足188字节的数据包做填充
-  -  PES包 <= 184字节，则一个TS包就可以放下，如果还有空余的地方，就填充无实际用处的字节，使其满足184字节
+- `TS Header` 又包括固定长度部分和可选部分，提供关于传输方面的信息
 
-- `payload`是`pes`数据
+  - 固定部分长度为 `4` 字节
+
+  - 可选部分包括适配域（Adaptation Field）
+
+    - `adaptation`可能不存在，主要作用是给不足188字节的数据包做填充
+
+    - `PES packet <= 184`字节时，则一个`TS`包就可以放下，如果还有空余的地方，就填充无实际用处的字节，使其满足`184`字节
+
+      > 除去`4`字节`ts header`需要`184`字节
+
+- `payload`可以是`AAC`、`H264`、 `PAT`、`PMT`等
+
+  - `payload`是`pes`数据
   - `188 - 4 - adaptation_feild_size`就是`payload`大小
   - 如果 PES包 > 184字节，则需要多个TS包封装
     - 分包时，实际上是将一个PES包切片，所以`PES Header`只需要首个TS包封装即可
 
+- `204`字节在`188`字节后加`16`字节的`CRC`校验数据，其他格式一样
 
-> ​		ts文件分为三个层次：ts层、pes层、es层。
->
-> - es层就是音视频数据
->
-> - pes层是在音视频数据上加了时间戳等数据帧的说明信息
->
-> - ts层是在pes层上加入了数据流识别和传输的必要信息
+- 每个`TS`都有`PID`
 
-​		**ts 层的内容是通过 PID 值来标识的，主要内容包括：PAT 表、PMT 表、音频流、视频流。**
+  - **ts 层的内容是通过 PID 值来标识的，主要内容包括：PAT 表、PMT 表、音频流、视频流。**
 
-- 解析 ts 流要先找到 PAT 表，只要找到 PAT 就可以找到 PMT，然后就可以找到音视频流了
-- PAT 表的和 PMT 表需要定期插入 ts 流
-  - 因为用户随时可能加入 ts 流，这个间隔比较小，通常每隔几个视频帧就要加入 PAT 和 PMT
-- PAT 和 PMT 表是必须的，还可以加入其它表如 SDT（业务描述表）等
-- 不过 HLS 流只要有 PAT 和 PMT 就可以播放了
-
-> - PAT 表：主要的作用就是指明了 PMT 表的 PID 值。
-> - PMT 表：主要的作用就是指明了音视频流的 PID 值。
-
-
-![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/a1a7238bf4fe0132fbe9be6dc7d85715.png)
+<img src="https://mmbiz.qpic.cn/mmbiz_jpg/gUnqKPeSuehz5Hg9nJv4kicOZSBYolBrp9AqlKWIwGjGvibcd114dHBc4h7R4piakKcJsMRG2xxahs8QGAia0sDvpg/640?wx_fmt=jpeg&tp=webp&wxfrom=5&wx_lazy=1" alt="图片" style="zoom: 80%;" />
 
 ![在这里插入图片描述](https://raw.githubusercontent.com/Mocearan/picgo-server/main/aHR0cHM6Ly9pbWFnZXMyMDE1LmNuYmxvZ3MuY29tL2Jsb2cvMTAxNjI2Ni8yMDE3MDUvMTAxNjI2Ni0yMDE3MDUxNTE5NTU1MjgyMi0yMDQ5MjY5NTY4LnBuZw)
 
-### Header
 
-​		整个TS流组成形式如下：
 
-![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809122755796)
+#### Header
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/70e9597779db9cca5e499a5a6e339ac5.png#pic_center)
+​		`TS Header` 主要包含的数据主要是传输流的头信息，用于传输和包分组。这些数据包括固定长度部分和可选部分。
+
+<img src="https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809122755796" alt="img" style="zoom: 80%;" />
+
+<img src="https://img-blog.csdnimg.cn/img_convert/70e9597779db9cca5e499a5a6e339ac5.png#pic_center" alt="在这里插入图片描述" style="zoom: 67%;" />
 
 
 
@@ -120,12 +109,37 @@
 
 
 
-- `sync_byte`  
+##### fixed header
 
-  - 一般以 0x47 开始，方便在某些场景下进行同步操作
-    - 后面包中的数据不会出现 0x47 
-  - 是包中的第一个字节，固定为 0x47，表示后面是一个 TS 分组，用于建立发送端和接收端包的同步<br /
+​		 `4 `字节
 
+```c
+typedef struct MPEGTS_FIXED_HEADER
+{
+	/* byte 0 */
+	unsigned sync_byte : 8; // 同步字节，值为 0x47
+
+	/* byte 1, 2 */
+	unsigned transport_error_indicator : 1; // 传输错误指示位，置 1 时，表示传送包中至少有一个不可纠正的错误位
+	unsigned payload_unit_start_indicator : 1; // 负载单元起始指标位，针对不同的负载，有不同的含义
+	unsigned transport_priority : 1; // 传输优先级，表明该包比同个 PID 的但未置位的 TS 包有更高的优先级
+	unsigned PID : 13; // 该 TS 包的 ID 号，如果净荷是 PAT 包，则 PID 固定为 0x00
+
+	/* byte 3 */
+	unsigned transport_scrambling_control : 2; // 传输加扰控制位
+	unsigned adaptation_field_control : 2; // 自适应调整域控制位，分别表示是否有调整字段和负载数据
+	unsigned continuity_counter : 4;// 连续计数器，随着具有相同 PID 的 TS 包的增加而增加，达到最大时恢复为 0
+	/* 如果两个连续相同 PID 的 TS 包具有相同的计数，则表明这两个包是一样的，只取一个解析即可。 */
+} MPEGTS_FIXED_HEADER; // MPEG-TS 包头占 4 字节
+```
+
+- `sync_byte （8 bit）`  ，同步字节，固定 `8 bit`
+
+  - 一般为 `0100 0111 (0x47)` ，方便在某些场景下进行同步操作
+    - 后面包中的数据不会出现 `0x47 `，以避免冲突
+    - 表示后面是一个 `TS `分组，用于建立发送端和接收端包的同步
+  - 是包中的第一个字节
+  
   ```c
   MPEG_transport_stream()
   {
@@ -135,34 +149,54 @@
   }
   ```
 
-![](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809133716015)
+- `tansport_error_indicator（1bit）`：传输错误标志位， `1 bit`
 
-- `tansport_error_indicator（1bit）`：传输错误标志位
-
-  - 为 1 表示在相关的传输包中至少有一个不可纠正的错误位。
+  - 发送时（调制前）值为 0。
+  - 接收方的解调器在无法成功解调（即使有前向纠错机制）TS 分组内容时，将该位设置为 1，表示该 TS 分组损坏。
   - 当被置 1 后，在错误被纠正之前不能重置为 0。
 
-- `payload_unit_start_indicator`（1bit）：负载起始标识，针对不同的负载，有不同的含义。
+- `payload_unit_start_indicator`（1bit）：负载起始标识，`1 bit`
 
-  - PES：置为 1，标识 TS 包的有效载荷以 PES 包的第一个字节开始，即此 TS 包为 PES 包的起始包，且此 TS 分组中有且只有一个 PES 包的起始字段；置为 0，表示 TS 包不是 PES 包的起始包，是后面的数据包。
+  - 针对不同的负载，有不同的含义。
 
-  - PSI：置为 1，表示 TS 包中带有 PSI 数据分段的第一个字节，即这个 TS 包是 PSI Section 的起始包，则此 TS 包的负载的第一个字节带有 pointer_field，用来指示 PSI 数据在 payload 中的位置；置为 0，表示 TS 包不带有 PSI Section 的第一个字节，即此 TS 包不是 PSI 的起始包，即在有效负载中没有 pointer_filed，有效负载的开始就是 PSI 的数据内容。对于空包，payload_unit_start_indicator 应该置为 0。
+  - PES：
+    - 置为 1， `PES `包的第一个字节开始，即此 TS 包为 PES 包的起始包，且此 TS 分组中有且只有一个 PES 包的起始字段
 
-    > 比如：
-    >
-    > ​		若 TS 包载荷为 PAT，则当接收到 TS 包的 payload_unit_start_indicator 为 1 时，表明这个 TS 包包含了 PAT 头信息，从这个包里面解析出 section_length 和 continuity_counter，然后继续收集后面的 payload_unit_start_indicator = 0 的 TS 包，并判断 continuity_counter 的连续性，不断读出 TS 包中的净载荷（也就是 PAT 数据），用 section_length 作为收集 TS 包结束条件
+    - 置为 0，表示 TS 包不是 PES 包的起始包，是后面的数据包。
 
-- `transport_priority（1bit）`：传输优先标志
+  - PSI：
+    - 置为 1，`PSI `的第一个字节，即这个 TS 包是 PSI 的起始包
+      - 则此 TS 包的负载的第一个字节带有 `pointer_field`，用来指示 PSI 数据在 `payload `中的位置；
 
-  - 为 1 表明当前 TS 包的优先级比其他具有相同 PID，但此位没有被置 1 的 TS 包高。
+    - 置为 0，表示 TS 包不带有 PSI 的第一个字节，即此 TS 包不是 `PSI `的起始包
+      - 即在有效负载中没有 `pointer_filed`，有效负载的开始就是 `PSI `的数据内容
 
-- `PID（playload ID）`， 表示了Packet的类型，是TS流中唯一识别标志
+  - 对于空包，`payload_unit_start_indicator` 应该置为 0
 
-  > Packet Data是什么内容就是由PID决定的
+  > ​		若 TS 包载荷为 `PAT`
   >
-  > 在 TS 码流生成时，每一类业务（视频，音频，数据）的基本码流均被赋予一个不同的识别号 PID，解码器借助于 PID 判断某一个 TS 包属于哪一类业务的基本码流。
+  > - 则当接收到 `TS `包的 `payload_unit_start_indicator `为 `1 `时，表明这个 `TS `包包含了 `PAT `头信息
+  > - 从这个包里面解析出 `section_length `和 `continuity_counter`
+  > - 然后继续收集后面的` payload_unit_start_indicator = 0 `的 `TS `包
+  > - 并判断 `continuity_counter `的连续性，不断读出 TS 包中的净载荷（也就是 `PAT `数据）
+  > - 用 `section_length `作为收集 `TS `包结束条件
+
+- `transport_priority（1bit）`：传输优先标志，`1 bit`
+
+  - 为 1 表明当前 TS 包的优先级比其他具有相同 `PID`，但此位没有被置 `1 `的 `TS `包高
+
+    > 在相同 PID 的分组中具有更高的优先权。传输机制可以使用该字段优先考虑基本流内的该包数据。
+
+- `PID（playload ID）(13 bit)`， 表示了`Packet`的类型，是`TS`流中唯一识别标志，识别 TS 分组，`13 bit`
+
+  - 一个 PID 对应一个特定的 PES
+
+    > Packet Data 是什么内容就是由`PID`决定的
+    >
+    > 在 TS 码流生成时，每一类业务（视频，音频，数据）的基本码流均被赋予一个不同的识别号 `PID`，解码器借助于 `PID `判断某一个 `TS `包属于哪一类业务的基本码流
 
   - `0x0000`，PAT表
+    
     - PMT表的PID在PAT表中给出
   - `0x0001`，CAT
   - `0x0002`，TSDT
@@ -174,22 +208,25 @@
     - `0x0014`，TDT,TOT,ST
   - ...
 
-- `transport_scrambling_control（2bits）`：有效负载加密模式标志
+- `transport_scrambling_control（2bits）`：有效负载加扰模式标志，`2 bit`
 
-  - 00 表示未加密。如果传输包包头中包括调整字段，不应被加密。
-  - 其他取值含义是用户自定义的。
+  - `00` 表示载荷未加扰。
+    - 如果传输包包头中包括调整字段，不应被加密。
+  - 其余值由具体系统定义。
 
-- `adaption_field_control（2bits）`：调整字段标志，表示此 ts 首部是否跟随调整字段和负载数据。
+- `adaption_field_control（2bits）`：适配域存在标志，`2 bit`
 
-  - 00：保留；
-  - 01：表示无调整字段，只有有效负载数据；
-  - 10：表示只有调整字段，无有效负载数据；
-  - 11：表示有调整字段，且其后跟随有效负载数据；
+  - 表示此 `ts header`是否有可选头部和负载数据
+  - `00`：保留；
+  - `01`：表示无调整字段，只有有效负载数据；
+  - `10`：表示只有调整字段，无有效负载数据；
+  - `11`：表示有调整字段，且其后跟随有效负载数据；
 
-- `continuity_counter（4bits）`：循环计数器，用于对传输误码进行检测。
+- `continuity_counter（4bits）`：连续性计数器， `4 bit`
 
-  - 在发送端对所有的包都做 0~15 的循环计数，起始值不一定是 0。
-  - 在接收终端，如发现循环计数器的值有中断，表明数据在传输中有丢失。
+  - 取值为 `0x00` 到 `0x0F`，循环使用
+  - 用于检查同一个 `PID `的 `TS `分组的连续性。每当一个 `TS `分组中包含载荷时，该计数器加 `1`
+  - 在接收终端，如发现循环计数器的值有中断，表明数据在传输中有丢失
 
   
 
@@ -218,35 +255,20 @@ continuity_counte=0010               即0x02,表示当前传送的相同类型�
 */
 ```
 
-```c
-typedef struct MPEGTS_FIXED_HEADER
-{
-	/* byte 0 */
-	unsigned sync_byte : 8; // 同步字节，值为 0x47
-
-	/* byte 1, 2 */
-	unsigned transport_error_indicator : 1; // 传输错误指示位，置 1 时，表示传送包中至少有一个不可纠正的错误位
-	unsigned payload_unit_start_indicator : 1; // 负载单元起始指标位，针对不同的负载，有不同的含义
-	unsigned transport_priority : 1; // 传输优先级，表明该包比同个 PID 的但未置位的 TS 包有更高的优先级
-	unsigned PID : 13; // 该 TS 包的 ID 号，如果净荷是 PAT 包，则 PID 固定为 0x00
-
-	/* byte 3 */
-	unsigned transport_scrambling_control : 2; // 传输加扰控制位
-	unsigned adaptation_field_control : 2; // 自适应调整域控制位，分别表示是否有调整字段和负载数据
-	unsigned continuity_counter : 4;// 连续计数器，随着具有相同 PID 的 TS 包的增加而增加，达到最大时恢复为 0
-	/* 如果两个连续相同 PID 的 TS 包具有相同的计数，则表明这两个包是一样的，只取一个解析即可。 */
-} MPEGTS_FIXED_HEADER; // MPEG-TS 包头占 4 字节
-```
 
 
+##### adaptation field
 
-### adaptation field
+​		适配域（Adaptation Field）中的数据主要用于携带一些额外信息以及做数据填充以确保 TS 的一个包大小固定在 188 字节。
 
-​		为了传送打包后长度不足188B（包括包头）的不完整TS，或者为了在系统层插入节目时钟参考PCR（Program Clock Reference）字段，需要在TS包中插入可变长度的调整字段。
+- 当` TS Header` 的 `adaption_field_control `字段值为 `10` 或 `11` 时，说明该` TS packet `有适配域（Adaptation Field）。
+- 适配域的格式基于采用若干标志符，以表示该字段的某些特定扩展是否存在
+- 适配域由适配域长度、不连续指示器、随机存取器、PCR标志符、基本数据流优先级指示器、拼接点标志符、传送专用数据标志、调整字段扩展标志以及有相应标志符的字段组成
+- `adaptation field `最少占用 `1 `个字节
+  - 即` adaptation_field_length `字段，这样最少可以填充 1 个字节。
 
-​		当 TS Header 的 adaption_field_control 字段的第一个比特位是 1 时，说明该 TS packet 有调整字段（adaptation field）。
 
-​		调整字段包括对较高层次的解码功能有用的相关信息，调整字段的格式基于采用若干标志符，以表示该字段的某些特定扩展是否存在。调整字段由调整字段长度、不连续指示器、随机存取器、PCR标志符、基本数据流优先级指示器、拼接点标志符、传送专用数据标志、调整字段扩展标志以及有相应标志符的字段组成。
+<img src="https://img-blog.csdnimg.cn/img_convert/34f29e448f68767e3d0b784f7692d4b2.png#pic_center" alt="在这里插入图片描述" style="zoom: 67%;" />
 
 | 字段                                 | 大小   | 描述                             |
 | ------------------------------------ | ------ | -------------------------------- |
@@ -262,24 +284,88 @@ typedef struct MPEGTS_FIXED_HEADER
 | PCR                                  | 40 bit | 当 PCR_flag=1 时携带             |
 | stuffing_bytes                       | 不定   | 填充字节，取值0xff               |
 
-​		![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/1f11d1c0a32eee64a1d5b00f836a64ae.png#pic_center)
+- `adaptation_field_length`，适配域部分的长度，8 比特
+  - 单位为字节，不包含当前字段字节。
+  - 0 值表示传输流包中插入单个填充字节。
+  - 当 `adaptation_field_control` 值为 `11` 时，此时表示后面有载荷，`adaptation_field_length` 值必须在 0 到 182 的区间内。
+  - 当 `adaptation_field_control` 值为 `10` 时，此时表示后面无载荷，`adaptation_field_length` 值必须为 183。
+  - 对于承载 PES 包的传输流包，只要存在欠充足的 PES 包数据就需要通过填充来完全填满传输流包的有效载荷字节。
+- `discontinuity_indicator`，不连续指示位，1 比特。如果根据连续性计数器或 PCR 计算，确认当前分组处于不连续状态，则取值为 1。不连续性指示符用于指示两种类型
+  的不连续性，系统时间不连续性和 `continuity_counter` 不连续性。
+- `random_access_indicator`，随机访问指示位，1 比特。如果当前分组是一个 PES 的起始，取值为 1。
+- `elementary_stream_priority_indicator`，ES 优先级指示位，1 比特。表示有效载荷内承载的基本流数据的优先级，`1` 表示该有效载荷具有
+  比其他传输流包有效载荷更高的优先级。
+- `PCR_flag`，PCR 标识位，1 比特。1 表示适配域存在 PCR 数据。
+- `program_clock_reference_base` + `program_clock_reference_extension`，即 PCR（Program Clock Reference）数据。结构为 33 位的基础部分 + 9 位的扩展部分，共 42 比特。PCR 表示包含 `program_clock_reference_base` 最后比特的字节到达系统目标解码器输入端的预期时间。它用于时钟同步，使得解码后的内容可以正确地同步播放。
+- `splice_countdown`，倒数计数器，8 比特。可以为正或负的值。正值表示传输流中有相同 PID 的距离拼接点剩余传输流包的数量。复制的传输流包和仅包含自适应字段的传输流包被排除。相关 `splice_countdown` 字段达到零的传输流包中的最后字节之后的位置即为拼接点的定位。在 `splice_countdown` 达到零的传输流包中，传输流包有效载荷的最后数据字节必须是编码音频帧或编码图像的最后字节。
+- `private_data_byte`，私有数据，8 比特。可包含多组。
+- `splice_type`，拼接类型，4 比特。从此字段的首次出现向前，在该字段存在的相同 PID 的所有连续传输流包中，它都具有相同的值，直至 `splice_countdown` 达到零的包出现时为止（包括该包）。
+- `DTS_next_AU`，解码时间标记下一个存取单元，以 3 部分编码，共 33 比特。在连续和周期解码通过此拼接点的情况中，它表示跟随拼接点的第一个存取单元的解码时间。此解码时间以时间基表示，在 `splice_countdown` 字段达到零的传输流包中生效。从首次出现此字段向前，在它存在的相同 PID 的所有后续传输流中该字段均必须有相同值，直到 `splice_countdown` 字段达到零的包出现时为止（包括此包）。
+- `stuffing_byte`，填充数据，8 比特。可包含多组。
 
-​		针对不同的 ts payload，adaptation field 的应用方式也不同：
 
-- 针对 PAT、PMT，不足 188 Bytes 的部分直接使用 0xff 进行填充，而不会使用 adaptation field（但是也有例外，有的编码器会携带）。
-- 针对 PES packet，才会使用 adaptation field 做填充。
-  - audio PES packet 不会在 adaptation field 中携带 PCR 字段。
-  - video PES packet 可以选择是否在 adaptation field 中携带 PCR 字段。一般 PES packet 被拆分时，会在第一个和最后一个拆分包添加 adaptation field。第一个拆分包的 adaptation field 才会携带 pcr 时钟，且主要作用是为了携带 pcr 时钟，而不是为了填充数据；最后一个拆分包的 adaptation field 不会携带 pcr 时钟，只做填充用。
 
-PCR 属于编码端的时钟，其作用是如果编码端时钟源与解码端时钟源不同步，那么解码端应该采用 pcr 作为自己的时钟源，以同步编码端。
+​	<img src="https://img-blog.csdnimg.cn/img_convert/1f11d1c0a32eee64a1d5b00f836a64ae.png#pic_center" alt="在这里插入图片描述" style="zoom:67%;" />
 
-例如编码端时钟是解码端的 2 倍，解码端是正常的物理时钟，这时一个物理世界 5min 的视频，因为编码端时钟源走得太快，那么最后一个视频帧的 dts 就是 10min。播放端直接播放的话，就会播放 10min，显得播放得很慢。所以播放端需要加快播放，方法就是采用 pcr 时钟作为自己的时钟源，让自己的时钟走得跟编码端一样快，这样看起来就是正常速度播放了。
+​		针对不同的` ts payload`，`adaptation field `的应用方式也不同：
 
-> 注意，adaptation field 最少占用 1 个字节，即 adaptation_field_length 字段，这样最少可以填充 1 个字节。
+- 针对 `PAT`、`PMT`，不足` 188 Bytes` 的部分直接使用 `0xff `进行填充，而不会使用` adaptation field`（但是也有例外，有的编码器会携带）。
 
-adaptation field 层次图：
+- 针对 `PES packe`t，才会使用` adaptation field `做填充。
+  - `audio PES packet` 不会在 `adaptation field `中携带 `PCR `字段
+  
+  - `video PES packet `可以选择是否在` adaptation field` 中携带 `PCR `字段
+  
+    - 一般 `PES packet` 被拆分时，会在第一个和最后一个拆分包添加 `adaptation field`
+    - 第一个拆分包的 `adaptation field` 才会携带 `pcr `时钟，且主要作用是为了携带 `pcr `时钟，而不是为了填充数据；
+    - 最后一个拆分包的 `adaptation field `不会携带 `pcr `时钟，只做填充用。
+  
+    > `PCR `属于编码端的时钟，
+    >
+    > 作用是如果编码端时钟源与解码端时钟源不同步，那么解码端应该采用 `pcr `作为自己的时钟源，以同步编码端。
+    >
+    > 例如，编码端时钟是解码端的 2 倍，解码端是正常的物理时钟，这时一个物理世界 `5min `的视频，因为编码端时钟源走得太快，那么最后一个视频帧的 `dts `就是` 10min`。播放端直接播放的话，就会播放 `10min`，显得播放得很慢。所以播放端需要加快播放，方法就是采用 `pcr `时钟作为自己的时钟源，让自己的时钟走得跟编码端一样快，这样看起来就是正常速度播放了。
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/img_convert/34f29e448f68767e3d0b784f7692d4b2.png#pic_center)
+
+
+#### payload
+
+​		当 TS Header 中的 `adaptation_field_control` 字段值为 `01` 或 `11` 时，这就表明存在载荷（Payload Data）部分。
+
+​		载荷部分对应的是 `TS `层数据结构的 `data_byte` 字段。
+
+- `data_byte`，该字段 8 比特一个单位，可包含多组。
+  - 该数据必须来自 PES 包、PSI 分段以及 PSI 分段后的包中相连贯的数据字节，或者不在这些结构中的专用数据。
+  - 如 PID 所指示的。在具有 PID 值`0x1FFF` 的空包情况中，`data_bytes` 可以指派为任何值。
+  - `data_bytes` 数 N 通过 184 减去 `adaptation_field()` 中的字节数来确定。
+
+
+
+### PES 层
+
+<img src="https://mmbiz.qpic.cn/mmbiz_jpg/gUnqKPeSuehz5Hg9nJv4kicOZSBYolBrpraThFDwwB1raYYzTkvgj4UryWc617pzoKFAP0D9PtZb23CZTtDBFVA/640?wx_fmt=jpeg&tp=webp&wxfrom=5&wx_lazy=1" alt="图片" style="zoom: 80%;" />
+
+
+
+PES 包中的部分字段解释：
+
+- `stream_id`，表示基本流的类型和编号。
+- `PES_packet_length`，表示 PES 包中在该字段后的数据字节数，该字段 16 比特。
+- `PTS`，表示显示时间戳。分为 3 段，共 33 比特。
+- `DTS`，表示解码时间戳。分为 3 段，共 33 比特。
+- `ES_rate`，基本流速率，在 PES 流情况中，指定解码器接收 PES 包字节的速率。
+- `trick_mode_control`，表示相关视频的特技方式，3 比特字段。这些特技方式包括：快进、慢动作、冻结帧、快速反向、慢反向等。
+- `PES_packet_data_byte`，表示来自包 stream_id 或 PID 所指示的基本流的连贯数据字节。该字段 8 比特一个单位。
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/gUnqKPeSuehz5Hg9nJv4kicOZSBYolBrpJGpibcU0mAd5jDcxNv2J5bPpNpnmHXuZFAibxuuu7QQCyGMnJs3KPBNw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1)
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/gUnqKPeSuehz5Hg9nJv4kicOZSBYolBrpVfrWnvGnl1637Z0nj0uDSAQEw2D89Jd5BibFEy6OH8tjN92YUNO1ERQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1)
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/gUnqKPeSuehz5Hg9nJv4kicOZSBYolBrpOCIySER5GzNyaXdlfFHYaTPp8ZuyFyVicUWianPSeYQpq9jE96iaFXxIw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1)
+
+### ES层
+
+ES 层指的就是音视频基本数据，一般视频为 H.264 编码数据，音频为 AAC 编码数据。
 
 ## PSI
 
@@ -287,10 +373,10 @@ adaptation field 层次图：
 
 ​		Program Specific Information，节目特定信息，用来描述`TS`的组成结构。
 
-- TS 包是对 PES 包的封装，但是不只是 PES，TS 还可以是对 PSI 数据的封装
--  PSI 不是一个表，PSI 是 PAT，PMT，CAT，NIT...这些表的统称。
+- TS 包是对 `PES `包的封装，但是不只是 `PES`，`TS `还可以是对 `PSI `数据的封装
+-  `PSI `不是一个表，`PSI `是 `PAT`，`PMT`，`CAT`，`NIT`...这些表的统称。
 
-​		PSI信息由四种类型的表组成，包括
+​		`PSI`信息由四种类型的表组成，包括
 
 - 节目关联表（PAT，Program Association Table）
   - 0x0000  解析 .ts 文件的第一步就是找到 PAT 表，然后获取 PMT 表的 PID 值
@@ -306,6 +392,15 @@ adaptation field 层次图：
 > - 在解析TS流的时候，首先寻找PAT表
 > - 根据PAT获取所有PMT表的PID；再寻找PMT表，获取该频段所有节目数据并保存。
 > - 这样，只需要知道节目的PID就可以根据`Packet Heade`给出的`PID`过滤出不同的Packet，从而观看不同的节目。
+
+> - 解析 `ts `流要先找到 `PAT `表，只要找到 `PAT `就可以找到 `PMT`，然后就可以找到音视频流了
+> - `PAT `表的和 `PMT `表需要定期插入 `ts `流
+>   - 因为用户随时可能加入 `ts `流，这个间隔比较小，通常每隔几个视频帧就要加入 `PAT `和 `PMT`
+> - `PAT `和 `PMT `表是必须的，还可以加入其它表如 `SDT`（业务描述表）等
+> - 不过 `HLS `流只要有 `PAT `和 `PMT `就可以播放了
+>
+> > - PAT 表：主要的作用就是指明了 PMT 表的 PID 值。
+> > - PMT 表：主要的作用就是指明了音视频流的 PID 值。
 
 ### PAT表
 
@@ -739,10 +834,48 @@ void Process_Packet(unsigned char*buff)
 
 ![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809195105562)
 
-##  分析软件
+> ​		`TS`包有可能是音视频数据，也有可能是表格(`PAT/PMT/…`)：`PAT,PMT,DATA,DATA,,,,,,,,PAT,PMT,DATA,DATA,,,,,,`
+>
+> - 每隔一段时间，发送一张`PAT`表，紧接着发送`DATA`数据
+>
+> - `PAT`表格里面包含所有`PMT`表格的信息
+>
+>   - 一个`PMT`表格对应一个频道，例如中央电视台综合频道
+>
+>   - 一个`PMT`里面包含所有节目的信息，例如`CCTV-1`到`CCTV-14`
+>
+>   - 在实际情况中有很多频道，所以PMT表格不止一张
+>
+>     - `PAT、PMT、PMT、PMT,,,DATA,DATA，DATA,,,,`
+>
+>   - 每个频道或节目都有自己的标识符（`PID`）
+>
+>     - 当得到一个`DATA`，解出里面的`PID`就知道是什么节目了,也知道节目所属频道
+>
+>     > 在看电视时，会收到所有节目的`DATA`，当选择某个节目时，机顶盒会把这个节目的`DATA`单独过滤出来，其他舍弃
+>
 
-- elecard stream analyzer，支持 TS，FLV，MP4 等众多格式，可免费试用 30天
-- MPEG-2 TS packet analyser ，界面清晰简洁。
+
+
+## TS 流的生成和解析
+
+1）TS 流的生成流程大致如下：
+
+- 1、将原始的音视频数据编码后，组成基本码流（ES）；
+- 2、将基本码流（ES）打包成 PES；
+- 3、在 PES 中加入需要的信息，比如 PTS、DTS 等；
+- 4、将 PES 包的数据装载到一系列固定长度为 188 字节的传输包（TS Packet）中；
+- 5、在 TS 包中加入需要的信息，比如 PSI、PCR 等；
+- 6、连输输出 TS 包形成具有恒定码率的 TS 流。
+
+2）TS 流的解析流程大致如下：
+
+- 1、从 TS 流中解析出 TS 包；
+- 2、从 TS 包中获取流信息，比如 PSI、PCR 等；
+- 3、获取特定节目的音视频 PID；
+- 4、通过 PID 获取特定音视频相关的 TS 包，从中解析出 PES 包；
+- 5、从 PES 包中获取 PTS、DTS 等时间戳信息，并从 PES 中解析出基本码流（ES）；
+- 6、将基本码流数据交给解码器，解码出原始音视频数据。
 
 
 
@@ -857,3 +990,4 @@ void Process_Packet(unsigned char*buff)
 
 
 
+![](https://raw.githubusercontent.com/Mocearan/picgo-server/main/20130809133716015)
