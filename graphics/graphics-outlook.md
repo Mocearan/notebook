@@ -71,19 +71,27 @@
 
 ​		不同的处理硬件有着不同的编程接口实现，图形软件开发者适配不同硬件的代价太高。因此，统一硬件接口标准由此而来，由接口标准来兼容不同的硬件，而图形软件开发者使用依据这些标准开发的软件库来便捷的兼容各种硬件。
 
-
+- **`OpenGL`** 是一套跨语言、跨平台，支持 2D、3D 图形渲染**接口**。
+  - 这套接口由一系列的函数组成，定义了如何对简单及复杂的图形进行绘制。
+  - 这套接口涉及到对设备的图像硬件进行调用，因此在不同的平台基于这套统一接口做了对应的实现。
+- **`OpenGL ES`** 是 `OpenGL `的**子集**，是针对手机和游戏主机等嵌入式设备而设计，去除了许多不必要和性能较低的 `API `接口。
+- **`Metal`** 是苹果为了解决 `3D `渲染性能问题而推出的框架，该技术将 `3D `图形渲染性能提高了 `10 `倍。
+- **`Vulkan`** 是一套新的跨平台支持 `2D`、`3D `图形渲染的接口。
+  - `Vulkan `针对全平台即时 `3D `程序（如电子游戏和交互媒体）设计，并提供高性能与更均衡的 `CPU/GPU` 使用。
 
 ### history
 
-- 1990s，`SGI`为应对HP、SUN、IBM等服务器厂商在图形工作站领域的竞争，开放了公司内部的3D接口技术标准 `IRIS GL`，称为`openGL`，可以自由扩展。
+- 1990s，`SGI`为应对`HP`、`SUN`、`IBM`等服务器厂商在图形工作站领域的竞争，开放了公司内部的`3D`接口技术标准 `IRIS GL`，称为`openGL`，可以自由扩展。
 - 1992，`openGL 1.0`作为标准发布，计算机3D图形领域正式进入`openGL`时代，仍以图形工作站为主要使用场景。
-- 1996，`Microsoft`在个人PC领域推广了自行研发的`Direct 3D`，不支持扩展。在PC的游戏领域达到了统治地位。
+- 1996，`Microsoft`在个人`PC`领域推广了自行研发的`Direct 3D`，不支持扩展。在PC的游戏领域达到了统治地位。
 - 2000，小型机退出历史舞台，摩尔定律推动PC机快速发展，小型机工作站失去了存在的意义。`openGL`也慢慢失去了地位。
   - `linux/apple`还在使用着`openGL`，但硬件厂商对`linux`的驱动支持一直不太好，如`Nvidia`
 - 2006，`SGI`日渐衰微，将`openGL`标准委员会托管给了非营利组织`Khronos Group`
-- 2007，iphone的发布使得电子消费产业很快进入移动互联网时代，移动设备上的图形渲染能力（游戏、影音）日渐重要
+- 2007，`iphone`的发布使得电子消费产业很快进入移动互联网时代，移动设备上的图形渲染能力（游戏、影音）日渐重要
+  
   - 此时，`ios/android`的唯一选择是`openGL`
 - 2011，`openGL`经过裁剪，发布了精简版`openGL ES`标准以供移动设备使用
+  
   - `ios/android`使用`openGL ES`
   - `windows phone`使用`Direct 3D`
   - `Windows PC`使用`Direct 3D`
@@ -91,18 +99,23 @@
 - 2012，`Khronos Group`推出了`openGL ES 3.0`标准
 - 2014，`Microsoft`提出了`Direct3D 12`，虽然版本名称延续，但其已经彻底改头换面
 - 2014，`Apple`发布了`Metal`标准
+
+  > 2014 年之前苹果一直是使用 OpenGL ES 来处理底层渲染，之后慢慢的把渲染框架迁移到了 Metal。到 iOS 12 苹果已经开始弃用 OpenGL，完全使用 Metal 实现底层渲染。不过 OpenGL 是跨平台的且相当稳定，目前 Metal 还只是用于苹果体系。
 - 2015，`Khronos Group`发布会了`openGL`的继任者`Vulkan`
   - `Direct3D 12 / Metal / Vulkan`支持`Shader`中间格式
     - `Direct3D 12`提出`DXIL`格式
     - `Metal`提出`Metal IR`格式
     - `Vulkan`提出`SPIR-V`格式
 
+> `OpenGL `已经发展了 25 年以上，不断满足着行业需求。但是，随着 `CPU`、`GPU `等硬件技术的发展和 3D 等更复杂场景对性能的需要，`OpenGL `已经逐渐满足不了行业的需要了。后来在 2013 年，`AMD `主导开发了 `Mantle`。`Mantle `是面向 3D 游戏的新一代图形渲染接口，可以让开发人员直接操作 `GPU `硬件底层，从而提高硬件利用率和游戏性能，效果显著。`Mantle `很好的带动了图形行业发展，微软参考 `AMD Mantle` 的思路开发了 `DirectX 12`，苹果则提出了 `Metal`。但是因为 `AMD `行业影响力和领导力不足，`Mantle `没有发展成为全行业的标准。2015 年，`AMD `宣布不在维护 `Mantle`，`Mantle `功成身退。`Khronos `接过 `AMD `手中的接力棒，在 `Mantle `的基础上推出了 `Vulkan`，`Khronos `最先把 `Vulkan `API 称为『下一代 `OpenGL `行动（`glNext`）』，但在正式宣布 `Vulkan `之后这些名字就没有再使用了。
+
+> 谷歌则是从 2016 年的 Android N（安卓 7.0）开始支持 Vulkan API。当然 OpenGL ES 也仍是持续支持的。
 
 ### shader
 
-​	在最初的GPU设计中，每个计算核心上要运行的程序是不能动态编程的，而是出厂时通过设定若干预设以供选择，编程时通过接口选择预设程序来达到效果。这种设计称为固定管线（Fixed Pipeline）。
+​	在最初的GPU设计中，每个计算核心上要运行的程序是不能动态编程的，而是出厂时通过设定若干预设以供选择，编程时通过接口选择预设程序来达到效果。这种设计称为**固定管线（Fixed Pipeline）**。
 
-​	可编程管线（programmable pipeline）在后续的设计中诞生，允许用户通过编程接口，将一段程序注入到GPU的核心上运行以代替固定管线的预设程序，实现对GPU的可编程。
+​	**可编程管线（programmable pipeline）**在后续的设计中诞生，允许用户通过编程接口，将一段程序注入到GPU的核心上运行以代替固定管线的预设程序，实现对GPU的可编程。
 
 ​	 注入 到GPU核心运行的程序称为`Shader`，即着色器。
 
@@ -110,7 +123,7 @@
 
 ​	`openGL ES 3.0`推出了`Shader`缓存机制。可以获取`Shader`的编译产物进行物理存储，然后每次将其读取后交由GPU执行。
 
-### shader中间格式
+### shader 中间格式
 
 ​	不同的厂商不同批次的GPU硬件产生的编译产物可能都不完全相同，因此由软件开发者编译`Shader`并分发编译产物的的策略并不可行。因此都需要在用户第一次使用软件并加载相关单元时进行编译。
 
@@ -126,14 +139,16 @@
 
 
 
-### openGL
+### `openGL`
 
 ​		`openGL`是一个开放的3D图形编程接口标准，可以自由的进行定制化的扩展。
 
 - `openGL 1.0`
   - 固定管线
 
-![img](https://raw.githubusercontent.com/Mocearan/picgo-server/main/7a25099352fd1615d83eef6bfaf3b47e.png)
+<img src="https://raw.githubusercontent.com/Mocearan/picgo-server/main/7a25099352fd1615d83eef6bfaf3b47e.png" alt="img" style="zoom: 50%;" />
+
+
 
 
 
