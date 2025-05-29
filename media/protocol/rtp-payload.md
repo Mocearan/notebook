@@ -2,6 +2,8 @@
 
 ---
 
+​		
+
 ​		对于使用RTP荷载不同的码流，标准给出了不同的文档来说明。可以查看：[RFC RTP Payload](https://www.rfc-editor.org/search/rfc_search_detail.php?page=All&title=RTP Payload&pubstatus[]=Any&pub_date_type=any&sortkey=Number&sorting=ASC)
 
 
@@ -19,8 +21,8 @@
 
 - 音频帧一般较小，一般只用一个 RTP 包也可以承载
   - 一般一个RTP包也只荷载一帧
-- RTP Payload 要去除ADTS头
-- RTP Payload 前面加 4 个字节的荷载标识
+- `RTP Payload` 要去除`ADTS`头
+- `RTP Payload` 前面加` 4 `个字节的荷载标识
 
 ```c
 // 荷载标识
@@ -117,7 +119,7 @@ static int aac_parse(Track *tr, uint8_t *data, size_t len)
 
 ## 荷载视频
 
-​		荷载视频有三种模式：单一帧包，分片帧包，组合帧包。在H264中详细介绍。
+​		荷载视频有三种模式：单一帧包，分片帧包，组合帧包。在`H264`中详细介绍。
 
 ​		[H.264视频的RTP荷载格式 - DoubleLi - 博客园 (cnblogs.com)](https://www.cnblogs.com/lidabo/p/4245439.html)
 
@@ -364,7 +366,7 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
 
 ### H265
 
-​		负载H265时，单一包和组合包的处理同H264。分片包有所不同。
+​		负载`H265`时，单一包和组合包的处理同`H264`。分片包有所不同。
 
 ​		` PayloadHeader + FU header + DON + FU payload + RTP padding`
 
@@ -382,14 +384,14 @@ static int h264_parse(Track *tr, uint8_t *data, size_t len)
     };
     ```
 
-- `FU header`，`1byte`，同H264
+- `FU header`，`1byte`，同`H264`
 
-  - `S`：start 标记位，当该位为 1 时表示 NALU 的第一个分片
-  - `E`：end 标记位，当该位为 1 时表示 NALU 的最后一个分片
+  - `S`：start 标记位，当该位为 1 时表示 `NALU `的第一个分片
+  - `E`：end 标记位，当该位为 1 时表示 `NALU `的最后一个分片
   - `R`：保留位，接收者可以忽略该位。
   - `Type`：实际完整`NALU `的 `Type `类型（1-23）
 
-- `DON`：Decoding Order Number
+- `DON`：`Decoding Order Number`
 
   - 当使用多slice编码模式时使用，用于判断一帧的每个slice是否收齐
   - 一般使用单slice，无此字段
